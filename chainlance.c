@@ -62,6 +62,7 @@ static void opl_del(struct oplist *o, int start, int end);
 /* parsing and preprocessing */
 
 static struct oplist *parse(int fd);
+static int repdepth(struct oplist *ops);
 
 /* actual compilation */
 
@@ -89,6 +90,19 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
+	struct oplist *opsA = parse(fdA), *opsB = parse(fdB);
+
+	/* find maximum depth of nested repeats */
+
+	int maxrepdepth;
+
+	{
+		int d1 = repdepth(opsA), d2 = repdepth(opsB);
+		maxrepdepth = d1 > d2 ? d1 : d2;
+	}
+
+	printf("%%define MAXREPS %d\n\n", maxrepdepth);
+
 	/* copy header */
 
 	FILE *hdr = fopen(argv[1], "r");
@@ -108,8 +122,6 @@ int main(int argc, char *argv[])
 
 	/* translate into code */
 
-	struct oplist *opsA = parse(fdA), *opsB = parse(fdB);
-
 	compile(stdout, opsA, 'A', "pa", 0);
 	compile(stdout, opsB, 'B', "pb", 0);
 	compile(stdout, opsB, 'B', "pf", 1);
@@ -123,7 +135,7 @@ int main(int argc, char *argv[])
 
 static void compile(FILE *f, struct oplist *ops, char side, const char *prefix, int flip)
 {
-	fprintf(f, "Prog%c%s:\n", side, flip ? "2" : "");
+	fprintf(f, "prog%c%s:\n", side, flip ? "2" : "");
 
 	for (int at = 0; at < ops->len; at++)
 	{
@@ -159,7 +171,7 @@ static void compile(FILE *f, struct oplist *ops, char side, const char *prefix, 
 
 		case OP_LOOP1:
 			if (side == 'A')
-				fprintf(f, "\tcmp [rTapeBase + rTapeA], 0\n");
+				fprintf(f, "\tcmp byte [rTapeBase + rTapeA], 0\n");
 			else
 				fprintf(f, "\ttest rCell2, rCell2\n");
 			fprintf(f, "\tjz %s%d\n", prefix, op->match);
@@ -168,7 +180,7 @@ static void compile(FILE *f, struct oplist *ops, char side, const char *prefix, 
 
 		case OP_LOOP2:
 			if (side == 'A')
-				fprintf(f, "\tcmp [rTapeBase + rTapeA], 0\n");
+				fprintf(f, "\tcmp byte [rTapeBase + rTapeA], 0\n");
 			else
 				fprintf(f, "\ttest rCell2, rCell2\n");
 			fprintf(f, "\tjnz %s%d\n", prefix, op->match);
@@ -468,6 +480,25 @@ static struct oplist *parse(int fd)
 	matchloop(ops);
 
 	return ops;
+}
+
+static int repdepth(struct oplist *ops)
+{
+	int d = 0, maxd = 0;
+
+	for (int at = 0; at < ops->len; at++)
+	{
+		if (ops->ops[at].type == OP_REP1)
+		{
+			d++;
+			if (d > maxd) maxd = d;
+			continue;
+		}
+		else if (ops->ops[at].type == OP_REP2)
+			d--;
+	}
+
+	return maxd;
 }
 
 /* oplist handling, impl */

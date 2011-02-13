@@ -89,10 +89,7 @@ run:	;; runs a single match
 
 	;; initialize rep counter stack
 
-%if MAXREPS > 0
-	xor rRepAd, rRepAd
-	xor rRepBd, rRepBd
-
+%if MAXREPS > 1
 	lea rRepSA, [rel repStackA]
 	lea rRepSB, [rel repStackB]
 %endif
@@ -179,10 +176,12 @@ tie:	ret					; tie (no change in esi)
 
 tape:	times 30 db 0
 
+%if MAXREPS > 1
 repStackA:
-	times MAXREPS dd 0
+	times MAXREPS-1 dd 0
 repStackB:
-	times MAXREPS dd 0
+	times MAXREPS-1 dd 0
+%endif
 
 	SECTION .text
 
