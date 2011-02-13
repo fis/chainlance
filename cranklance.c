@@ -316,16 +316,36 @@ op_waitB:
 	NEXTB;
 
 op_loop1A:
-	if (!*ptrA) ipA = oplA[ipA].match;
+	if (!*ptrA)
+	{
+		if (oplA[ipA].count)
+			repA = oplA[oplA[ipA].rep].count - (repA - 1);
+		ipA = oplA[ipA].match;
+	}
 	NEXTA;
 op_loop1B:
-	if (!*ptrB) ipB = oplB[ipB].match;
+	if (!*ptrB)
+	{
+		if (oplB[ipB].count)
+			repB = oplB[oplB[ipB].rep].count - (repB - 1);
+		ipB = oplB[ipB].match;
+	}
 	NEXTB;
 op_loop2A:
-	if (*ptrA) ipA = oplA[ipA].match;
+	if (*ptrA)
+	{
+		if (oplA[ipA].count)
+			repA = oplA[oplA[ipA].rep].count - (repA - 1);
+		ipA = oplA[ipA].match;
+	}
 	NEXTA;
 op_loop2B:
-	if (*ptrB) ipB = oplB[ipB].match;
+	if (*ptrB)
+	{
+		if (oplB[ipB].count)
+			repB = oplB[oplB[ipB].rep].count - (repB - 1);
+		ipB = oplB[ipB].match;
+	}
 	NEXTB;
 
 	/* these handle OP_INNER1/OP_INNER2 too with suitable .match settings */
@@ -577,7 +597,11 @@ static void matchloop(struct oplist *ops)
 			ops->ops[at].match = stack[depth];
 			ops->ops[stack[depth]].match = at;
 			if (istack[depth] != o->rep)
-				o->count = 1; /* flag as inner-block crossing */
+			{
+				/* flag as inner-block crossing loop */
+				o->count = 1;
+				ops->ops[stack[depth]].count = 1;
+			}
 			break;
 
 		case OP_INNER1:
