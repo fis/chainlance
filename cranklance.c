@@ -30,18 +30,10 @@ enum optype
 
 struct op
 {
-	union {
-		enum optype type;
-		void *code;
-	};
+	enum optype type;
 	int match; /* offset of matching delimiter for [({ })] pairs */
-	int rep;   /* immediate surrounding rep */
-	int count;
-	/* count is a multi-use field, with the following meanings:
-	   rep instructions ({}) -- counter value for the enclosing ()*N block
-	   any instruction       -- -1 if part of the {..} block of immediately enclosing rep
-	   loop instructions     -- +1 if crossing a {..} block in a (..{..}..)*N construct
-	   if none of the above match -- 0 */
+	int inner; /* extra links between matched ( .. { and } .. ) */
+	int count; /* static repetition count for the ({}) instructions */
 };
 
 struct oplist
@@ -102,6 +94,17 @@ int main(int argc, char *argv[])
 
 	struct oplist *opsA = parse(fdA), *opsB = parse(fdB);
 
+	/* for debuggin purposes, dump out the parse */
+
+#if 0
+	for (int at = 0; at < opsA->len; at++)
+	{
+		struct op *op = &opsA->ops[at];
+		printf("%3d: %2d  (%-2d  {%-2d  *%-2d\n", at, op->type, op->match, op->inner, op->count);
+	}
+	return 0;
+#endif
+
 	/* run them */
 
 	int score = run(opsA, opsB);
@@ -125,49 +128,58 @@ static int run(struct oplist *opsA, struct oplist *opsB)
 
 	/* convert opcode types into pointers for both progs */
 
+	void **opcA = smalloc((opsA->len+1) * sizeof *opcA);
+	void **opcB = smalloc((opsB->len+1) * sizeof *opcB);
+
 	for (int at = 0; at < opsA->len; at++)
 	{
 		struct op *op = &oplA[at];
+		void **opc = &opcA[at];
 		switch (op->type)
 		{
-		case OP_INC:    op->code = &&op_incA;   break;
-		case OP_DEC:    op->code = &&op_decA;   break;
-		case OP_LEFT:   op->code = &&op_leftA;  break;
-		case OP_RIGHT:  op->code = &&op_rightA; break;
-		case OP_WAIT:   op->code = &&op_waitA;  break;
-		case OP_LOOP1:  op->code = &&op_loop1A; break;
-		case OP_LOOP2:  op->code = &&op_loop2A; break;
-		case OP_REP1:   op->code = &&op_rep1A;  break;
-		case OP_REP2:   op->code = &&op_rep2A;  break;
-		case OP_INNER1: op->code = &&op_rep2A;  break; /* compatible code */
-		case OP_INNER2: op->code = &&op_rep1A;  break; /* compatible code */
+		case OP_INC:    *opc = &&op_incA;    break;
+		case OP_DEC:    *opc = &&op_decA;    break;
+		case OP_LEFT:   *opc = &&op_leftA;   break;
+		case OP_RIGHT:  *opc = &&op_rightA;  break;
+		case OP_WAIT:   *opc = &&op_waitA;   break;
+		case OP_LOOP1:  *opc = &&op_loop1A;  break;
+		case OP_LOOP2:  *opc = &&op_loop2A;  break;
+		case OP_REP1:   *opc = &&op_rep1A;   break;
+		case OP_REP2:
+			if (op->inner != -1) *opc = &&op_irep2A;
+			else                 *opc = &&op_rep2A;
+			break;
+		case OP_INNER1: *opc = &&op_inner1A; break;
+		case OP_INNER2: *opc = &&op_inner2A; break;
 		}
 	}
 
-	opl_append(opsA, OP_INC);
-	oplA[opsA->len-1].code = &&op_doneA;
+	opcA[opsA->len] = &&op_doneA;
 
 	for (int at = 0; at < opsB->len; at++)
 	{
 		struct op *op = &oplB[at];
+		void **opc = &opcB[at];
 		switch (op->type)
 		{
-		case OP_INC:    op->code = &&op_incB;   break;
-		case OP_DEC:    op->code = &&op_decB;   break;
-		case OP_LEFT:   op->code = &&op_leftB;  break;
-		case OP_RIGHT:  op->code = &&op_rightB; break;
-		case OP_WAIT:   op->code = &&op_waitB;  break;
-		case OP_LOOP1:  op->code = &&op_loop1B; break;
-		case OP_LOOP2:  op->code = &&op_loop2B; break;
-		case OP_REP1:   op->code = &&op_rep1B;  break;
-		case OP_REP2:   op->code = &&op_rep2B;  break;
-		case OP_INNER1: op->code = &&op_rep2B;  break; /* compatible code */
-		case OP_INNER2: op->code = &&op_rep1B;  break; /* compatible code */
+		case OP_INC:    *opc = &&op_incB;    break;
+		case OP_DEC:    *opc = &&op_decB;    break;
+		case OP_LEFT:   *opc = &&op_leftB;   break;
+		case OP_RIGHT:  *opc = &&op_rightB;  break;
+		case OP_WAIT:   *opc = &&op_waitB;   break;
+		case OP_LOOP1:  *opc = &&op_loop1B;  break;
+		case OP_LOOP2:  *opc = &&op_loop2B;  break;
+		case OP_REP1:   *opc = &&op_rep1B;   break;
+		case OP_REP2:
+			if (op->inner != -1) *opc = &&op_irep2B;
+			else                 *opc = &&op_rep2B;
+			break;
+		case OP_INNER1: *opc = &&op_inner1B; break;
+		case OP_INNER2: *opc = &&op_inner2B; break;
 		}
 	}
 
-	opl_append(opsB, OP_INC);
-	oplB[opsB->len-1].code = &&nextcycle; /* a slight shortcut */
+	opcB[opsB->len] = &&nextcycle; /* a slight shortcut */
 
 	/* state-holding variables */
 
@@ -199,7 +211,7 @@ static int run(struct oplist *opsA, struct oplist *opsB)
 		cycles = MAXCYCLES;
 
 		oldscore = score;
-		goto *oplA[0].code;
+		goto *opcA[0];
 	done_normal:
 		if (score > oldscore) putchar('<');
 		else if (score < oldscore) putchar ('>');
@@ -209,9 +221,9 @@ static int run(struct oplist *opsA, struct oplist *opsB)
 
 	for (int at = 0; at < opsB->len; at++)
 	{
-		struct op *op = &oplB[at];
-		if (op->code == &&op_incB) op->code = &&op_decB;
-		else if (op->code == &&op_decB) op->code = &&op_incB;
+		enum optype op = oplB[at].type;
+		if (op == OP_INC) opcB[at] = &&op_decB;
+		else if (op == OP_DEC) opcB[at] = &&op_incB;
 	}
 
 	ret = &&done_flipped;
@@ -229,7 +241,7 @@ static int run(struct oplist *opsA, struct oplist *opsB)
 		cycles = MAXCYCLES;
 
 		oldscore = score;
-		goto *oplA[0].code;
+		goto *opcA[0];
 	done_flipped:
 		if (score > oldscore) putchar('<');
 		else if (score < oldscore) putchar ('>');
@@ -241,7 +253,7 @@ static int run(struct oplist *opsA, struct oplist *opsB)
 
 	/* actual core */
 
-#define NEXTA ipA++; goto *oplB[ipB].code
+#define NEXTA ipA++; goto *opcB[ipB]
 #define NEXTB ipB++; goto nextcycle
 
 /* #define TRACE 1 */
@@ -277,11 +289,11 @@ nextcycle:
 	if (!--cycles)
 		goto *ret;
 
-	goto *oplA[ipA].code;
+	goto *opcA[ipA];
 
 fallA:
 	deathsA = 2;
-	goto *oplB[ipB].code;
+	goto *opcB[ipB];
 
 fallB:
 	if (!tape[0]) deathsA++;
@@ -326,59 +338,65 @@ op_waitB:
 	NEXTB;
 
 op_loop1A:
-	if (!*ptrA)
-	{
-		if (oplA[ipA].count)
-			repA = oplA[oplA[ipA].rep].count - (repA - 1);
-		ipA = oplA[ipA].match;
-	}
+	if (!*ptrA) ipA = oplA[ipA].match;
 	NEXTA;
 op_loop1B:
-	if (!*ptrB)
-	{
-		if (oplB[ipB].count)
-			repB = oplB[oplB[ipB].rep].count - (repB - 1);
-		ipB = oplB[ipB].match;
-	}
+	if (!*ptrB) ipB = oplB[ipB].match;
 	NEXTB;
 op_loop2A:
-	if (*ptrA)
-	{
-		if (oplA[ipA].count)
-			repA = oplA[oplA[ipA].rep].count - (repA - 1);
-		ipA = oplA[ipA].match;
-	}
+	if (*ptrA) ipA = oplA[ipA].match;
 	NEXTA;
 op_loop2B:
-	if (*ptrB)
-	{
-		if (oplB[ipB].count)
-			repB = oplB[oplB[ipB].rep].count - (repB - 1);
-		ipB = oplB[ipB].match;
-	}
+	if (*ptrB) ipB = oplB[ipB].match;
 	NEXTB;
 
-	/* these handle OP_INNER1/OP_INNER2 too with suitable .match settings */
-	/* TODO: fix repcounts in the (a[b{c}d]e)*N case when [ jumps over... */
+	/* simple (..) repeats with no corresponding {..} block */
 
 op_rep1A:
 	*repSA++ = repA; repA = oplA[ipA].count;
-	goto *oplA[++ipA].code;
+	goto *opcA[++ipA];
 op_rep1B:
 	*repSB++ = repB; repB = oplB[ipB].count;
-	goto *oplB[++ipB].code;
+	goto *opcB[++ipB];
 
 op_rep2A:
 	if (--repA) ipA = oplA[ipA].match;
 	else repA = *--repSA;
-	goto *oplA[++ipA].code;
+	goto *opcA[++ipA];
 op_rep2B:
 	if (--repB) ipB = oplB[ipB].match;
 	else repB = *--repSB;
-	goto *oplB[++ipB].code;
+	goto *opcB[++ipB];
+
+	/* complex (..{ and }..) repeats; use .inner for target, count in different dirs */
+
+op_inner1A:
+	if (--repA) ipA = oplA[ipA].inner;
+	else repA = *--repSA;
+	goto *opcA[++ipA];
+op_inner1B:
+	if (--repB) ipB = oplB[ipB].inner;
+	else repB = *--repSB;
+	goto *opcB[++ipB];
+
+op_inner2A:
+	*repSA++ = repA; repA = 1;
+	goto *opcA[++ipA];
+op_inner2B:
+	*repSB++ = repB; repB = 1;
+	goto *opcB[++ipB];
+
+op_irep2A:
+	if (++repA > oplA[ipA].count) ipA = oplA[ipA].inner;
+	else repA = *--repSA;
+	goto *opcA[++ipA];
+op_irep2B:
+	if (++repB > oplB[ipB].count) ipB = oplB[ipB].inner;
+	else repB = *--repSB;
+	goto *opcB[++ipB];
 
 op_doneA:
-	goto *oplB[ipB].code;
+	goto *opcB[ipB];
 }
 
 /* parsing and preprocessing, impl */
@@ -472,31 +490,59 @@ static struct oplist *readops(int fd)
 
 static void matchrep(struct oplist *ops)
 {
-	/* match (..) pairs */
+	/* match (..) pairs and inner {..} blocks */
 
-	int stack[MAXNEST];
-	int depth = 0;
+	int stack[MAXNEST], istack[MAXNEST], idstack[MAXNEST];
+	int depth = 0, idepth = 0;
 
 	for (int at = 0; at < ops->len; at++)
 	{
-		struct op *o = &ops->ops[at];
+		struct op *op = &ops->ops[at];
 
-		o->rep = (depth > 0 ? stack[depth-1] : -1);
-
-		switch (o->type)
+		switch (op->type) /* in order of occurrence */
 		{
 		case OP_REP1:
 			if (depth == MAXNEST) fail("maximum () nesting depth exceeded");
-			stack[depth++] = at;
+			stack[depth] = at;
+			idstack[depth] = idepth;
+			op->match = -1;
+			op->inner = -1;
+			depth++;
+			idepth = 0;
+			break;
+
+		case OP_INNER1:
+			istack[idepth++] = at;
+			if (idepth > depth) fail("encountered { without suitable enclosing (");
+			op->match = -1;
+			op->inner = stack[depth-idepth];
+			if (ops->ops[op->inner].inner != -1) fail("encountered second { on a same level");
+			ops->ops[op->inner].inner = at;
+			break;
+
+		case OP_INNER2:
+			if (!idepth) fail("terminating } without a matching {");
+			idepth--;
+			op->match = istack[idepth];
+			op->inner = -1;
+			ops->ops[op->match].match = at;
 			break;
 
 		case OP_REP2:
-			if (depth == 0) fail("terminating ) without a matching (");
+			if (!depth) fail("terminating ) without a matching (");
+			if (idepth) fail("starting { without a matching }");
 			depth--;
-			ops->ops[at].rep = (depth > 0 ? stack[depth-1] : -1);
-			ops->ops[at].match = stack[depth];
-			ops->ops[stack[depth]].match = at;
-			ops->ops[stack[depth]].count = ops->ops[at].count;
+			op->match = stack[depth];
+			op->inner = (ops->ops[op->match].inner != -1 ? ops->ops[ops->ops[op->match].inner].match : -1);
+			ops->ops[op->match].match = at;
+			ops->ops[op->match].count = op->count;
+			if (op->inner != -1)
+			{
+				ops->ops[op->inner].inner = at;
+				ops->ops[op->inner].count = op->count;
+				ops->ops[ops->ops[op->inner].match].count = op->count;
+			}
+			idepth = idstack[depth];
 			break;
 
 		default:
@@ -515,10 +561,10 @@ static void cleanrep(struct oplist *ops)
 
 	for (int at = 0; at < ops->len; at++)
 	{
-		struct op *o = &ops->ops[at];
-		if (o->type == OP_REP1 && o->count == 0)
+		struct op *op = &ops->ops[at];
+		if (op->type == OP_REP1 && op->count == 0)
 		{
-			opl_del(ops, at, o->match+1);
+			opl_del(ops, at, op->match+1);
 			at--;
 		}
 	}
@@ -526,97 +572,46 @@ static void cleanrep(struct oplist *ops)
 	/* TODO: clean ()*N with a multipass thing */
 }
 
-static void checkrep(struct oplist *ops)
-{
-	/* make sure each (...) block has just 0 or 1 top-level {...}s */
-
-	int stack[MAXNEST];
-	int depth = -1;
-
-	for (int at = 0; at < ops->len; at++)
-	{
-		struct op *o = &ops->ops[at];
-
-		switch (o->type)
-		{
-		case OP_REP1:
-			depth++;
-			stack[depth] = -1;
-			break;
-
-		case OP_REP2:
-			if (stack[depth] >= 0) fail("starting { without a terminating } on single (...) level");
-			if (stack[depth] == -2) o->count = -o->count;
-			depth--;
-			break;
-
-		case OP_INNER1:
-			if (depth < 0) fail("starting { without a surrounding ()");
-			if (stack[depth] != -1) fail("multiple starting {s on a single (...) level");
-			ops->ops[o->rep].count = -ops->ops[o->rep].count;
-			o->count = ops->ops[o->rep].count;
-			stack[depth] = at;
-			break;
-
-		case OP_INNER2:
-			if (depth < 0) fail("terminating { without a surrounding ()");
-			if (stack[depth] < 0) fail("terminating } without a matching {");
-			o->count = ops->ops[o->rep].count;
-			ops->ops[ops->ops[o->rep].match].match = at; /* match enclosing ) with } for looping */
-			ops->ops[stack[depth]].match = o->rep;       /* match starting { with initial ( for looping */
-			stack[depth] = -2;
-			break;
-
-		default:
-			if (depth >= 0 && stack[depth] >= 0)
-				o->count = -1;
-			else
-				o->count = 0;
-			break;
-		}
-	}
-}
-
 static void matchloop(struct oplist *ops)
 {
 	/* match [..] pairs */
 
-	int stack[MAXNEST], istack[MAXNEST];
-	int depth = 0;
+	int stack[MAXNEST], idstack[MAXNEST];
+	int depth = 0, idepth = 0;
 
 	for (int at = 0; at < ops->len; at++)
 	{
-		struct op *o = &ops->ops[at];
+		struct op *op = &ops->ops[at];
 
-		switch (o->type)
+		switch (op->type)
 		{
 		case OP_LOOP1:
 			if (depth == MAXNEST) fail("maximum [] nesting depth exceeded");
 			stack[depth] = at;
-			istack[depth] = o->rep; /* used for detecting {..}-spanning loops */
+			idstack[depth] = idepth;
+			op->match = -1;
 			depth++;
+			idepth = 0;
+			break;
+
+		case OP_REP1:
+		case OP_INNER1:
+			idepth++;
+			break;
+
+		case OP_INNER2:
+		case OP_REP2:
+			if (!idepth) fail("[..] crossing out of a ({..}) level");
+			idepth--;
 			break;
 
 		case OP_LOOP2:
-			if (depth == 0) fail("terminating ] without a matching [");
+			if (!depth) fail("terminating ] without a matching [");
+			if (idepth) fail("[..] crossing into a ({..}) level");
 			depth--;
-			if (ops->ops[at].rep != ops->ops[stack[depth]].rep)
-				fail("matching [...] across (...) levels");
-			if (ops->ops[at].count != ops->ops[stack[depth]].count)
-				fail("matching [...] across (..{..}..) inner-body boundary");
-			ops->ops[at].match = stack[depth];
-			ops->ops[stack[depth]].match = at;
-			if (istack[depth] != o->rep)
-			{
-				/* flag as inner-block crossing loop */
-				o->count = 1;
-				ops->ops[stack[depth]].count = 1;
-			}
-			break;
-
-		case OP_INNER1:
-			if (depth > 0 && istack[depth-1] == o->rep)
-				istack[depth-1] = -2; /* doesn't match any rep */
+			op->match = stack[depth];
+			ops->ops[op->match].match = at;
+			idepth = idstack[depth];
 			break;
 
 		default:
@@ -637,7 +632,6 @@ static struct oplist *parse(int fd)
 
 	matchrep(ops);
 	cleanrep(ops);
-	checkrep(ops);
 
 	/* handle [...] constructions now that rep/inner levels are known */
 
@@ -673,7 +667,11 @@ static void opl_append(struct oplist *o, enum optype type)
 		o->ops = srealloc(o->ops, o->size * sizeof *o->ops);
 	}
 
-	o->ops[o->len++].type = type;
+	o->ops[o->len].type = type;
+	o->ops[o->len].match = -1;
+	o->ops[o->len].inner = -1;
+	o->ops[o->len].count = -1;
+	o->len++;
 }
 
 static void opl_del(struct oplist *o, int start, int end)
@@ -695,9 +693,9 @@ static void opl_del(struct oplist *o, int start, int end)
 	{
 		struct op *op = &o->ops[at];
 		if (op->match >= start && op->match < end) die("opl_del: dangling ->match");
-		if (op->rep >= start && op->rep < end) die("opl_del: dangling ->rep");
+		if (op->inner >= start && op->inner < end) die("opl_del: dangling ->inner");
 		if (op->match >= end) op->match -= d;
-		if (op->rep >= end) op->rep -= d;
+		if (op->inner >= end) op->inner -= d;
 	}
 }
 
