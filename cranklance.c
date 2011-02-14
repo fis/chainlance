@@ -97,10 +97,15 @@ int main(int argc, char *argv[])
 	/* for debuggin purposes, dump out the parse */
 
 #if 0
+	unsigned char opchars[] = {
+		[OP_INC] = '+', [OP_DEC] = '-', [OP_LEFT] = '<', [OP_RIGHT] = '>',
+		[OP_WAIT] = '.', [OP_LOOP1] = '[', [OP_LOOP2] = ']',
+		[OP_REP1] = '(', [OP_REP2] = ')', [OP_INNER1] = '{', [OP_INNER2] = '}'
+	};
 	for (int at = 0; at < opsA->len; at++)
 	{
 		struct op *op = &opsA->ops[at];
-		printf("%3d: %2d  (%-2d  {%-2d  *%-2d\n", at, op->type, op->match, op->inner, op->count);
+		printf("%3d:  %c  (%-2d  {%-2d  *%-2d\n", at, opchars[op->type], op->match, op->inner, op->count);
 	}
 	return 0;
 #endif
@@ -493,7 +498,7 @@ static void matchrep(struct oplist *ops)
 	/* match (..) pairs and inner {..} blocks */
 
 	int stack[MAXNEST], istack[MAXNEST], idstack[MAXNEST];
-	int depth = 0, idepth = 0;
+	int depth = 0, idepth = 0, isdepth = 0;
 
 	for (int at = 0; at < ops->len; at++)
 	{
@@ -512,7 +517,8 @@ static void matchrep(struct oplist *ops)
 			break;
 
 		case OP_INNER1:
-			istack[idepth++] = at;
+			istack[isdepth++] = at;
+			idepth++;
 			if (idepth > depth) fail("encountered { without suitable enclosing (");
 			op->match = -1;
 			op->inner = stack[depth-idepth];
@@ -523,7 +529,8 @@ static void matchrep(struct oplist *ops)
 		case OP_INNER2:
 			if (!idepth) fail("terminating } without a matching {");
 			idepth--;
-			op->match = istack[idepth];
+			isdepth--;
+			op->match = istack[isdepth];
 			op->inner = -1;
 			ops->ops[op->match].match = at;
 			break;
