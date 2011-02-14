@@ -259,8 +259,8 @@ static int run(struct oplist *opsA, struct oplist *opsB)
 /* #define TRACE 1 */
 
 nextcycle:
-	if (!tape[0]) deathsA++;
-	if (!tape[tapesize-1]) deathsB++;
+	if (!tape[0]) deathsA++; else if (deathsA == 1) deathsA = 0;
+	if (!tape[tapesize-1]) deathsB++; else if (deathsB == 1) deathsB = 0;
 
 #ifdef TRACE
 	printf("%6d: ", MAXCYCLES-cycles);
