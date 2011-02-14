@@ -387,11 +387,11 @@ op_inner2B:
 	goto *opcB[++ipB];
 
 op_irep2A:
-	if (++repA > oplA[ipA].count) ipA = oplA[ipA].inner;
+	if (++repA <= oplA[ipA].count) ipA = oplA[ipA].inner;
 	else repA = *--repSA;
 	goto *opcA[++ipA];
 op_irep2B:
-	if (++repB > oplB[ipB].count) ipB = oplB[ipB].inner;
+	if (++repB <= oplB[ipB].count) ipB = oplB[ipB].inner;
 	else repB = *--repSB;
 	goto *opcB[++ipB];
 
