@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
 	/* run them */
 
 	int score = run(opsA, opsB);
-	printf("score: %d\n", score);
+	printf("%d\n", score);
 	return score;
 
 	opl_free(opsA);
@@ -121,7 +121,7 @@ static unsigned char tape[MAXTAPE];
 static int run(struct oplist *opsA, struct oplist *opsB)
 {
 	struct op *oplA = opsA->ops, *oplB = opsB->ops;
-	int score = 0;
+	int score = 0, oldscore = 0;
 
 	/* convert opcode types into pointers for both progs */
 
@@ -197,10 +197,15 @@ static int run(struct oplist *opsA, struct oplist *opsB)
 		deathsA = 0, deathsB = 0;
 
 		cycles = MAXCYCLES;
+
+		oldscore = score;
 		goto *oplA[0].code;
 	done_normal:
-		(void)0;
+		if (score > oldscore) putchar('<');
+		else if (score < oldscore) putchar ('>');
+		else putchar('X');
 	}
+	putchar(' ');
 
 	for (int at = 0; at < opsB->len; at++)
 	{
@@ -222,10 +227,15 @@ static int run(struct oplist *opsA, struct oplist *opsB)
 		deathsA = 0, deathsB = 0;
 
 		cycles = MAXCYCLES;
+
+		oldscore = score;
 		goto *oplA[0].code;
 	done_flipped:
-		(void)0;
+		if (score > oldscore) putchar('<');
+		else if (score < oldscore) putchar ('>');
+		else putchar('X');
 	}
+	putchar(' ');
 
 	return score;
 
