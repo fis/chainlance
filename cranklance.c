@@ -17,6 +17,7 @@
 #define MAXTAPE 30
 
 /* #define TRACE 1 */
+#define CYCLESTATS 1
 
 static struct {
 	long long cycles;
@@ -229,6 +230,8 @@ static int run(struct oplist *opsA, struct oplist *opsB)
 		if (score > oldscore) putchar('<');
 		else if (score < oldscore) putchar ('>');
 		else putchar('X');
+
+		printf("%d ", MAXCYCLES - cycles);
 		stats.cycles += (MAXCYCLES - cycles);
 	}
 	putchar(' ');
@@ -260,6 +263,8 @@ static int run(struct oplist *opsA, struct oplist *opsB)
 		if (score > oldscore) putchar('<');
 		else if (score < oldscore) putchar ('>');
 		else putchar('X');
+
+		printf("%d ", MAXCYCLES - cycles);
 		stats.cycles += (MAXCYCLES - cycles);
 	}
 	putchar(' ');
@@ -439,7 +444,13 @@ static int readrepc(unsigned char *buf, ssize_t bsize, int *bat, int fd)
 	int c = 0, ch;
 
 	ch = nextc();
-	if (ch != '*' && ch != '%') fail("bad char after (): %c", ch);
+	if (ch != '*' && ch != '%')
+	{
+		/* treat garbage as ()*0 in case it's inside a comment */
+		buf[--at] = ch;
+		*bat = at-1;
+		return 0;
+	}
 
 	while (1)
 	{
