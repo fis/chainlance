@@ -16,6 +16,14 @@
 #define MINTAPE 10
 #define MAXTAPE 30
 
+/* #define TRACE 1 */
+
+static struct {
+	long long cycles;
+} stats = {
+	.cycles = 0
+};
+
 /* types */
 
 enum optype
@@ -113,7 +121,7 @@ int main(int argc, char *argv[])
 	/* run them */
 
 	int score = run(opsA, opsB);
-	printf("%d\n", score);
+	printf("%d c%lld\n", score, stats.cycles);
 	return score;
 
 	opl_free(opsA);
@@ -221,6 +229,7 @@ static int run(struct oplist *opsA, struct oplist *opsB)
 		if (score > oldscore) putchar('<');
 		else if (score < oldscore) putchar ('>');
 		else putchar('X');
+		stats.cycles += (MAXCYCLES - cycles);
 	}
 	putchar(' ');
 
@@ -251,6 +260,7 @@ static int run(struct oplist *opsA, struct oplist *opsB)
 		if (score > oldscore) putchar('<');
 		else if (score < oldscore) putchar ('>');
 		else putchar('X');
+		stats.cycles += (MAXCYCLES - cycles);
 	}
 	putchar(' ');
 
@@ -264,6 +274,8 @@ static int run(struct oplist *opsA, struct oplist *opsB)
 /* #define TRACE 1 */
 
 nextcycle:
+	cycles--;
+
 	if (!tape[0]) deathsA++; else if (deathsA == 1) deathsA = 0;
 	if (!tape[tapesize-1]) deathsB++; else if (deathsB == 1) deathsB = 0;
 
@@ -291,7 +303,7 @@ nextcycle:
 		goto *ret;
 	}
 
-	if (!--cycles)
+	if (!cycles)
 		goto *ret;
 
 	goto *opcA[ipA];
