@@ -1,0 +1,11 @@
+update results.txt
+
+  ./crank_hill.sh hill/* | tee results.txt
+
+fetch a hill:
+
+  wget -r -l 1 -A bfjoust -nd -np http://codu.org/eso/bfjoust/in_egobot/
+
+test for parse errors:
+
+  ls hill/* | while read f; do echo -n "$f "; ./cranklance $f $f; done
