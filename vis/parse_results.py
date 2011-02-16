@@ -64,7 +64,7 @@ for row, prog in enumerate(proglist):
 
         scores[row, col*NCFG:(col+1)*NCFG] = [p for p, c in s]
         cycles[row, col*NCFG:(col+1)*NCFG] = [c for p, c in s]
-        dpoints[row, col] = np.array(s).sum()
+        dpoints[row, col] = np.array([p for p, c in s]).sum()
         dcycles[row, col] = cc
 
 scores = ma.masked_invalid(scores)
@@ -104,7 +104,7 @@ for i in xrange(0, nprogs):
     p = (pscores[others, i*21*2:(i+1)*21*2] * w).sum(0) / w.sum()
     pscores[i, i*21*2:(i+1)*21*2] = p
 
-# dump results for further processing
+# simplify out the path names and extensions for proglist
 
 def simplify_name(p):
     if p.endswith('.bfjoust'):
@@ -115,6 +115,15 @@ def simplify_name(p):
     return p
 
 proglist = [simplify_name(p) for p in proglist]
+
+# dump out the "worth" values to know which people to beat in evo
+
+worder = sorted(range(nprogs), key=lambda i: points[i], reverse=True)
+
+for i in worder:
+    print "%s.bfjoust %.3f" % (proglist[i], (points[i]+nprogs)/(2*(nprogs-1)))
+
+# dump results for further processing
 
 np.savez('results.npz',
          points=points,
