@@ -17,11 +17,10 @@
 #define MAXTAPE 30
 
 /* #define TRACE 1 */
-#define CYCLESTATS 1
-#define TAPESTATS 1
+
+static int scores[2][MAXTAPE];
 
 static struct {
-	int scores[2][MAXTAPE];
 	long long cycles;
 	unsigned tapestats[2][MAXTAPE];
 } stats = {
@@ -80,7 +79,7 @@ static struct oplist *parse(int fd);
 
 /* actual interpretation */
 
-static int run(struct oplist *opsA, struct oplist *opsB);
+static void run(struct oplist *opsA, struct oplist *opsB);
 
 /* main application */
 
@@ -124,9 +123,23 @@ int main(int argc, char *argv[])
 
 	/* run them */
 
-	int score = run(opsA, opsB);
+	run(opsA, opsB);
+
+	/* summarize results */
+
+	int score = 0;
+
+	for (int pol = 0; pol < 2; pol++)
+	{
+		for (int tlen = MINTAPE; tlen <= MAXTAPE; tlen++)
+		{
+			putchar(scores[pol][tlen] ? (scores[pol][tlen] > 0 ? '<' : '>') : 'X');
+			score += scores[pol][tlen];
+		}
+		putchar(' ');
+	}
+
 	printf("%d c%lld\n", score, stats.cycles);
-	return score;
 
 	opl_free(opsA);
 	opl_free(opsB);
@@ -138,7 +151,7 @@ int main(int argc, char *argv[])
 
 static unsigned char tape[MAXTAPE];
 
-static int run(struct oplist *opsA, struct oplist *opsB)
+static void run(struct oplist *opsA, struct oplist *opsB)
 {
 	struct op *oplA = opsA->ops, *oplB = opsB->ops;
 
@@ -224,18 +237,19 @@ static int run(struct oplist *opsA, struct oplist *opsB)
 		deathsA = 0, deathsB = 0; \
 	  \
 		cycles = MAXCYCLES; \
-		if (TAPESTATS) memset(stats.tapestats, 0, sizeof stats.tapestats); \
+		memset(stats.tapestats, 0, sizeof stats.tapestats); \
 	  \
 		score = 0; \
 		goto *opcA[0]; \
 	sym: \
-		stats.scores[pol][tapesize] = score; \
+		scores[pol][tapesize] = score; \
+	  \
 		stats.cycles += (MAXCYCLES - cycles); \
-		if (TAPESTATS) { \
-			printf("TAPE[%d,%d] =", pol, tapesize); \
-			for (int p = 0; p < tapesize; p++) printf(" %u/%u", stats.tapestats[0][p], stats.tapestats[1][p]); \
-			printf("\n"); \
-		} \
+		printf("CYCLES[%d,%d] = %d\n", pol, tapesize, MAXCYCLES - cycles); \
+	  \
+		printf("TAPE[%d,%d] =", pol, tapesize); \
+		for (int p = 0; p < tapesize; p++) printf(" %u/%u", stats.tapestats[0][p], stats.tapestats[1][p]); \
+		printf("\n"); \
 	}
 
 	void *ret;
@@ -252,7 +266,9 @@ static int run(struct oplist *opsA, struct oplist *opsB)
 
 	EXECUTE_ALL(done_flipped, 1);
 
-	return score;
+	free(opcA);
+	free(opcB);
+	return;
 
 	/* actual core */
 
@@ -291,10 +307,8 @@ nextcycle:
 		goto *ret;
 	}
 
-#ifdef TAPESTATS
 	stats.tapestats[0][ptrA-tape]++;
 	stats.tapestats[1][ptrB-tape]++;
-#endif
 
 	if (!cycles)
 		goto *ret;
