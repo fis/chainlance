@@ -18,9 +18,12 @@
 
 /* #define TRACE 1 */
 #define CYCLESTATS 1
+#define TAPESTATS 1
 
 static struct {
+	int scores[2][MAXTAPE];
 	long long cycles;
+	unsigned tapestats[2][MAXTAPE];
 } stats = {
 	.cycles = 0
 };
@@ -138,7 +141,6 @@ static unsigned char tape[MAXTAPE];
 static int run(struct oplist *opsA, struct oplist *opsB)
 {
 	struct op *oplA = opsA->ops, *oplB = opsB->ops;
-	int score = 0, oldscore = 0;
 
 	/* convert opcode types into pointers for both progs */
 
@@ -204,37 +206,42 @@ static int run(struct oplist *opsA, struct oplist *opsB)
 	int repA = 0, repB = 0, *repSA = 0, *repSB = 0;
 	int deathsA = 0, deathsB = 0;
 	int cycles = 0;
+	int score = 0;
 
 	/* execute with all tape lenghts and both relative polarities */
+
+#define EXECUTE_ALL(sym, pol)	  \
+	ret = &&sym; \
+	for (tapesize = MINTAPE; tapesize <= MAXTAPE; tapesize++) \
+	{ \
+		ipA = 0, ipB = 0; \
+	  \
+		memset(tape, 0, tapesize); \
+		ptrA = &tape[0], ptrB = &tape[tapesize-1]; \
+		*ptrA = 128, *ptrB = 128; \
+	  \
+		repSA = repStackA, repSB = repStackB; \
+		deathsA = 0, deathsB = 0; \
+	  \
+		cycles = MAXCYCLES; \
+		if (TAPESTATS) memset(stats.tapestats, 0, sizeof stats.tapestats); \
+	  \
+		score = 0; \
+		goto *opcA[0]; \
+	sym: \
+		stats.scores[pol][tapesize] = score; \
+		stats.cycles += (MAXCYCLES - cycles); \
+		if (TAPESTATS) { \
+			printf("TAPE[%d,%d] =", pol, tapesize); \
+			for (int p = 0; p < tapesize; p++) printf(" %u/%u", stats.tapestats[0][p], stats.tapestats[1][p]); \
+			printf("\n"); \
+		} \
+	}
 
 	void *ret;
 	int tapesize = 0;
 
-	ret = &&done_normal;
-	for (tapesize = MINTAPE; tapesize <= MAXTAPE; tapesize++)
-	{
-		ipA = 0, ipB = 0;
-
-		memset(tape, 0, tapesize);
-		ptrA = &tape[0], ptrB = &tape[tapesize-1];
-		*ptrA = 128, *ptrB = 128;
-
-		repSA = repStackA, repSB = repStackB;
-		deathsA = 0, deathsB = 0;
-
-		cycles = MAXCYCLES;
-
-		oldscore = score;
-		goto *opcA[0];
-	done_normal:
-		if (score > oldscore) putchar('<');
-		else if (score < oldscore) putchar ('>');
-		else putchar('X');
-
-		printf("%d ", MAXCYCLES - cycles);
-		stats.cycles += (MAXCYCLES - cycles);
-	}
-	putchar(' ');
+	EXECUTE_ALL(done_normal, 0);
 
 	for (int at = 0; at < opsB->len; at++)
 	{
@@ -243,31 +250,7 @@ static int run(struct oplist *opsA, struct oplist *opsB)
 		else if (op == OP_DEC) opcB[at] = &&op_incB;
 	}
 
-	ret = &&done_flipped;
-	for (tapesize = MINTAPE; tapesize <= MAXTAPE; tapesize++)
-	{
-		ipA = 0, ipB = 0;
-
-		memset(tape, 0, tapesize);
-		ptrA = &tape[0], ptrB = &tape[tapesize-1];
-		*ptrA = 128, *ptrB = 128;
-
-		repSA = repStackA, repSB = repStackB;
-		deathsA = 0, deathsB = 0;
-
-		cycles = MAXCYCLES;
-
-		oldscore = score;
-		goto *opcA[0];
-	done_flipped:
-		if (score > oldscore) putchar('<');
-		else if (score < oldscore) putchar ('>');
-		else putchar('X');
-
-		printf("%d ", MAXCYCLES - cycles);
-		stats.cycles += (MAXCYCLES - cycles);
-	}
-	putchar(' ');
+	EXECUTE_ALL(done_flipped, 1);
 
 	return score;
 
@@ -307,6 +290,11 @@ nextcycle:
 		score++;
 		goto *ret;
 	}
+
+#ifdef TAPESTATS
+	stats.tapestats[0][ptrA-tape]++;
+	stats.tapestats[1][ptrB-tape]++;
+#endif
 
 	if (!cycles)
 		goto *ret;
