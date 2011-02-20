@@ -12,6 +12,7 @@ test for parse errors:
 
 update visible egostats pages:
 
+  rm stats/plot_*.png stats/tn_plot_*.png stats/index.html
   ./parse_results.py
   ./update_stats.py
   rsync -av --chmod a+r,Da+x stats/ momus:/space/www/zem/egostats

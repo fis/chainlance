@@ -15,6 +15,7 @@ re_summary = r'^SUMMARY: ([<>X]{21}) ([<>X]{21}) [0-9-]+ c(\d+) sl(\d+) sr(\d+)'
 re_cycles = r'^CYCLES\[(\d+),(\d+)\] = (\d+)'
 re_tapeabs = r'^TAPEABS\[(\d+),(\d+)\] = ([-0-9 ]+)'
 re_tapemax = r'^TAPEMAX\[(\d+),(\d+)\] = ([0-9/ ]+)'
+re_error = r'^parse error'
 
 NTAPES = MAXTAPE - MINTAPE + 1
 NCFG = 2*NTAPES
@@ -34,6 +35,7 @@ re_summary = re.compile(re_summary)
 re_cycles = re.compile(re_cycles)
 re_tapeabs = re.compile(re_tapeabs)
 re_tapemax = re.compile(re_tapemax)
+re_error = re.compile(re_error)
 
 current_l, current_li = None, None
 current_r, current_ri = None, None
@@ -102,6 +104,23 @@ for l in results:
         current_l['cfg'][p][cfg]['tapemax'] = [int(x[0]) for x in t]
         current_r['cfg'][p][cfg]['tapemax'] = list(reversed([int(x[1]) for x in t]))
         continue
+
+    m = re_error.match(l)
+    if m is not None:
+        # build a fake all-tie match
+        current_l['score'] = [0 for x in xrange(NCFG)]
+        current_r['score'] = [0 for x in xrange(NCFG)]
+        current_l['cycles'] = current_r['cycles'] = 128
+        for p in (0, 1):
+            for cfg in xrange(NTAPES):
+                current_l['cfg'][p][cfg]['cycles'] = 128
+                current_r['cfg'][p][cfg]['cycles'] = 128
+                current_l['cfg'][p][cfg]['tape'] = [0 for x in xrange(MINTAPE+cfg)]
+                current_r['cfg'][p][cfg]['tape'] = [0 for x in xrange(MINTAPE+cfg)]
+                current_l['cfg'][p][cfg]['tapemax'] = [0 for x in xrange(MINTAPE+cfg)]
+                current_r['cfg'][p][cfg]['tapemax'] = [0 for x in xrange(MINTAPE+cfg)]
+        current_li.setdefault('len', 1)
+        current_ri.setdefault('len', 1)
 
 # assign numeric ids for progs
 
