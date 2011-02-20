@@ -1,46 +1,107 @@
 #! /usr/bin/env python
 
+import cPickle as pickle
+import re
+from itertools import chain
+
 import numpy as np
 import numpy.ma as ma
-import re
 
-NCFG = 21*2
-re_result = r'(\S+) (\S+):((?:\s+[<>X]\d+){42}) +[0-9-]+ c(\d+)'
-re_score = r'\s*([<>X])(\d+)'
+MINTAPE = 10
+MAXTAPE = 30
 
-# parse the results report into a scorecard
+re_header = r'^! (\S+) (\S+)'
+re_summary = r'^SUMMARY: ([<>X]{21}) ([<>X]{21}) [0-9-]+ c(\d+) sl(\d+) sr(\d+)'
+re_cycles = r'^CYCLES\[(\d+),(\d+)\] = (\d+)'
+re_tapeabs = r'^TAPEABS\[(\d+),(\d+)\] = ([-0-9 ]+)'
+re_tapemax = r'^TAPEMAX\[(\d+),(\d+)\] = ([0-9/ ]+)'
+
+NTAPES = MAXTAPE - MINTAPE + 1
+NCFG = 2*NTAPES
+
+# parse the results report into Python structures
 
 t = open('results.txt')
 results = list(t)
 t.close()
 
 progs = {}
+proginfo = {}
 scorekey = { '<': 1, '>': -1, 'X': 0 }
 
-r = re.compile(re_result)
-r2 = re.compile(re_score)
+re_header = re.compile(re_header)
+re_summary = re.compile(re_summary)
+re_cycles = re.compile(re_cycles)
+re_tapeabs = re.compile(re_tapeabs)
+re_tapemax = re.compile(re_tapemax)
+
+current_l, current_li = None, None
+current_r, current_ri = None, None
+
+def simplify_name(p):
+    if p.endswith('.bfjoust'):
+        p = p[:-8]
+    t = p.rfind('/')
+    if t != -1:
+        p = p[t+1:]
+    return p
 
 for l in results:
-    m = r.match(l)
-    if m is None: continue
+    m = re_header.match(l)
+    if m is not None:
+        pln = simplify_name(m.group(1))
+        prn = simplify_name(m.group(2))
 
-    p1 = m.group(1)
-    p2 = m.group(2)
-    cc = float(m.group(4))/NCFG
+        pl = progs.setdefault(pln, {})
+        pr = progs.setdefault(prn, {})
 
-    prog1 = progs.setdefault(p1, {})
-    prog2 = progs.setdefault(p2, {})
+        current_l = { 'cfg': ([{} for x in xrange(NTAPES)], [{} for x in xrange(NTAPES)]) }
+        current_r = { 'cfg': ([{} for x in xrange(NTAPES)], [{} for x in xrange(NTAPES)]) }
 
-    s = []
-    for spec in m.group(3).split():
-        m2 = r2.match(spec)
-        if m2 is None: raise Exception('bad spec')
-        s.append((scorekey[m2.group(1)], int(m2.group(2))))
-    if len(s) != NCFG:
-        raise Exception('bad number of configs')
+        pl[prn] = current_l
+        pr[pln] = current_r
 
-    prog1[p2] = (s, cc)
-    prog2[p1] = ([(-p, c) for p, c in s], cc)
+        current_li = proginfo.setdefault(pln, {})
+        current_ri = proginfo.setdefault(prn, {})
+
+        continue
+
+    m = re_summary.match(l)
+    if m is not None:
+        s = m.group(1) + m.group(2)
+        current_l['score'] = [ scorekey[c] for c in s]
+        current_r['score'] = [-scorekey[c] for c in s]
+        current_l['cycles'] = current_r['cycles'] = int(m.group(3))
+        current_li['len'] = int(m.group(4))
+        current_ri['len'] = int(m.group(5))
+        continue
+
+    m = re_cycles.match(l)
+    if m is not None:
+        p = int(m.group(1))
+        cfg = int(m.group(2)) - MINTAPE
+        c = int(m.group(3))
+        current_l['cfg'][p][cfg]['cycles'] = c
+        current_r['cfg'][p][cfg]['cycles'] = c
+        continue
+
+    m = re_tapeabs.match(l)
+    if m is not None:
+        p = int(m.group(1))
+        cfg = int(m.group(2)) - MINTAPE
+        t = [int(x) for x in m.group(3).split()]
+        current_l['cfg'][p][cfg]['tape'] = t
+        current_r['cfg'][p][cfg]['tape'] = list(reversed(t))
+        continue
+
+    m = re_tapemax.match(l)
+    if m is not None:
+        p = int(m.group(1))
+        cfg = int(m.group(2)) - MINTAPE
+        t = [x.split('/') for x in m.group(3).split()]
+        current_l['cfg'][p][cfg]['tapemax'] = [int(x[0]) for x in t]
+        current_r['cfg'][p][cfg]['tapemax'] = list(reversed([int(x[1]) for x in t]))
+        continue
 
 # assign numeric ids for progs
 
@@ -49,6 +110,11 @@ proglist.sort()
 
 nprogs = len(proglist)
 progmap = dict((prog, pid) for pid, prog in enumerate(proglist))
+
+# dump the python structure for direct analysis
+
+pickle.dump({'progs': progs, 'proglist': proglist, 'progmap': progmap, 'proginfo': proginfo},
+            open('results.dat', 'wb'))
 
 # generate the (masked) array representation for scores and duel points
 
@@ -59,13 +125,14 @@ dpoints = np.nan * np.zeros((nprogs, nprogs))
 dcycles = np.nan * np.zeros((nprogs, nprogs))
 
 for row, prog in enumerate(proglist):
-    for opponent, (s, cc) in progs[prog].iteritems():
+    for opponent, match in progs[prog].iteritems():
         col = progmap[opponent]
 
-        scores[row, col*NCFG:(col+1)*NCFG] = [p for p, c in s]
-        cycles[row, col*NCFG:(col+1)*NCFG] = [c for p, c in s]
-        dpoints[row, col] = np.array([p for p, c in s]).sum()
-        dcycles[row, col] = cc
+        scores[row, col*NCFG:(col+1)*NCFG] = match['score']
+        cycles[row, col*NCFG:(col+1)*NCFG] = [c['cycles'] for c in chain(match['cfg'][0], match['cfg'][1])]
+
+        dpoints[row, col] = np.array(match['score']).sum()
+        dcycles[row, col] = match['cycles']
 
 scores = ma.masked_invalid(scores)
 cycles = ma.masked_invalid(cycles)
@@ -103,18 +170,6 @@ for i in xrange(0, nprogs):
     w = 1/dist[others, i:i+1]
     p = (pscores[others, i*21*2:(i+1)*21*2] * w).sum(0) / w.sum()
     pscores[i, i*21*2:(i+1)*21*2] = p
-
-# simplify out the path names and extensions for proglist
-
-def simplify_name(p):
-    if p.endswith('.bfjoust'):
-        p = p[:-8]
-    t = p.rfind('/')
-    if t != -1:
-        p = p[t+1:]
-    return p
-
-proglist = [simplify_name(p) for p in proglist]
 
 # dump out the "worth" values to know which people to beat in evo
 

@@ -22,7 +22,6 @@ static int scores[2][MAXTAPE];
 
 static struct {
 	long long cycles;
-	unsigned tapestats[2][MAXTAPE];
 } stats = {
 	.cycles = 0
 };
@@ -127,6 +126,8 @@ int main(int argc, char *argv[])
 
 	/* summarize results */
 
+	printf("SUMMARY: ");
+
 	int score = 0;
 
 	for (int pol = 0; pol < 2; pol++)
@@ -139,7 +140,7 @@ int main(int argc, char *argv[])
 		putchar(' ');
 	}
 
-	printf("%d c%lld\n", score, stats.cycles);
+	printf("%d c%lld sl%d sr%d\n", score, stats.cycles, opsA->len, opsB->len);
 
 	opl_free(opsA);
 	opl_free(opsB);
@@ -214,6 +215,9 @@ static void run(struct oplist *opsA, struct oplist *opsB)
 
 	static int repStackA[MAXNEST], repStackB[MAXNEST];
 
+	static unsigned tapestats[2][MAXTAPE];
+	static unsigned char tapemax[2][MAXTAPE];
+
 	int ipA = 0, ipB = 0;
 	unsigned char *ptrA = 0, *ptrB = 0;
 	int repA = 0, repB = 0, *repSA = 0, *repSB = 0;
@@ -237,7 +241,8 @@ static void run(struct oplist *opsA, struct oplist *opsB)
 		deathsA = 0, deathsB = 0; \
 	  \
 		cycles = MAXCYCLES; \
-		memset(stats.tapestats, 0, sizeof stats.tapestats); \
+		memset(tapestats, 0, sizeof tapestats); \
+		memset(tapemax, 0, sizeof tapemax); \
 	  \
 		score = 0; \
 		goto *opcA[0]; \
@@ -247,8 +252,14 @@ static void run(struct oplist *opsA, struct oplist *opsB)
 		stats.cycles += (MAXCYCLES - cycles); \
 		printf("CYCLES[%d,%d] = %d\n", pol, tapesize, MAXCYCLES - cycles); \
 	  \
-		printf("TAPE[%d,%d] =", pol, tapesize); \
-		for (int p = 0; p < tapesize; p++) printf(" %u/%u", stats.tapestats[0][p], stats.tapestats[1][p]); \
+		printf("TAPEABS[%d,%d] =", pol, tapesize); \
+		for (int p = 0; p < tapesize; p++) printf(" %d", tape[p] >= 128 ? tape[p]-256 : tape[p]); \
+		printf("\n"); \
+		printf("TAPEMAX[%d,%d] =", pol, tapesize); \
+		for (int p = 0; p < tapesize; p++) printf(" %u/%u", tapemax[0][p], tapemax[1][p]); \
+		printf("\n"); \
+		printf("TAPEHEAT[%d,%d] =", pol, tapesize); \
+		for (int p = 0; p < tapesize; p++) printf(" %u/%u", tapestats[0][p], tapestats[1][p]); \
 		printf("\n"); \
 	}
 
@@ -307,8 +318,8 @@ nextcycle:
 		goto *ret;
 	}
 
-	stats.tapestats[0][ptrA-tape]++;
-	stats.tapestats[1][ptrB-tape]++;
+	tapestats[0][ptrA-tape]++;
+	tapestats[1][ptrB-tape]++;
 
 	if (!cycles)
 		goto *ret;
@@ -339,19 +350,27 @@ op_decB:
 	(*ptrB)--;
 	NEXTB;
 
+#define MAXSTAT(ptr,i)	  \
+	if (*ptr >= 128) { if (256-*ptr > tapemax[i][ptr-tape]) tapemax[i][ptr-tape] = 256-*ptr; } \
+	else { if (*ptr > tapemax[i][ptr-tape]) tapemax[i][ptr-tape] = *ptr; }
+
 op_leftA:
+	MAXSTAT(ptrA, 0);
 	ptrA--;
 	if (ptrA < tape) goto fallA;
 	NEXTA;
 op_leftB:
+	MAXSTAT(ptrB, 1);
 	ptrB++;
 	if (ptrB >= &tape[tapesize]) goto fallB;
 	NEXTB;
 op_rightA:
+	MAXSTAT(ptrA, 0);
 	ptrA++;
 	if (ptrA >= &tape[tapesize]) goto fallA;
 	NEXTA;
 op_rightB:
+	MAXSTAT(ptrB, 1);
 	ptrB--;
 	if (ptrB < tape) goto fallB;
 	NEXTB;

@@ -8,4 +8,10 @@ fetch a hill:
 
 test for parse errors:
 
-  ls hill/* | while read f; do echo -n "$f "; ./cranklance $f $f; done
+  ls hill/*.bfjoust | while read f; do echo -n "$f "; ./gearlance $f $f; done
+
+update visible egostats pages:
+
+  ./parse_results.py
+  ./update_stats.py
+  rsync -av --chmod a+r,Da+x stats/ momus:/space/www/zem/egostats
