@@ -1,0 +1,55 @@
+/* section headers and toggle switches */
+
+h1 {
+    border-bottom: 2px solid black;
+    font-size: x-large;
+    font-weight: normal;
+    margin-top: 3ex;
+}
+
+h2 {
+    border-bottom: 1px solid black;
+    font-size: large;
+    font-weight: normal;
+    padding-left: 2ex;
+    margin-top: 3ex;
+}
+
+span.toggle {
+    cursor: pointer;
+    color: #800;
+}
+
+/* summary table */
+
+td, th {
+    padding-left: 1ex;
+    padding-right: 1ex;
+}
+
+th {
+    border-bottom: 1px solid black;
+}
+
+td.summarypos {
+    text-align: right;
+}
+
+/* plot blocks */
+
+img.plot {
+    clear: left;
+    float: left;
+    margin-right: 1ex;
+    margin-bottom: 1ex;
+}
+
+h1, h2, hr.midplot {
+    clear: left;
+}
+
+hr.midplot {
+    border: none;
+    border-bottom: 1px solid #ccc;
+    height: 1px;
+}
