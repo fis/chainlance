@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
 
 	/* for debuggin purposes, dump out the parse */
 
-#if 0
+#if 1
 	unsigned char opchars[] = {
 		[OP_INC] = '+', [OP_DEC] = '-', [OP_LEFT] = '<', [OP_RIGHT] = '>',
 		[OP_WAIT] = '.', [OP_LOOP1] = '[', [OP_LOOP2] = ']',
@@ -471,11 +471,19 @@ static int readrepc(unsigned char *buf, ssize_t bsize, int *bat, int fd)
 		return 0;
 	}
 
+	int neg = -1;
+
 	while (1)
 	{
 		ch = nextc();
+		if (ch == '-' && neg < 0)
+		{
+			neg = 1;
+			continue;
+		}
 		if (ch < '0' || ch > '9')
 			break;
+		if (neg < 0) neg = 0;
 
 		c = c*10 + (ch - '0');
 		if (c > MAXCYCLES)
@@ -489,7 +497,7 @@ static int readrepc(unsigned char *buf, ssize_t bsize, int *bat, int fd)
 	buf[--at] = ch;
 	*bat = at-1;
 
-	return c;
+	return neg > 0 ? -c : c;
 }
 
 static struct oplist *readops(int fd)
@@ -523,6 +531,7 @@ static struct oplist *readops(int fd)
 				/* need to extract the count */
 				i++;
 				c = readrepc(buf, got, &i, fd);
+				if (c < 0) c = MAXCYCLES;
 				opl_append(ops, OP_REP2);
 				ops->ops[ops->len-1].count = c;
 				break;
