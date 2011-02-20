@@ -53,7 +53,7 @@
 
 /* #define TRACE 1 */
 
-static int scores[2][MAXTAPE];
+static int scores[2][MAXTAPE+1];
 
 /* types */
 
@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
 
 	/* for debuggin purposes, dump out the parse */
 
-#if 1
+#if 0
 	unsigned char opchars[] = {
 		[OP_INC] = '+', [OP_DEC] = '-', [OP_LEFT] = '<', [OP_RIGHT] = '>',
 		[OP_WAIT] = '.', [OP_LOOP1] = '[', [OP_LOOP2] = ']',
@@ -243,7 +243,7 @@ static void run(struct oplist *opsA, struct oplist *opsB)
 	static int repStackA[MAXNEST], repStackB[MAXNEST];
 
 	int ipA = 0, ipB = 0;
-	unsigned char *ptrA = 0, *ptrB = 0;
+	unsigned char *ptrA = 0, *ptrB = 0, bcache = 0;
 	int repA = 0, repB = 0, *repSA = 0, *repSB = 0;
 	int deathsA = 0, deathsB = 0;
 	int cycles = 0;
@@ -259,7 +259,7 @@ static void run(struct oplist *opsA, struct oplist *opsB)
 	  \
 		memset(tape, 0, tapesize); \
 		ptrA = &tape[0], ptrB = &tape[tapesize-1]; \
-		*ptrA = 128, *ptrB = 128; \
+		*ptrA = 128, *ptrB = 128; bcache = 128; \
 	  \
 		repSA = repStackA, repSB = repStackB; \
 		deathsA = 0, deathsB = 0; \
@@ -330,6 +330,7 @@ nextcycle:
 	if (!cycles)
 		goto *ret;
 
+	bcache = *ptrB;
 	goto *opcA[ipA];
 
 fallA:
@@ -382,13 +383,13 @@ op_loop1A:
 	if (!*ptrA) ipA = oplA[ipA].match;
 	NEXTA;
 op_loop1B:
-	if (!*ptrB) ipB = oplB[ipB].match;
+	if (!bcache) ipB = oplB[ipB].match;
 	NEXTB;
 op_loop2A:
 	if (*ptrA) ipA = oplA[ipA].match;
 	NEXTA;
 op_loop2B:
-	if (*ptrB) ipB = oplB[ipB].match;
+	if (bcache) ipB = oplB[ipB].match;
 	NEXTB;
 
 	/* simple (..) repeats with no corresponding {..} block */
