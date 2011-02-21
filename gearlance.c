@@ -549,8 +549,10 @@ static void matchrep(struct oplist *ops)
 {
 	/* match (..) pairs and inner {..} blocks */
 
-	int stack[MAXNEST], istack[MAXNEST], idstack[MAXNEST];
-	int depth = 0, idepth = 0, isdepth = 0;
+	int stack[MAXNEST], istack[MAXNEST], mstack[MAXNEST];
+	int dstack[MAXNEST], idstack[MAXNEST]; /* used for detecting cross-level matches */
+	int depth = 0, idepth = 0, mdepth = 0;
+#define DREC(depth, idepth, mdepth) ((depth)*MAXNEST*MAXNEST + (idepth)*MAXNEST + (mdepth))
 
 	for (int at = 0; at < ops->len; at++)
 	{
@@ -561,36 +563,42 @@ static void matchrep(struct oplist *ops)
 		case OP_REP1:
 			if (depth == MAXNEST) fail("maximum () nesting depth exceeded");
 			stack[depth] = at;
-			idstack[depth] = idepth;
+			dstack[depth] = DREC(depth, idepth, mdepth);
+			mstack[mdepth] = at;
 			op->match = -1;
 			op->inner = -1;
 			depth++;
-			idepth = 0;
+			mdepth++;
 			break;
 
 		case OP_INNER1:
-			istack[isdepth++] = at;
-			idepth++;
-			if (idepth > depth) fail("encountered { without suitable enclosing (");
+			if (idepth == MAXNEST) fail("maximum {} nesting depth exceeded");
+			if (!mdepth) fail("encountered { without matching (");
+			mdepth--;
+			istack[idepth] = at;
+			idstack[idepth] = DREC(depth, idepth, mdepth);
 			op->match = -1;
-			op->inner = stack[depth-idepth];
-			if (ops->ops[op->inner].inner != -1) fail("encountered second { on a same level");
+			op->inner = mstack[mdepth];
+			if (ops->ops[op->inner].inner != -1) fail("same ( has multiple matching {s");
 			ops->ops[op->inner].inner = at;
+			idepth++;
 			break;
 
 		case OP_INNER2:
 			if (!idepth) fail("terminating } without a matching {");
 			idepth--;
-			isdepth--;
-			op->match = istack[isdepth];
+			if (idstack[idepth] != DREC(depth, idepth, mdepth)) fail("across-levels {..}");
+			op->match = istack[idepth];
 			op->inner = -1;
 			ops->ops[op->match].match = at;
+			mdepth++;
 			break;
 
 		case OP_REP2:
 			if (!depth) fail("terminating ) without a matching (");
-			if (idepth) fail("starting { without a matching }");
 			depth--;
+			mdepth--;
+			if (dstack[depth] != DREC(depth, idepth, mdepth)) fail("across-levels (..)");
 			op->match = stack[depth];
 			op->inner = (ops->ops[op->match].inner != -1 ? ops->ops[ops->ops[op->match].inner].match : -1);
 			ops->ops[op->match].match = at;
@@ -601,7 +609,6 @@ static void matchrep(struct oplist *ops)
 				ops->ops[op->inner].count = op->count;
 				ops->ops[ops->ops[op->inner].match].count = op->count;
 			}
-			idepth = idstack[depth];
 			break;
 
 		default:
@@ -654,11 +661,11 @@ static void matchloop(struct oplist *ops)
 			break;
 
 		case OP_REP1:
-		case OP_INNER1:
+		case OP_INNER2:
 			idepth++;
 			break;
 
-		case OP_INNER2:
+		case OP_INNER1:
 		case OP_REP2:
 			if (!idepth) fail("[..] crossing out of a ({..}) level");
 			idepth--;
