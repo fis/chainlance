@@ -508,19 +508,23 @@ static int readrepc(unsigned char *buf, ssize_t bsize, int *bat, int fd)
 		return 0;
 	}
 
-	int neg = -1;
+	int neg = 0;
+	int seen_digits = 0;
 
 	while (1)
 	{
 		ch = nextc();
-		if (ch == '-' && neg < 0)
+		if ((ch == ' ' || ch == '\n' || ch == 't') && !seen_digits)
+			continue;
+		if (ch == '-' && !seen_digits)
 		{
 			neg = 1;
+			seen_digits = 1;
 			continue;
 		}
 		if (ch < '0' || ch > '9')
 			break;
-		if (neg < 0) neg = 0;
+		seen_digits = 1;
 
 		c = c*10 + (ch - '0');
 		if (c > MAXCYCLES)
@@ -534,7 +538,7 @@ static int readrepc(unsigned char *buf, ssize_t bsize, int *bat, int fd)
 	buf[--at] = ch;
 	*bat = at-1;
 
-	return neg > 0 ? -c : c;
+	return neg ? -c : c;
 }
 
 static struct oplist *readops(int fd)

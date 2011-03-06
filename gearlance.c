@@ -304,14 +304,14 @@ nextcycle:
 	if (!tape[tapesize-1]) deathsB++; else if (deathsB == 1) deathsB = 0;
 
 #ifdef TRACE
-	printf("%6d: ", MAXCYCLES-cycles);
+	printf("%6d: ", MAXCYCLES-1-cycles);
 	for (int i = 0; i < tapesize; i++)
 		printf("%c%02x ",
 		       (ptrA - tape) == i
 		       ? ((ptrB - tape) == i ? 'X' : 'A')
 		       : ((ptrB - tape) == i ? 'B' : ' '),
 		       tape[i]);
-	printf("  dA %d  dB %d   ipA %d ipB %d\n", deathsA, deathsB, ipA, ipB);
+	printf("  dA %d  dB %d   ipA %d ipB %d   repA %d repB %d\n", deathsA, deathsB, ipA, ipB, repA, repB);
 #endif
 
 	if (deathsA >= 2 && deathsB >= 2)
@@ -472,19 +472,23 @@ static int readrepc(unsigned char *buf, ssize_t bsize, int *bat, int fd)
 		return 0;
 	}
 
-	int neg = -1;
+	int neg = 0;
+	int seen_digits = 0;
 
 	while (1)
 	{
 		ch = nextc();
-		if (ch == '-' && neg < 0)
+		if ((ch == ' ' || ch == '\n' || ch == '\t') && !seen_digits)
+			continue;
+		if (ch == '-' && !seen_digits)
 		{
 			neg = 1;
+			seen_digits = 1;
 			continue;
 		}
 		if (ch < '0' || ch > '9')
 			break;
-		if (neg < 0) neg = 0;
+		seen_digits = 1;
 
 		c = c*10 + (ch - '0');
 		if (c > MAXCYCLES)
@@ -498,7 +502,7 @@ static int readrepc(unsigned char *buf, ssize_t bsize, int *bat, int fd)
 	buf[--at] = ch;
 	*bat = at-1;
 
-	return neg > 0 ? -c : c;
+	return neg ? -c : c;
 }
 
 static struct oplist *readops(int fd)
