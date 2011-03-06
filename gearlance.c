@@ -443,106 +443,129 @@ op_doneA:
 
 /* parsing and preprocessing, impl */
 
-static int readrepc(unsigned char *buf, ssize_t bsize, int *bat, int fd)
-{
-	/* read and parse a () count */
-
-	int at = *bat;
-
-	int nextc(void)
-	{
-		if (at < bsize)
-			return buf[at++];
-
-		unsigned char c;
-		ssize_t t = read(fd, &c, 1);
-		if (t < 0) die("read error");
-		if (t == 0) return -1;
-		return c;
-	}
-
-	int c = 0, ch;
-
-	ch = nextc();
-	if (ch != '*' && ch != '%')
-	{
-		/* treat garbage as ()*0 in case it's inside a comment */
-		buf[--at] = ch;
-		*bat = at-1;
-		return 0;
-	}
-
-	int neg = 0;
-	int seen_digits = 0;
-
-	while (1)
-	{
-		ch = nextc();
-		if ((ch == ' ' || ch == '\n' || ch == '\t') && !seen_digits)
-			continue;
-		if (ch == '-' && !seen_digits)
-		{
-			neg = 1;
-			seen_digits = 1;
-			continue;
-		}
-		if (ch < '0' || ch > '9')
-			break;
-		seen_digits = 1;
-
-		c = c*10 + (ch - '0');
-		if (c > MAXCYCLES)
-		{
-			c = MAXCYCLES;
-			ch = 0;
-			break;
-		}
-	}
-
-	buf[--at] = ch;
-	*bat = at-1;
-
-	return neg ? -c : c;
-}
-
 static struct oplist *readops(int fd)
 {
 	/* lexical tokenizing into initial oplist */
 
+	/* helper functions to do buffered reading with ungetch support */
+
 	static unsigned char buf[65536];
-	struct oplist *ops = opl_new();
+	static unsigned buf_at = 0, buf_size = 0;
 
-	while (1)
+	int nextc(void)
 	{
-		ssize_t got = read(fd, buf, sizeof buf);
-		if (got < 0) die("read error");
-		if (got == 0) break;
-
-		for (int i = 0; i < got; i++)
+		if (buf_at >= buf_size)
 		{
-			int c;
+			ssize_t t = read(fd, buf, sizeof buf);
+			if (t < 0) die("read error");
+			if (t == 0) return -1;
 
-			switch (buf[i])
+			buf_at = 0;
+			buf_size = t;
+		}
+
+		return buf[buf_at++];
+	}
+
+	int nextcmd(void)
+	{
+		while (1)
+		{
+			int c = nextc();
+			switch (c)
 			{
-			case '+': opl_append(ops, OP_INC);    break;
-			case '-': opl_append(ops, OP_DEC);    break;
-			case '<': opl_append(ops, OP_LEFT);   break;
-			case '>': opl_append(ops, OP_RIGHT);  break;
-			case '.': opl_append(ops, OP_WAIT);   break;
-			case '[': opl_append(ops, OP_LOOP1);  break;
-			case ']': opl_append(ops, OP_LOOP2);  break;
-			case '(': opl_append(ops, OP_REP1);   break;
-			case ')':
-				/* need to extract the count */
-				i++;
-				c = readrepc(buf, got, &i, fd);
-				if (c < 0) c = MAXCYCLES;
-				opl_append(ops, OP_REP2);
-				ops->ops[ops->len-1].count = c;
+			case -1:
+			case '+': case '-': case '<': case '>': case '.': case ',': case '[': case ']':
+			case '(': case ')': case '{': case '}': case '*': case '%':
+			case '0': case '1': case '2': case '3': case '4':
+			case '5': case '6': case '7': case '8': case '9':
+				return c;
+
+			default:
+				/* ignore this character */
 				break;
-			case '{': opl_append(ops, OP_INNER1); break;
-			case '}': opl_append(ops, OP_INNER2); break;
 			}
+		}
+	}
+
+	void unc(int c)
+	{
+		buf[--buf_at] = c;
+	}
+
+	/* helper function to read the count after a repetition operation */
+
+	int readrepc(void)
+	{
+		int c = 0, neg = 0, ch;
+
+		ch = nextcmd();
+		if (ch != '*' && ch != '%')
+		{
+			/* treat garbage as ()*0 in case it's inside a comment */
+			unc(ch);
+			return 0;
+		}
+
+		ch = nextcmd();
+		if (ch == '-')
+		{
+			neg = 1;
+			ch = nextc();
+		}
+
+		while (1)
+		{
+			if (ch < '0' || ch > '9')
+				break;
+
+			c = c*10 + (ch - '0');
+			if (c > MAXCYCLES)
+			{
+				c = MAXCYCLES;
+				ch = 0;
+				break;
+			}
+
+			ch = nextc();
+		}
+
+		unc(ch);
+
+		return neg ? -c : c;
+	}
+
+	/* main code to read the list of ops */
+
+	struct oplist *ops = opl_new();
+	int ch;
+
+	while ((ch = nextcmd()) >= 0)
+	{
+		int c;
+
+		switch (ch)
+		{
+		case '+': opl_append(ops, OP_INC);    break;
+		case '-': opl_append(ops, OP_DEC);    break;
+		case '<': opl_append(ops, OP_LEFT);   break;
+		case '>': opl_append(ops, OP_RIGHT);  break;
+		case '.': opl_append(ops, OP_WAIT);   break;
+		case '[': opl_append(ops, OP_LOOP1);  break;
+		case ']': opl_append(ops, OP_LOOP2);  break;
+		case '(': opl_append(ops, OP_REP1);   break;
+		case ')':
+			/* need to extract the count */
+			c = readrepc();
+			if (c < 0) c = MAXCYCLES;
+			opl_append(ops, OP_REP2);
+			ops->ops[ops->len-1].count = c;
+			break;
+		case '{': opl_append(ops, OP_INNER1); break;
+		case '}': opl_append(ops, OP_INNER2); break;
+		default:
+			/* ignore unexpected commands */
+			break;
 		}
 	}
 
