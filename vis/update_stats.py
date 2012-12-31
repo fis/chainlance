@@ -153,6 +153,19 @@ def plot_cycleh():
     plt.xlabel('Match length in 10^x cycles')
     plt.ylabel('Number of jousts in the bin')
 
+def plot_cyclewl():
+    wcycles = cycles.copy()
+    lcycles = cycles.copy()
+    wcycles.mask[scores < 0] = True
+    lcycles.mask[scores > 0] = True
+    wcycles = wcycles.mean(1).filled(0)
+    lcycles = lcycles.mean(1).filled(0)
+    wlcycles = np.concatenate((wcycles.reshape((1,nprogs)), lcycles.reshape((1,nprogs))), 0)
+
+    plt.gcf().set_size_inches(6, 12)
+    plt.subplots_adjust(.05, .05, .5, .95)
+    plt.plot([0, 1], wlcycles)
+
 def plot_tapeabs():
     N = 256 # number of cells for interpolation
 
@@ -179,26 +192,27 @@ def plot_tapeabs():
 # single-program plots
 
 def plot_ptapeabs(pn, p):
-    N = 256
-
-    tapes = np.zeros((NTAPES, N))
+    tapes = np.zeros((NTAPES, MAXTAPE))
     tapecount = np.zeros((NTAPES, 1))
 
     for match in p.itervalues():
         for cfg in chain(match['cfg'][0], match['cfg'][1]):
             tabs = abs(np.array(cfg['tape']))
-            tf = interp1d(xrange(len(tabs)), tabs, 'nearest')
-            tapes[len(tabs)-MINTAPE, :] += tf(np.linspace(0, len(tabs)-1, N))
+            tapes[len(tabs)-MINTAPE, 0:len(tabs)] += tabs
             tapecount[len(tabs)-MINTAPE] += 1
 
     tapes /= tapecount
+
+    for tlen in xrange(MINTAPE, MAXTAPE):
+        tapes[tlen-MINTAPE, tlen:] = np.nan
+    tapes = ma.masked_invalid(tapes)
 
     plt.subplots_adjust(.08, .08, .98, .92)
     plt.pcolor(tapes, cmap=cmap)
     plt.colorbar()
 
-    plt.xticks([0, N], ['home', 'opp. flag'])
-    plt.xlim(0, N)
+    plt.xticks(np.array([1]+range(MINTAPE, MAXTAPE+1, 10))-0.5, ['Home']+[repr(x) for x in xrange(MINTAPE, MAXTAPE+1, 10)])
+    plt.xlim(0, MAXTAPE)
     plt.yticks(np.array(xrange(NTAPES))+.5, [repr(x) for x in xrange(MINTAPE,MAXTAPE+1)])
     plt.ylim(0, NTAPES)
     plt.ylabel('Tape length')
@@ -207,26 +221,27 @@ def plot_ptapeabs(pn, p):
     plt.grid(True, which='minor', linestyle='-', color='k')
 
 def plot_ptapemax(pn, p):
-    N = 256
-
-    tapes = np.zeros((NTAPES, N))
+    tapes = np.zeros((NTAPES, MAXTAPE))
     tapecount = np.zeros((NTAPES, 1))
 
     for match in p.itervalues():
         for cfg in chain(match['cfg'][0], match['cfg'][1]):
             tabs = np.array(cfg['tapemax'])
-            tf = interp1d(xrange(len(tabs)), tabs, 'nearest')
-            tapes[len(tabs)-MINTAPE, :] += tf(np.linspace(0, len(tabs)-1, N))
+            tapes[len(tabs)-MINTAPE, 0:len(tabs)] += tabs
             tapecount[len(tabs)-MINTAPE] += 1
 
     tapes /= tapecount
+
+    for tlen in xrange(MINTAPE, MAXTAPE):
+        tapes[tlen-MINTAPE, tlen:] = np.nan
+    tapes = ma.masked_invalid(tapes)
 
     plt.subplots_adjust(.08, .08, .98, .92)
     plt.pcolor(tapes, cmap=cmap)
     plt.colorbar()
 
-    plt.xticks([0, N], ['home', 'opp. flag'])
-    plt.xlim(0, N)
+    plt.xticks(np.array([1]+range(MINTAPE, MAXTAPE+1, 10))-0.5, ['Home']+[repr(x) for x in xrange(MINTAPE, MAXTAPE+1, 10)])
+    plt.xlim(0, MAXTAPE)
     plt.yticks(np.array(xrange(NTAPES))+.5, [repr(x) for x in xrange(MINTAPE,MAXTAPE+1)])
     plt.ylim(0, NTAPES)
     plt.ylabel('Tape length')
