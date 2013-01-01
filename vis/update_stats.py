@@ -16,7 +16,7 @@ import numpy.ma as ma
 import scipy.cluster.hierarchy as clust
 from scipy.interpolate import interp1d
 
-ONLYPLOT = None # use None to draw all, 'foo' to update only plot foo
+ONLYPLOT = 'pscores' # use None to draw all, 'foo' to update only plot foo
 
 # import the data
 
@@ -166,7 +166,7 @@ def plot_cyclewl():
     plt.subplots_adjust(.05, .05, .5, .95)
     plt.plot([0, 1], wlcycles)
 
-def plot_tapeabs():
+def plot_tapeavg(key, ylabel, logy=False, lpos='best'):
     N = 256 # number of cells for interpolation
 
     tapes = np.zeros((nprogs, N))
@@ -175,7 +175,7 @@ def plot_tapeabs():
     for i, pn in enumerate(proglist):
         for match in progs[pn].itervalues():
             for cfg in chain(match['cfg'][0], match['cfg'][1]):
-                tabs = abs(np.array(cfg['tape']))
+                tabs = abs(np.array(cfg[key]))
                 tf = interp1d(xrange(len(tabs)), tabs)
                 tapes[i, :] += tf(np.linspace(0, len(tabs)-1, N))
                 tapecount[i] += 1
@@ -183,48 +183,82 @@ def plot_tapeabs():
     tapes /= tapecount
 
     plt.subplots_adjust(.08, .08, .92, .92)
-    plt.plot(np.linspace(0, 1, N), tapes[ordr[:7],:].T)
+    (plt.plot if not logy else plt.semilogy)(np.linspace(0, 1, N), tapes[ordr[:7],:].T)
 
     plt.xticks([0, 1], ['home', 'opp. flag'])
-    plt.ylabel('absolute value left on tape')
-    plt.legend([proglist[i] for i in ordr[:7]])
+    plt.ylabel(ylabel)
+    plt.legend([proglist[i] for i in ordr[:7]], loc=lpos)
+
+def plot_tapeabs():
+    plot_tapeavg('tape', 'absolute value left on tape')
 
 def plot_tapeheat():
-    N = 256 # number of cells for interpolation
-
-    tapes = np.zeros((nprogs, N))
-    tapecount = np.zeros((nprogs, 1))
-
-    for i, pn in enumerate(proglist):
-        for match in progs[pn].itervalues():
-            for cfg in chain(match['cfg'][0], match['cfg'][1]):
-                tabs = abs(np.array(cfg['tapeheat']))
-                tf = interp1d(xrange(len(tabs)), tabs)
-                tapes[i, :] += tf(np.linspace(0, len(tabs)-1, N))
-                tapecount[i] += 1
-
-    tapes /= tapecount
-
-    plt.subplots_adjust(.08, .08, .92, .92)
-    plt.semilogy(np.linspace(0, 1, N), tapes[ordr[:7],:].T)
-
-    plt.xticks([0, 1], ['home', 'opp. flag'])
-    plt.ylabel('average number of cycles')
-    plt.legend([proglist[i] for i in ordr[:7]], loc='upper center')
+    plot_tapeavg('tapeheat', 'average number of cycles', logy=True, lpos='upper center')
 
 # single-program plots
 
-def plot_ptapeabs(pn, p):
+def plot_pscores(pn, p):
+    opps = [proglist[opp] for opp in ordr[::-1] if proglist[opp] != pn]
+
+    pscores = np.zeros((nprogs-1, 2*NTAPES+1))
+    for row, opp in enumerate(opps):
+        pscores[row,0:NTAPES] = p[opp]['score'][0:NTAPES]
+        pscores[row,NTAPES+1:] = p[opp]['score'][NTAPES:]
+
+    pscores[:,NTAPES] = np.nan
+    pscores = ma.masked_invalid(pscores)
+
+    plt.subplots_adjust(.3, .05, .95, .95)
+    plt.pcolor(pscores, cmap=cmap)
+
+    plt.xticks([0.5,NTAPES-0.5,NTAPES+1.5,2*NTAPES+0.5], [MINTAPE,MAXTAPE,MINTAPE,MAXTAPE])
+    # plt.xticks(np.arange(NTAPES)+0.5, [repr(x) for x in xrange(MINTAPE, MAXTAPE+1)])
+    plt.yticks(np.arange(nprogs)+0.5, opps)
+
+    plt.gca().set_xticks(np.arange(1, 2*NTAPES+1), minor=True)
+    plt.gca().set_yticks(np.arange(1, nprogs-1), minor=True)
+    plt.grid(True, which='minor', linestyle='-', color='k')
+
+    plt.xlim(0, 2*NTAPES+1)
+    plt.ylim(0, nprogs-1)
+    plt.clim(-1, 1)
+    # plt.colorbar()
+
+    # tlpoints = np.zeros((nprogs, NTAPES))
+    # for tl in xrange(NTAPES):
+    #     tlpoints[:,tl] = scores[:,tl::NTAPES].sum(1)
+    # tlpoints /= 2
+
+    # plt.subplots_adjust(.3, .05, .95, .95)
+    # plt.pcolor(tlpoints[ordr[::-1],:], cmap=cmap)
+
+    # plt.xticks(np.arange(NTAPES)+0.5, [repr(x) for x in xrange(MINTAPE, MAXTAPE+1)])
+    # plt.yticks(np.arange(nprogs)+0.5, proglist[ordr[::-1]])
+
+    # plt.gca().set_xticks(np.arange(1, NTAPES), minor=True)
+    # plt.gca().set_yticks(np.arange(1, nprogs), minor=True)
+    # plt.grid(True, which='minor', linestyle='-', color='k')
+
+    # plt.xlim(0, NTAPES)
+    # plt.ylim(0, nprogs)
+    # plt.clim(-(nprogs-1), nprogs-1)
+    # plt.colorbar()
+
+def plot_ptapeavg(pn, p, key, logc=False):
     tapes = np.zeros((NTAPES, MAXTAPE))
     tapecount = np.zeros((NTAPES, 1))
 
     for match in p.itervalues():
         for cfg in chain(match['cfg'][0], match['cfg'][1]):
-            tabs = abs(np.array(cfg['tape']))
+            tabs = np.array(cfg[key])
             tapes[len(tabs)-MINTAPE, 0:len(tabs)] += tabs
             tapecount[len(tabs)-MINTAPE] += 1
 
     tapes /= tapecount
+
+    if logc:
+        tapes[tapes == 0] = 0.001
+        tapes = np.log10(tapes)
 
     for tlen in xrange(MINTAPE, MAXTAPE):
         tapes[tlen-MINTAPE, tlen:] = np.nan
@@ -242,67 +276,15 @@ def plot_ptapeabs(pn, p):
 
     plt.gca().set_yticks(xrange(NTAPES+1), minor=True)
     plt.grid(True, which='minor', linestyle='-', color='k')
+
+def plot_ptapeabs(pn, p):
+    plot_ptapeavg(pn, p, 'tape')
 
 def plot_ptapemax(pn, p):
-    tapes = np.zeros((NTAPES, MAXTAPE))
-    tapecount = np.zeros((NTAPES, 1))
-
-    for match in p.itervalues():
-        for cfg in chain(match['cfg'][0], match['cfg'][1]):
-            tabs = np.array(cfg['tapemax'])
-            tapes[len(tabs)-MINTAPE, 0:len(tabs)] += tabs
-            tapecount[len(tabs)-MINTAPE] += 1
-
-    tapes /= tapecount
-
-    for tlen in xrange(MINTAPE, MAXTAPE):
-        tapes[tlen-MINTAPE, tlen:] = np.nan
-    tapes = ma.masked_invalid(tapes)
-
-    plt.subplots_adjust(.08, .08, .98, .92)
-    plt.pcolor(tapes, cmap=cmap)
-    plt.colorbar()
-
-    plt.xticks(np.array([1]+range(MINTAPE, MAXTAPE+1, 10))-0.5, ['Home']+[repr(x) for x in xrange(MINTAPE, MAXTAPE+1, 10)])
-    plt.xlim(0, MAXTAPE)
-    plt.yticks(np.array(xrange(NTAPES))+.5, [repr(x) for x in xrange(MINTAPE,MAXTAPE+1)])
-    plt.ylim(0, NTAPES)
-    plt.ylabel('Tape length')
-
-    plt.gca().set_yticks(xrange(NTAPES+1), minor=True)
-    plt.grid(True, which='minor', linestyle='-', color='k')
+    plot_ptapeavg(pn, p, 'tapemax')
 
 def plot_ptapeheat(pn, p):
-    tapes = np.zeros((NTAPES, MAXTAPE))
-    tapecount = np.zeros((NTAPES, 1))
-
-    for match in p.itervalues():
-        for cfg in chain(match['cfg'][0], match['cfg'][1]):
-            tabs = np.array(cfg['tapeheat'])
-            tapes[len(tabs)-MINTAPE, 0:len(tabs)] += tabs
-            tapecount[len(tabs)-MINTAPE] += 1
-
-    tapes /= tapecount
-
-    tapes[tapes == 0] = 0.001
-    tapes = np.log10(tapes)
-
-    for tlen in xrange(MINTAPE, MAXTAPE):
-        tapes[tlen-MINTAPE, tlen:] = np.nan
-    tapes = ma.masked_invalid(tapes)
-
-    plt.subplots_adjust(.08, .08, .98, .92)
-    plt.pcolor(tapes, cmap=cmap)
-    plt.colorbar()
-
-    plt.xticks(np.array([1]+range(MINTAPE, MAXTAPE+1, 10))-0.5, ['Home']+[repr(x) for x in xrange(MINTAPE, MAXTAPE+1, 10)])
-    plt.xlim(0, MAXTAPE)
-    plt.yticks(np.array(xrange(NTAPES))+.5, [repr(x) for x in xrange(MINTAPE,MAXTAPE+1)])
-    plt.ylim(0, NTAPES)
-    plt.ylabel('Tape length')
-
-    plt.gca().set_yticks(xrange(NTAPES+1), minor=True)
-    plt.grid(True, which='minor', linestyle='-', color='k')
+    plot_ptapeavg(pn, p, 'tapeheat', logc=True)
 
 # plotter wrapper for saving figures with thumbnails
 
@@ -445,6 +427,13 @@ for i, prog in enumerate(proglist):
 
     index.write('    <h2 id="prog%d" class="sect">%s</h2>\n' % (i, prog))
     index.write('    <div id="sprog%d" class="sect">\n' % i)
+
+    linkplot('pscores', plot_pscores, '''
+Win/loss matrix of this particular program.  Red indicates a win, blue
+a loss, grey a tie.  Left half is sieve; right half is kettle.
+''', i)
+
+    index.write('      <hr class="midplot" />\n')
 
     linkplot('ptapeabs', plot_ptapeabs, '''
 Absolute values (magnitude of differences from 0) left on the tape at
