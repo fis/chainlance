@@ -15,6 +15,7 @@ re_summary = r'^SUMMARY: ([<>X]{21}) ([<>X]{21}) [0-9-]+ c(\d+) sl(\d+) sr(\d+)'
 re_cycles = r'^CYCLES\[(\d+),(\d+)\] = (\d+)'
 re_tapeabs = r'^TAPEABS\[(\d+),(\d+)\] = ([-0-9 ]+)'
 re_tapemax = r'^TAPEMAX\[(\d+),(\d+)\] = ([0-9/ ]+)'
+re_tapeheat = r'^TAPEHEAT\[(\d+),(\d+)\] = ([0-9/ ]+)'
 re_error = r'^parse error'
 
 NTAPES = MAXTAPE - MINTAPE + 1
@@ -35,6 +36,7 @@ re_summary = re.compile(re_summary)
 re_cycles = re.compile(re_cycles)
 re_tapeabs = re.compile(re_tapeabs)
 re_tapemax = re.compile(re_tapemax)
+re_tapeheat = re.compile(re_tapeheat)
 re_error = re.compile(re_error)
 
 current_l, current_li = None, None
@@ -105,6 +107,15 @@ for l in results:
         current_r['cfg'][p][cfg]['tapemax'] = list(reversed([int(x[1]) for x in t]))
         continue
 
+    m = re_tapeheat.match(l)
+    if m is not None:
+        p = int(m.group(1))
+        cfg = int(m.group(2)) - MINTAPE
+        t = [x.split('/') for x in m.group(3).split()]
+        current_l['cfg'][p][cfg]['tapeheat'] = [int(x[0]) for x in t]
+        current_r['cfg'][p][cfg]['tapeheat'] = list(reversed([int(x[1]) for x in t]))
+        continue
+
     m = re_error.match(l)
     if m is not None:
         # build a fake all-tie match
@@ -119,6 +130,8 @@ for l in results:
                 current_r['cfg'][p][cfg]['tape'] = [0 for x in xrange(MINTAPE+cfg)]
                 current_l['cfg'][p][cfg]['tapemax'] = [0 for x in xrange(MINTAPE+cfg)]
                 current_r['cfg'][p][cfg]['tapemax'] = [0 for x in xrange(MINTAPE+cfg)]
+                current_l['cfg'][p][cfg]['tapeheat'] = [0 for x in xrange(MINTAPE+cfg)]
+                current_r['cfg'][p][cfg]['tapeheat'] = [0 for x in xrange(MINTAPE+cfg)]
         current_li.setdefault('len', 1)
         current_ri.setdefault('len', 1)
 

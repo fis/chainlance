@@ -189,6 +189,29 @@ def plot_tapeabs():
     plt.ylabel('absolute value left on tape')
     plt.legend([proglist[i] for i in ordr[:7]])
 
+def plot_tapeheat():
+    N = 256 # number of cells for interpolation
+
+    tapes = np.zeros((nprogs, N))
+    tapecount = np.zeros((nprogs, 1))
+
+    for i, pn in enumerate(proglist):
+        for match in progs[pn].itervalues():
+            for cfg in chain(match['cfg'][0], match['cfg'][1]):
+                tabs = abs(np.array(cfg['tapeheat']))
+                tf = interp1d(xrange(len(tabs)), tabs)
+                tapes[i, :] += tf(np.linspace(0, len(tabs)-1, N))
+                tapecount[i] += 1
+
+    tapes /= tapecount
+
+    plt.subplots_adjust(.08, .08, .92, .92)
+    plt.semilogy(np.linspace(0, 1, N), tapes[ordr[:7],:].T)
+
+    plt.xticks([0, 1], ['home', 'opp. flag'])
+    plt.ylabel('average number of cycles')
+    plt.legend([proglist[i] for i in ordr[:7]], loc='upper center')
+
 # single-program plots
 
 def plot_ptapeabs(pn, p):
@@ -231,6 +254,38 @@ def plot_ptapemax(pn, p):
             tapecount[len(tabs)-MINTAPE] += 1
 
     tapes /= tapecount
+
+    for tlen in xrange(MINTAPE, MAXTAPE):
+        tapes[tlen-MINTAPE, tlen:] = np.nan
+    tapes = ma.masked_invalid(tapes)
+
+    plt.subplots_adjust(.08, .08, .98, .92)
+    plt.pcolor(tapes, cmap=cmap)
+    plt.colorbar()
+
+    plt.xticks(np.array([1]+range(MINTAPE, MAXTAPE+1, 10))-0.5, ['Home']+[repr(x) for x in xrange(MINTAPE, MAXTAPE+1, 10)])
+    plt.xlim(0, MAXTAPE)
+    plt.yticks(np.array(xrange(NTAPES))+.5, [repr(x) for x in xrange(MINTAPE,MAXTAPE+1)])
+    plt.ylim(0, NTAPES)
+    plt.ylabel('Tape length')
+
+    plt.gca().set_yticks(xrange(NTAPES+1), minor=True)
+    plt.grid(True, which='minor', linestyle='-', color='k')
+
+def plot_ptapeheat(pn, p):
+    tapes = np.zeros((NTAPES, MAXTAPE))
+    tapecount = np.zeros((NTAPES, 1))
+
+    for match in p.itervalues():
+        for cfg in chain(match['cfg'][0], match['cfg'][1]):
+            tabs = np.array(cfg['tapeheat'])
+            tapes[len(tabs)-MINTAPE, 0:len(tabs)] += tabs
+            tapecount[len(tabs)-MINTAPE] += 1
+
+    tapes /= tapecount
+
+    tapes[tapes == 0] = 0.001
+    tapes = np.log10(tapes)
 
     for tlen in xrange(MINTAPE, MAXTAPE):
         tapes[tlen-MINTAPE, tlen:] = np.nan
@@ -359,6 +414,13 @@ programs, averaged over all opponents, tape lengths and polarities.
 See per-program statistics for single-program per-tape-length tables.
 ''')
 
+index.write('      <hr class="midplot" />\n')
+
+linkplot('tapeheat', plot_tapeheat, '''
+Number of cycles spent in a particular area of the tape, as seen from
+the viewpoint of the 7 best programs, averaged over all matches.
+''')
+
 index.write('    </div>\n')
 
 # random tournament-wide statistics
@@ -398,6 +460,14 @@ program executed a &lt; or a &gt; to move away from the cell.  In some
 cases this corresponds to set decoys and such; but do note that this
 will copy whatever structures the opponent program has made on the
 tape, if this program passes over it.
+''', i)
+
+    index.write('      <hr class="midplot" />\n')
+
+    linkplot('ptapeheat', plot_ptapeheat, '''
+Number of cycles the program's tape head has spent in a particular cell,
+averaged over all duels with the same tape length.  The color bar scale
+is logarithmic: value of x denotes 10<sup>x</sup> cycles.
 ''', i)
 
     index.write('    </div>\n')
