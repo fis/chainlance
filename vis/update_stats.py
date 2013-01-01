@@ -212,7 +212,6 @@ def plot_pscores(pn, p):
     plt.pcolor(pscores, cmap=cmap)
 
     plt.xticks([0.5,NTAPES-0.5,NTAPES+1.5,2*NTAPES+0.5], [MINTAPE,MAXTAPE,MINTAPE,MAXTAPE])
-    # plt.xticks(np.arange(NTAPES)+0.5, [repr(x) for x in xrange(MINTAPE, MAXTAPE+1)])
     plt.yticks(np.arange(nprogs)+0.5, opps)
 
     plt.gca().set_xticks(np.arange(1, 2*NTAPES+1), minor=True)
@@ -222,27 +221,6 @@ def plot_pscores(pn, p):
     plt.xlim(0, 2*NTAPES+1)
     plt.ylim(0, nprogs-1)
     plt.clim(-1, 1)
-    # plt.colorbar()
-
-    # tlpoints = np.zeros((nprogs, NTAPES))
-    # for tl in xrange(NTAPES):
-    #     tlpoints[:,tl] = scores[:,tl::NTAPES].sum(1)
-    # tlpoints /= 2
-
-    # plt.subplots_adjust(.3, .05, .95, .95)
-    # plt.pcolor(tlpoints[ordr[::-1],:], cmap=cmap)
-
-    # plt.xticks(np.arange(NTAPES)+0.5, [repr(x) for x in xrange(MINTAPE, MAXTAPE+1)])
-    # plt.yticks(np.arange(nprogs)+0.5, proglist[ordr[::-1]])
-
-    # plt.gca().set_xticks(np.arange(1, NTAPES), minor=True)
-    # plt.gca().set_yticks(np.arange(1, nprogs), minor=True)
-    # plt.grid(True, which='minor', linestyle='-', color='k')
-
-    # plt.xlim(0, NTAPES)
-    # plt.ylim(0, nprogs)
-    # plt.clim(-(nprogs-1), nprogs-1)
-    # plt.colorbar()
 
 def plot_ptapeavg(pn, p, key, logc=False):
     tapes = np.zeros((NTAPES, MAXTAPE))
