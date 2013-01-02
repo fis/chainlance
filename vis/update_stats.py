@@ -15,8 +15,9 @@ import numpy as np
 import numpy.ma as ma
 import scipy.cluster.hierarchy as clust
 from scipy.interpolate import interp1d
+import scipy.spatial.distance as distance
 
-ONLYPLOT = 'pscores' # use None to draw all, 'foo' to update only plot foo
+ONLYPLOT = 'heatpca' # use None to draw all, 'foo' to update only plot foo
 
 # import the data
 
@@ -52,6 +53,42 @@ ordr = sorted(xrange(nprogs), key=lambda i: tscores[i], reverse=True)
 iordr = range(nprogs)
 for i in xrange(nprogs):
     iordr[ordr[i]] = i
+
+# generate tape heatmap based features for plots that need those
+
+heatfeats = None
+def need_heatfeats():
+    global heatfeats
+
+    # calculate feature vector element indices of different tape lengths
+
+    tapesum = np.arange(MINTAPE,MAXTAPE+1).sum()
+    tapeidx = dict()
+    i = 0
+    for tapelen in xrange(MINTAPE, MAXTAPE+1):
+        tapeidx[tapelen] = i
+        i += tapelen
+
+    # compute the raw feature vectors
+
+    heatfeats = np.zeros((nprogs, 2*tapesum))
+
+    for i, pn in enumerate(proglist):
+        for match in progs[pn].itervalues():
+            for cfg in match['cfg'][0]:
+                tapelen = len(cfg['tape'])
+                heatfeats[i, tapeidx[tapelen]:tapeidx[tapelen]+tapelen] += cfg['tapeheat']
+            for cfg in match['cfg'][1]:
+                tapelen = len(cfg['tape'])
+                heatfeats[i, tapesum+tapeidx[tapelen]:tapesum+tapeidx[tapelen]+tapelen] += cfg['tapeheat']
+
+    # normalize each tape length / polarity separately
+
+    for tapelen in xrange(MINTAPE, MAXTAPE+1):
+        for offset in (0, tapesum):
+            t = heatfeats[:,offset+tapeidx[tapelen]:offset+tapeidx[tapelen]+tapelen].sum(1)
+            t[t == 0] = 1
+            heatfeats[:,offset+tapeidx[tapelen]:offset+tapeidx[tapelen]+tapelen] /= t.reshape((nprogs,1))
 
 # prepare our custom colormap
 
@@ -123,7 +160,9 @@ def plot_lenscore():
     for prog, nfo in proginfo.iteritems():
         lens[progmap[prog]] = nfo['len']
 
-    plt.semilogx(lens, tscores, 'bo')
+    plt.semilogx(lens, tscores, 'bo', alpha=0.2)
+    for p in xrange(nprogs):
+        plt.annotate(repr(iordr[p]+1), (lens[p], tscores[p]), ha='center', va='center')
     plt.xlabel('Program size in ops')
     plt.ylabel('Tournament score')
 
@@ -194,6 +233,29 @@ def plot_tapeabs():
 
 def plot_tapeheat():
     plot_tapeavg('tapeheat', 'average number of cycles', logy=True, lpos='upper center')
+
+def plot_heatpca():
+    need_heatfeats()
+    feats = np.copy(heatfeats)
+    feats -= feats.mean(0)
+    feats /= feats.std(0)
+    svd_u, svd_d, svd_v = np.linalg.svd(feats)
+    svd_p = svd_v.T[:, 0:2]
+    svd_t = np.dot(feats, svd_p)
+    plt.plot(svd_t[:,0], svd_t[:,1], 'bo', alpha=0.2)
+    for p in xrange(nprogs):
+        plt.annotate(repr(iordr[p]+1), svd_t[p,0:2], ha='center', va='center')
+    plt.xlabel('First principal component')
+    plt.ylabel('Second principal component')
+
+def plot_heatclust():
+    need_heatfeats()
+
+    plt.subplots_adjust(0, .05, .7, 1)
+
+    dist = distance.pdist(heatfeats)
+    l = clust.linkage(dist, method='average')
+    clust.dendrogram(l, orientation='right', count_sort=True, labels=proglist, leaf_rotation=0)
 
 # single-program plots
 
@@ -379,6 +441,22 @@ index.write('      <hr class="midplot" />\n')
 linkplot('tapeheat', plot_tapeheat, '''
 Number of cycles spent in a particular area of the tape, as seen from
 the viewpoint of the 7 best programs, averaged over all matches.
+''')
+
+index.write('      <hr class="midplot" />\n')
+
+linkplot('heatpca', plot_heatpca, '''
+PCA projection of the programs' tape heatmap signatures.  The original
+vectors used are normalized (sum-to-1) average tape heatmaps across
+all duels with a particular tape-length/polarity configuration, i.e.
+840-dimensional features.  The plot shows the two principal components.
+''')
+
+index.write('      <hr class="midplot" />\n')
+
+linkplot('heatclust', plot_heatclust, '''
+Hierarchical clustering (same settings as before) using Euclidean
+distance between the heatmap signature features from above.
 ''')
 
 index.write('    </div>\n')
