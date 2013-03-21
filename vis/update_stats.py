@@ -17,7 +17,7 @@ import scipy.cluster.hierarchy as clust
 from scipy.interpolate import interp1d
 import scipy.spatial.distance as distance
 
-ONLYPLOT = 'heatpca' # use None to draw all, 'foo' to update only plot foo
+ONLYPLOT = None # use None to draw all, 'foo' to update only plot foo
 
 # import the data
 
@@ -290,7 +290,7 @@ def plot_ptapeavg(pn, p, key, logc=False):
 
     for match in p.itervalues():
         for cfg in chain(match['cfg'][0], match['cfg'][1]):
-            tabs = np.array(cfg[key])
+            tabs = abs(np.array(cfg[key]))
             tapes[len(tabs)-MINTAPE, 0:len(tabs)] += tabs
             tapecount[len(tabs)-MINTAPE] += 1
 
