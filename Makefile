@@ -7,10 +7,10 @@ chainlance: chainlance.c
 
 cranklance: cranklance.c parser.c parser.h
 #	gcc -o cranklance -std=gnu99 -g -O0 -Wall cranklance.c
-	gcc -o cranklance -std=gnu99 -O2 -flto -march=native -Wall cranklance.c parser.c
+	gcc -o cranklance -std=gnu99 -O2 -fwhole-program -march=native -Wall cranklance.c
 
 gearlance: gearlance.c parser.c parser.h
-	gcc -o gearlance -std=gnu99 -O2 -flto -march=native -Wall cranklance.c parser.c
+	gcc -o gearlance -std=gnu99 -O2 -fwhole-program -march=native -Wall gearlance.c
 
 clean:
 	$(RM) chainlance cranklance gearlance

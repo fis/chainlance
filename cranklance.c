@@ -419,3 +419,5 @@ op_irep2B:
 op_doneA:
 	goto *opcB[ipB];
 }
+
+#include "parser.c"
