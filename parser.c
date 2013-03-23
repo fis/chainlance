@@ -48,6 +48,10 @@
 char fail_msg[256];
 jmp_buf fail_buf;
 
+/* forced repetition count for empty loops.
+   (0 and 1 are sensible values.) */
+#define EMPTY_LOOP_COUNT 0
+
 /* parsing and preprocessing, impl */
 
 struct oplist *readops(int fd)
@@ -275,11 +279,11 @@ void cleanrep(struct oplist *ops)
 				int rep1 = op->inner, inner1 = at, inner2 = op->match, rep2 = ops->ops[op->inner].match;
 				ops->ops[rep1].match = inner1;
 				ops->ops[rep1].inner = -1;
-				ops->ops[rep1].count = 0;
+				ops->ops[rep1].count = EMPTY_LOOP_COUNT;
 				ops->ops[inner1].type = OP_REP2;
 				ops->ops[inner1].match = rep1;
 				ops->ops[inner1].inner = -1;
-				ops->ops[inner1].count = 0;
+				ops->ops[inner1].count = EMPTY_LOOP_COUNT;
 				ops->ops[inner2].type = OP_REP1;
 				ops->ops[inner2].match = rep2;
 				ops->ops[inner2].inner = -1;
@@ -306,10 +310,10 @@ void cleanrep(struct oplist *ops)
 				ops->ops[inner2].type = OP_REP1;
 				ops->ops[inner2].match = rep2;
 				ops->ops[inner2].inner = -1;
-				ops->ops[inner2].count = 0;
+				ops->ops[inner2].count = EMPTY_LOOP_COUNT;
 				ops->ops[rep2].match = inner2;
 				ops->ops[rep2].inner = -1;
-				ops->ops[rep2].count = 0;
+				ops->ops[rep2].count = EMPTY_LOOP_COUNT;
 			}
 			break;
 		}
@@ -322,11 +326,12 @@ void cleanrep(struct oplist *ops)
 	{
 		struct op *op = &ops->ops[at];
 
-		if (op->type == OP_REP1 && op->count == 0)
+		if ((op->type == OP_REP1 || op->type == OP_INNER2) && op->count == 0)
 		{
-			ops->len -= op->match - at + 1; /* fixup length */
-			at = op->match;                 /* skip the loop */
-			to--;                           /* don't copy anything */
+			int del_to = op->inner == -1 ? op->match : op->inner;
+			ops->len -= del_to - at + 1; /* fixup length */
+			at = del_to;                 /* skip the loop */
+			to--;                        /* don't copy anything */
 		}
 		else if (to < at)
 		{
