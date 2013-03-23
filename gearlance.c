@@ -87,7 +87,11 @@ int main(int argc, char *argv[])
 	for (int at = 0; at < opsA->len; at++)
 	{
 		struct op *op = &opsA->ops[at];
-		printf("%3d:  %c  (%-2d  {%-2d  *%-2d\n", at, opchars[op->type], op->match, op->inner, op->count);
+		printf("%3d:  %c  ", at, opchars[op->type]);
+		if (op->match != -1) printf("(%-2d  ", op->match); else printf("     ");
+		if (op->inner != -1) printf("{%-2d  ", op->inner); else printf("     ");
+		if (op->count != -1) printf("*%d", op->count);
+		printf("\n");
 	}
 	return 0;
 #endif

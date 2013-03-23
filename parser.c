@@ -250,7 +250,72 @@ void matchrep(struct oplist *ops)
 
 void cleanrep(struct oplist *ops)
 {
-	/* clean out (...)*0 and ()*N */
+	/* turn contentless loops into *0's.
+	   transform ({a}b)%N to ()*0a(b)*N.
+	   transform (a{b})%N to (a)*Nb()*0. */
+
+	int last_real = -1;
+
+	for (int at = 0; at < ops->len; at++)
+	{
+		struct op *op = &ops->ops[at];
+		switch (op->type)
+		{
+		case OP_INC: case OP_DEC: case OP_LEFT: case OP_RIGHT:
+		case OP_LOOP1: case OP_LOOP2: case OP_WAIT:
+			last_real = at;
+			break;
+		case OP_REP1: case OP_INNER2:
+			/* no action */
+			break;
+		case OP_INNER1:
+			if (last_real < op->inner)
+			{
+				/* empty ({ part */
+				int rep1 = op->inner, inner1 = at, inner2 = op->match, rep2 = ops->ops[op->inner].match;
+				ops->ops[rep1].match = inner1;
+				ops->ops[rep1].inner = -1;
+				ops->ops[rep1].count = 0;
+				ops->ops[inner1].type = OP_REP2;
+				ops->ops[inner1].match = rep1;
+				ops->ops[inner1].inner = -1;
+				ops->ops[inner1].count = 0;
+				ops->ops[inner2].type = OP_REP1;
+				ops->ops[inner2].match = rep2;
+				ops->ops[inner2].inner = -1;
+				ops->ops[rep2].match = inner2;
+				ops->ops[rep2].inner = -1;
+			}
+			break;
+		case OP_REP2:
+			if (op->inner == -1 && last_real < op->match)
+			{
+				/* empty () loop */
+				op->count = 0;
+				ops->ops[op->match].count = 0;
+			}
+			else if (op->inner != -1 && last_real < op->inner)
+			{
+				/* empty }) part */
+				int rep1 = op->match, inner1 = ops->ops[op->inner].match, inner2 = op->inner, rep2 = at;
+				ops->ops[rep1].match = inner1;
+				ops->ops[rep1].inner = -1;
+				ops->ops[inner1].type = OP_REP2;
+				ops->ops[inner1].match = rep1;
+				ops->ops[inner1].inner = -1;
+				ops->ops[inner2].type = OP_REP1;
+				ops->ops[inner2].match = rep2;
+				ops->ops[inner2].inner = -1;
+				ops->ops[inner2].count = 0;
+				ops->ops[rep2].match = inner2;
+				ops->ops[rep2].inner = -1;
+				ops->ops[rep2].count = 0;
+			}
+			break;
+		}
+	}
+
+	/* clean out (...)*0 loops */
 
 	for (int at = 0; at < ops->len; at++)
 	{
@@ -261,8 +326,6 @@ void cleanrep(struct oplist *ops)
 			at--;
 		}
 	}
-
-	/* TODO: clean ()*N with a multipass thing */
 }
 
 void matchloop(struct oplist *ops)
