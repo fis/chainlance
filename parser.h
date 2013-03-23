@@ -87,7 +87,6 @@ int sopen(const char *fname);
 struct oplist *opl_new(void);
 void opl_free(struct oplist *o);
 void opl_append(struct oplist *o, enum optype type);
-void opl_del(struct oplist *o, int start, int end);
 
 /* parsing and preprocessing */
 

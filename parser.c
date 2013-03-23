@@ -317,13 +317,24 @@ void cleanrep(struct oplist *ops)
 
 	/* clean out (...)*0 loops */
 
-	for (int at = 0; at < ops->len; at++)
+	int orig_len = ops->len;
+	for (int at = 0, to = 0; at < orig_len; at++, to++)
 	{
 		struct op *op = &ops->ops[at];
+
 		if (op->type == OP_REP1 && op->count == 0)
 		{
-			opl_del(ops, at, op->match+1);
-			at--;
+			ops->len -= op->match - at + 1; /* fixup length */
+			at = op->match;                 /* skip the loop */
+			to--;                           /* don't copy anything */
+		}
+		else if (to < at)
+		{
+			if (op->match != -1)
+				ops->ops[op->match].match = to;
+			if (op->inner != -1)
+				ops->ops[op->inner].inner = to;
+			ops->ops[to] = *op;
 		}
 	}
 }
@@ -428,31 +439,6 @@ void opl_append(struct oplist *o, enum optype type)
 	o->ops[o->len].inner = -1;
 	o->ops[o->len].count = -1;
 	o->len++;
-}
-
-void opl_del(struct oplist *o, int start, int end)
-{
-	int d = end - start;
-	if (!d)
-		return;
-
-	if (end == o->len)
-	{
-		o->len = start;
-		return;
-	}
-
-	memmove(&o->ops[start], &o->ops[end], (o->len - end) * sizeof *o->ops);
-	o->len -= d;
-
-	for (int at = 0; at < o->len; at++)
-	{
-		struct op *op = &o->ops[at];
-		if (op->match >= start && op->match < end) die("opl_del: dangling ->match");
-		if (op->inner >= start && op->inner < end) die("opl_del: dangling ->inner");
-		if (op->match >= end) op->match -= d;
-		if (op->inner >= end) op->inner -= d;
-	}
 }
 
 /* generic helpers, impl */
