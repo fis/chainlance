@@ -46,7 +46,21 @@
 
 /* #define TRACE 1 */
 
+#ifdef CRANK_IT
+#define CRANK(x) x
+#else
+#define CRANK(x) /* no action */
+#endif
+
 static int scores[2][MAXTAPE+1];
+
+#ifdef CRANK_IT
+static struct {
+	long long cycles;
+} stats = {
+	.cycles = 0
+};
+#endif
 
 /* actual interpretation */
 
@@ -76,7 +90,7 @@ int main(int argc, char *argv[])
 
 	struct oplist *opsA = parse(fdA), *opsB = parse(fdB);
 
-	/* for debuggin purposes, dump out the parse */
+	/* for debugging purposes, dump out the parse */
 
 #if 0
 	unsigned char opchars[] = {
@@ -102,6 +116,8 @@ int main(int argc, char *argv[])
 
 	/* summarize results */
 
+	CRANK(printf("SUMMARY: "));
+
 	int score = 0;
 
 	for (int pol = 0; pol < 2; pol++)
@@ -114,7 +130,11 @@ int main(int argc, char *argv[])
 		putchar(' ');
 	}
 
+#ifdef CRANK_IT
+	printf("%d c%lld sl%d sr%d\n", score, stats.cycles, opsA->len, opsB->len);
+#else
 	printf("%d\n", score);
+#endif
 
 	opl_free(opsA);
 	opl_free(opsB);
@@ -189,6 +209,11 @@ static void run(struct oplist *opsA, struct oplist *opsB)
 
 	static int repStackA[MAXNEST], repStackB[MAXNEST];
 
+#ifdef CRANK_IT
+	static unsigned tapestats[2][MAXTAPE];
+	static unsigned char tapemax[2][MAXTAPE];
+#endif
+
 	int ipA = 0, ipB = 0;
 	unsigned char *ptrA = 0, *ptrB = 0, bcache = 0;
 	int repA = 0, repB = 0, *repSA = 0, *repSB = 0;
@@ -196,7 +221,23 @@ static void run(struct oplist *opsA, struct oplist *opsB)
 	int cycles = 0;
 	int score = 0;
 
-	/* execute with all tape lenghts and both relative polarities */
+	/* execute with all tape lengths and both relative polarities */
+
+#ifdef CRANK_IT
+#define EXECUTE_STATS(pol)	  \
+	stats.cycles += (MAXCYCLES - cycles); \
+	printf("CYCLES[%d,%d] = %d\n", pol, tapesize, MAXCYCLES - cycles); \
+	  \
+	printf("TAPEABS[%d,%d] =", pol, tapesize); \
+	for (int p = 0; p < tapesize; p++) printf(" %d", tape[p] >= 128 ? tape[p]-256 : tape[p]); \
+	printf("\n"); \
+	printf("TAPEMAX[%d,%d] =", pol, tapesize); \
+	for (int p = 0; p < tapesize; p++) printf(" %u/%u", tapemax[0][p], tapemax[1][p]); \
+	printf("\n"); \
+	printf("TAPEHEAT[%d,%d] =", pol, tapesize); \
+	for (int p = 0; p < tapesize; p++) printf(" %u/%u", tapestats[0][p], tapestats[1][p]); \
+	printf("\n")
+#endif
 
 #define EXECUTE_ALL(sym, pol)	  \
 	ret = &&sym; \
@@ -212,11 +253,14 @@ static void run(struct oplist *opsA, struct oplist *opsB)
 		deathsA = 0, deathsB = 0; \
 	  \
 		cycles = MAXCYCLES; \
+		CRANK(memset(tapestats, 0, sizeof tapestats)); \
+		CRANK(memset(tapemax, 0, sizeof tapemax)); \
 	  \
 		score = 0; \
 		goto *opcA[0]; \
 	sym: \
 		scores[pol][tapesize] = score; \
+		CRANK(EXECUTE_STATS(pol)); \
 	}
 
 	void *ret;
@@ -274,6 +318,11 @@ nextcycle:
 		goto *ret;
 	}
 
+#ifdef CRANK_IT
+	tapestats[0][ptrA-tape]++;
+	tapestats[1][ptrB-tape]++;
+#endif
+
 	if (!cycles)
 		goto *ret;
 
@@ -304,19 +353,29 @@ op_decB:
 	(*ptrB)--;
 	NEXTB;
 
+#ifdef CRANK_IT
+#define MAXSTAT(ptr,i)	  \
+	if (*ptr >= 128) { if (256-*ptr > tapemax[i][ptr-tape]) tapemax[i][ptr-tape] = 256-*ptr; } \
+	else { if (*ptr > tapemax[i][ptr-tape]) tapemax[i][ptr-tape] = *ptr; }
+#endif
+
 op_leftA:
+	CRANK(MAXSTAT(ptrA, 0));
 	ptrA--;
 	if (ptrA < tape) goto fallA;
 	NEXTA;
 op_leftB:
+	CRANK(MAXSTAT(ptrB, 1));
 	ptrB++;
 	if (ptrB >= &tape[tapesize]) goto fallB;
 	NEXTB;
 op_rightA:
+	CRANK(MAXSTAT(ptrA, 0));
 	ptrA++;
 	if (ptrA >= &tape[tapesize]) goto fallA;
 	NEXTA;
 op_rightB:
+	CRANK(MAXSTAT(ptrB, 1));
 	ptrB--;
 	if (ptrB < tape) goto fallB;
 	NEXTB;
