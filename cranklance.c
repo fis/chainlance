@@ -45,7 +45,7 @@
 
 /* #define TRACE 1 */
 
-static int scores[2][MAXTAPE];
+static int scores[2][MAXTAPE+1];
 
 static struct {
 	long long cycles;
