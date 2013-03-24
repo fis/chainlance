@@ -1,7 +1,20 @@
 /*
- * cranklance bfjoust interpreter; based on chainlance.
+ * genelance bfjoust interpreter; based on gearlance, itself based on
+ * cranklance, itself based on chainlance.
  *
- * Copyright 2011-2013 Heikki Kallasjoki. All rights reserved.
+ * This one is meant for people writing bfjoust evolvers.  You invoke
+ * it as "./genelance prog1 prog2 prog3 ...", where the programs are
+ * your evaluation opponents.  They will be parsed and "precompiled"
+ * in advance.  After that, the program reads a single (nl-terminated)
+ * bfjoust program from stdin, and prints out its fitness.  This
+ * continues until EOF or an empty program.  The output will have the
+ * form "N D1,D2,D3,..." where N is the total points (integer ranging
+ * from -M*42 to M*42, where M is the number of evaluation opponents)
+ * and D1,D2,D3,... the individual points (integers from -42 to 42)
+ * against a particular program, if you want to weight them
+ * differently.
+ *
+ * Copyright 2013 Heikki Kallasjoki. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -47,15 +60,9 @@
 
 static int scores[2][MAXTAPE+1];
 
-static struct {
-	long long cycles;
-} stats = {
-	.cycles = 0
-};
-
 /* actual interpretation */
 
-static void run(struct oplist *opsA, struct oplist *opsB);
+static void run(int nprogs, struct oplist **hill);
 
 /* main application */
 
@@ -63,15 +70,15 @@ int main(int argc, char *argv[])
 {
 	/* check args */
 
-	if (argc != 3)
+	if (argc < 2)
 	{
-		fprintf(stderr, "usage: %s prog1.bfjoust prog2.bfjoust\n", argv[0]);
+		fprintf(stderr, "usage: %s prog1.bfjoust prog2.bfjoust ...\n", argv[0]);
 		return 1;
 	}
 
-	/* parse competitors */
+	/* parse the hill */
 
-	int fdA = sopen(argv[1]), fdB = sopen(argv[2]);
+	int nprogs = argc - 1;
 
 	if (setjmp(fail_buf))
 	{
@@ -79,32 +86,17 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	struct oplist *opsA = parse(fdA), *opsB = parse(fdB);
+	struct oplist **hill = smalloc(nprogs * sizeof *hill);
 
-	/* run them */
-
-	run(opsA, opsB);
-
-	/* summarize results */
-
-	printf("SUMMARY: ");
-
-	int score = 0;
-
-	for (int pol = 0; pol < 2; pol++)
+	for (int i = 0; i < nprogs; i++)
 	{
-		for (int tlen = MINTAPE; tlen <= MAXTAPE; tlen++)
-		{
-			putchar(scores[pol][tlen] ? (scores[pol][tlen] > 0 ? '<' : '>') : 'X');
-			score += scores[pol][tlen];
-		}
-		putchar(' ');
+		int fd = sopen(argv[1+i]);
+		hill[i] = parse(fd);
 	}
 
-	printf("%d c%lld sl%d sr%d\n", score, stats.cycles, opsA->len, opsB->len);
+	/* run the loop */
 
-	opl_free(opsA);
-	opl_free(opsB);
+	run(nprogs, hill);
 
 	return 0;
 }
@@ -113,39 +105,63 @@ int main(int argc, char *argv[])
 
 static unsigned char tape[MAXTAPE];
 
-static void run(struct oplist *opsA, struct oplist *opsB)
+static void run(int nprogs, struct oplist **hill)
 {
-	struct op *oplA = opsA->ops, *oplB = opsB->ops;
+	/* make opcode lists for all the hill programs */
 
-	/* convert opcode types into pointers for both progs */
+	void ***hillopc = smalloc(nprogs * sizeof *hillopc);
 
-	void **opcA = smalloc((opsA->len+1) * sizeof *opcA);
-	void **opcB = smalloc((opsB->len+1) * sizeof *opcB);
-
-	for (int at = 0; at < opsA->len; at++)
+	for (int i = 0; i < nprogs; i++)
 	{
-		struct op *op = &oplA[at];
-		void **opc = &opcA[at];
-		switch (op->type)
+		struct oplist *opsA = hill[i];
+		struct op *oplA = opsA->ops;
+		void **opcA = smalloc((opsA->len+1) * sizeof *opcA);
+		hillopc[i] = opcA;
+
+		for (int at = 0; at < opsA->len; at++)
 		{
-		case OP_INC:    *opc = &&op_incA;    break;
-		case OP_DEC:    *opc = &&op_decA;    break;
-		case OP_LEFT:   *opc = &&op_leftA;   break;
-		case OP_RIGHT:  *opc = &&op_rightA;  break;
-		case OP_WAIT:   *opc = &&op_waitA;   break;
-		case OP_LOOP1:  *opc = &&op_loop1A;  break;
-		case OP_LOOP2:  *opc = &&op_loop2A;  break;
-		case OP_REP1:   *opc = &&op_rep1A;   break;
-		case OP_REP2:
-			if (op->inner != -1) *opc = &&op_irep2A;
-			else                 *opc = &&op_rep2A;
-			break;
-		case OP_INNER1: *opc = &&op_inner1A; break;
-		case OP_INNER2: *opc = &&op_inner2A; break;
+			struct op *op = &oplA[at];
+			void **opc = &opcA[at];
+			switch (op->type)
+			{
+			case OP_INC:    *opc = &&op_incA;    break;
+			case OP_DEC:    *opc = &&op_decA;    break;
+			case OP_LEFT:   *opc = &&op_leftA;   break;
+			case OP_RIGHT:  *opc = &&op_rightA;  break;
+			case OP_WAIT:   *opc = &&op_waitA;   break;
+			case OP_LOOP1:  *opc = &&op_loop1A;  break;
+			case OP_LOOP2:  *opc = &&op_loop2A;  break;
+			case OP_REP1:   *opc = &&op_rep1A;   break;
+			case OP_REP2:
+				if (op->inner != -1) *opc = &&op_irep2A;
+				else                 *opc = &&op_rep2A;
+				break;
+			case OP_INNER1: *opc = &&op_inner1A; break;
+			case OP_INNER2: *opc = &&op_inner2A; break;
+			}
 		}
+
+		opcA[opsA->len] = &&op_doneA;
 	}
 
-	opcA[opsA->len] = &&op_doneA;
+	int *dscores = smalloc(nprogs * sizeof *dscores);
+
+outer: ;
+
+	/* slurp in a program */
+
+	struct oplist *challenger = parse(0);
+	if (challenger->len == 0)
+	{
+		opl_free(challenger);
+		return;
+	}
+
+	/* convert opcode types into pointers for challenger */
+
+	struct oplist *opsB = challenger;
+	struct op *oplB = opsB->ops;
+	void **opcB = smalloc((opsB->len+1) * sizeof *opcB);
 
 	for (int at = 0; at < opsB->len; at++)
 	{
@@ -172,12 +188,36 @@ static void run(struct oplist *opsA, struct oplist *opsB)
 
 	opcB[opsB->len] = &&nextcycle; /* a slight shortcut */
 
+	/* run against all the hill members */
+
+	int hill_opponent = 0;
+
+inner:
+	if (hill_opponent == nprogs)
+	{
+		/* all done, clean up and compute final fitness */
+
+		opl_free(opsB);
+		free(opcB);
+
+		int total = 0;
+		for (int i = 0; i < nprogs; i++)
+			total += dscores[i];
+
+		printf("%d", total);
+		for (int i = 0; i < nprogs; i++)
+			printf("%c%d", i == 0 ? ' ' : ',', dscores[i]);
+		printf("\n");
+
+		goto outer;
+	}
+
+	struct op *oplA = hill[hill_opponent]->ops;
+	void **opcA = hillopc[hill_opponent];
+
 	/* state-holding variables */
 
 	static int repStackA[MAXNEST], repStackB[MAXNEST];
-
-	static unsigned tapestats[2][MAXTAPE];
-	static unsigned char tapemax[2][MAXTAPE];
 
 	int ipA = 0, ipB = 0;
 	unsigned char *ptrA = 0, *ptrB = 0, bcache = 0;
@@ -186,7 +226,7 @@ static void run(struct oplist *opsA, struct oplist *opsB)
 	int cycles = 0;
 	int score = 0;
 
-	/* execute with all tape lenghts and both relative polarities */
+	/* execute with all tape lengths and both relative polarities */
 
 #define EXECUTE_ALL(sym, pol)	  \
 	ret = &&sym; \
@@ -202,26 +242,11 @@ static void run(struct oplist *opsA, struct oplist *opsB)
 		deathsA = 0, deathsB = 0; \
 	  \
 		cycles = MAXCYCLES; \
-		memset(tapestats, 0, sizeof tapestats); \
-		memset(tapemax, 0, sizeof tapemax); \
 	  \
 		score = 0; \
 		goto *opcA[0]; \
 	sym: \
 		scores[pol][tapesize] = score; \
-	  \
-		stats.cycles += (MAXCYCLES - cycles); \
-		printf("CYCLES[%d,%d] = %d\n", pol, tapesize, MAXCYCLES - cycles); \
-	  \
-		printf("TAPEABS[%d,%d] =", pol, tapesize); \
-		for (int p = 0; p < tapesize; p++) printf(" %d", tape[p] >= 128 ? tape[p]-256 : tape[p]); \
-		printf("\n"); \
-		printf("TAPEMAX[%d,%d] =", pol, tapesize); \
-		for (int p = 0; p < tapesize; p++) printf(" %u/%u", tapemax[0][p], tapemax[1][p]); \
-		printf("\n"); \
-		printf("TAPEHEAT[%d,%d] =", pol, tapesize); \
-		for (int p = 0; p < tapesize; p++) printf(" %u/%u", tapestats[0][p], tapestats[1][p]); \
-		printf("\n"); \
 	}
 
 	void *ret;
@@ -238,9 +263,20 @@ static void run(struct oplist *opsA, struct oplist *opsB)
 
 	EXECUTE_ALL(done_flipped, 1);
 
-	free(opcA);
-	free(opcB);
-	return;
+	/* update score, go to next program */
+
+	int dscore = 0;
+
+	for (int pol = 0; pol < 2; pol++)
+	{
+		for (int tlen = MINTAPE; tlen <= MAXTAPE; tlen++)
+			dscore -= scores[pol][tlen]; /* scores in terms of A */
+	}
+
+	dscores[hill_opponent] = dscore;
+
+	hill_opponent++;
+	goto inner;
 
 	/* actual core */
 
@@ -279,9 +315,6 @@ nextcycle:
 		goto *ret;
 	}
 
-	tapestats[0][ptrA-tape]++;
-	tapestats[1][ptrB-tape]++;
-
 	if (!cycles)
 		goto *ret;
 
@@ -312,27 +345,19 @@ op_decB:
 	(*ptrB)--;
 	NEXTB;
 
-#define MAXSTAT(ptr,i)	  \
-	if (*ptr >= 128) { if (256-*ptr > tapemax[i][ptr-tape]) tapemax[i][ptr-tape] = 256-*ptr; } \
-	else { if (*ptr > tapemax[i][ptr-tape]) tapemax[i][ptr-tape] = *ptr; }
-
 op_leftA:
-	MAXSTAT(ptrA, 0);
 	ptrA--;
 	if (ptrA < tape) goto fallA;
 	NEXTA;
 op_leftB:
-	MAXSTAT(ptrB, 1);
 	ptrB++;
 	if (ptrB >= &tape[tapesize]) goto fallB;
 	NEXTB;
 op_rightA:
-	MAXSTAT(ptrA, 0);
 	ptrA++;
 	if (ptrA >= &tape[tapesize]) goto fallA;
 	NEXTA;
 op_rightB:
-	MAXSTAT(ptrB, 1);
 	ptrB--;
 	if (ptrB < tape) goto fallB;
 	NEXTB;
@@ -404,4 +429,5 @@ op_doneA:
 	goto *opcB[ipB];
 }
 
+#define PARSE_NEWLINE_AS_EOF 1
 #include "parser.c"

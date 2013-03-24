@@ -2,7 +2,7 @@
  * gearlance bfjoust interpreter; based on cranklance, itself based on
  * chainlance.
  *
- * Copyright 2011 Heikki Kallasjoki. All rights reserved.
+ * Copyright 2011-2013 Heikki Kallasjoki. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions

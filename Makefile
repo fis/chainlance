@@ -1,16 +1,15 @@
+LANCES = cranklance gearlance genelance
+
 .PHONY : clean test
 
-all: chainlance cranklance gearlance
+all: chainlance $(LANCES)
 
 chainlance: chainlance.c
 	gcc -o chainlance -std=gnu99 -g -Wall chainlance.c
 
-cranklance: cranklance.c parser.c parser.h
+$(LANCES): %: %.c parser.c parser.h
 #	gcc -o cranklance -std=gnu99 -g -O0 -Wall cranklance.c
-	gcc -o cranklance -std=gnu99 -O2 -fwhole-program -march=native -Wall cranklance.c
-
-gearlance: gearlance.c parser.c parser.h
-	gcc -o gearlance -std=gnu99 -O2 -fwhole-program -march=native -Wall gearlance.c
+	gcc -o $@ -std=gnu99 -O2 -fwhole-program -march=native -Wall $<
 
 clean:
 	$(RM) chainlance cranklance gearlance

@@ -75,6 +75,9 @@ struct oplist *readops(int fd)
 			buf_size = t;
 		}
 
+#ifdef PARSE_NEWLINE_AS_EOF
+		if (buf[buf_at] == '\n') return buf_at++, -1;
+#endif
 		return buf[buf_at++];
 	}
 
@@ -101,6 +104,9 @@ struct oplist *readops(int fd)
 
 	void unc(int c)
 	{
+#ifdef PARSE_NEWLINE_AS_EOF
+		if (c == -1) c = '\n';
+#endif
 		buf[--buf_at] = c;
 	}
 
