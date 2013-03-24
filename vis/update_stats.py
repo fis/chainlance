@@ -341,6 +341,7 @@ def plot(name, plotfn, progidx):
     if progidx is None: plotfn()
     else: plotfn(proglist[progidx], progs[proglist[progidx]])
     savefig(fname, fnametn)
+    plt.close()
     return fname, fnametn
 
 def linkplot(name, plotfn, desc, progidx=None):
