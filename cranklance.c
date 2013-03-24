@@ -81,22 +81,6 @@ int main(int argc, char *argv[])
 
 	struct oplist *opsA = parse(fdA), *opsB = parse(fdB);
 
-	/* for debuggin purposes, dump out the parse */
-
-#if 0
-	unsigned char opchars[] = {
-		[OP_INC] = '+', [OP_DEC] = '-', [OP_LEFT] = '<', [OP_RIGHT] = '>',
-		[OP_WAIT] = '.', [OP_LOOP1] = '[', [OP_LOOP2] = ']',
-		[OP_REP1] = '(', [OP_REP2] = ')', [OP_INNER1] = '{', [OP_INNER2] = '}'
-	};
-	for (int at = 0; at < opsA->len; at++)
-	{
-		struct op *op = &opsA->ops[at];
-		printf("%3d:  %c  (%-2d  {%-2d  *%-2d\n", at, opchars[op->type], op->match, op->inner, op->count);
-	}
-	return 0;
-#endif
-
 	/* run them */
 
 	run(opsA, opsB);
@@ -272,14 +256,14 @@ nextcycle:
 	if (!tape[tapesize-1]) deathsB++; else if (deathsB == 1) deathsB = 0;
 
 #ifdef TRACE
-	printf("%6d: ", MAXCYCLES-cycles);
+	printf("%6d: ", MAXCYCLES-1-cycles);
 	for (int i = 0; i < tapesize; i++)
 		printf("%c%02x ",
 		       (ptrA - tape) == i
 		       ? ((ptrB - tape) == i ? 'X' : 'A')
 		       : ((ptrB - tape) == i ? 'B' : ' '),
 		       tape[i]);
-	printf("  dA %d  dB %d   ipA %d ipB %d\n", deathsA, deathsB, ipA, ipB);
+	printf("  dA %d  dB %d   ipA %d ipB %d   repA %d repB %d\n", deathsA, deathsB, ipA, ipB, repA, repB);
 #endif
 
 	if (deathsA >= 2 && deathsB >= 2)
