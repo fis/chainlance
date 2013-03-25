@@ -209,6 +209,8 @@ inner:
 			printf("%c%d", i == 0 ? ' ' : ',', dscores[i]);
 		printf("\n");
 
+		fflush(stdout);
+
 		goto outer;
 	}
 
@@ -256,9 +258,9 @@ inner:
 
 	for (int at = 0; at < opsB->len; at++)
 	{
-		enum optype op = oplB[at].type;
-		if (op == OP_INC) opcB[at] = &&op_decB;
-		else if (op == OP_DEC) opcB[at] = &&op_incB;
+		void *opc = opcB[at];
+		if (opc == &&op_incB) opcB[at] = &&op_decB;
+		else if (opc == &&op_decB) opcB[at] = &&op_incB;
 	}
 
 	EXECUTE_ALL(done_flipped, 1);
