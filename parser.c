@@ -216,35 +216,42 @@ void matchrep(struct oplist *ops)
 			istack[isdepth++] = at;
 			idepth++;
 			if (idepth > depth) fail("encountered { without suitable enclosing (");
-			op->match = -1;
-			op->inner = stack[depth-idepth];
-			if (ops->ops[op->inner].inner != -1) fail("encountered second { on a same level");
-			ops->ops[op->inner].inner = at;
+			op->match = stack[depth-idepth];
+			op->inner = -1;
+			if (ops->ops[op->match].match != -1) fail("encountered second { on a same level");
+			ops->ops[op->match].type = OP_IREP1;
+			ops->ops[op->match].match = at;
 			break;
 
 		case OP_INNER2:
 			if (!idepth) fail("terminating } without a matching {");
 			idepth--;
 			isdepth--;
-			op->match = istack[isdepth];
-			op->inner = -1;
-			ops->ops[op->match].match = at;
+			op->match = -1;
+			op->inner = istack[isdepth];
+			ops->ops[op->inner].inner = at;
 			break;
 
 		case OP_REP2:
 			if (!depth) fail("terminating ) without a matching (");
 			if (idepth) fail("starting { without a matching }");
 			depth--;
-			op->match = stack[depth];
-			op->inner = (ops->ops[op->match].inner != -1 ? ops->ops[ops->ops[op->match].inner].match : -1);
-			ops->ops[op->match].match = at;
-			ops->ops[op->match].count = op->count;
-			if (op->inner != -1)
+			if (ops->ops[stack[depth]].type == OP_IREP1)
 			{
+				op->type = OP_IREP2;
+				op->inner = stack[depth];
+				op->match = ops->ops[ops->ops[op->inner].match].inner;
 				ops->ops[op->inner].inner = at;
 				ops->ops[op->inner].count = op->count;
 				ops->ops[ops->ops[op->inner].match].count = op->count;
 			}
+			else
+			{
+				op->inner = -1;
+				op->match = stack[depth];
+			}
+			ops->ops[op->match].match = at;
+			ops->ops[op->match].count = op->count;
 			idepth = idstack[depth];
 			break;
 
@@ -275,51 +282,49 @@ void cleanrep(struct oplist *ops)
 		case OP_LOOP1: case OP_LOOP2: case OP_WAIT:
 			last_real = at;
 			break;
-		case OP_REP1: case OP_INNER2:
+		case OP_REP1: case OP_IREP1: case OP_INNER2:
 			/* no action */
 			break;
-		case OP_INNER1:
-			if (last_real < op->inner)
-			{
-				/* empty ({ part */
-				int rep1 = op->inner, inner1 = at, inner2 = op->match, rep2 = ops->ops[op->inner].match;
-				ops->ops[rep1].match = inner1;
-				ops->ops[rep1].inner = -1;
-				ops->ops[rep1].count = EMPTY_LOOP_COUNT;
-				ops->ops[inner1].type = OP_REP2;
-				ops->ops[inner1].match = rep1;
-				ops->ops[inner1].inner = -1;
-				ops->ops[inner1].count = EMPTY_LOOP_COUNT;
-				ops->ops[inner2].type = OP_REP1;
-				ops->ops[inner2].match = rep2;
-				ops->ops[inner2].inner = -1;
-				ops->ops[rep2].match = inner2;
-				ops->ops[rep2].inner = -1;
-			}
-			break;
 		case OP_REP2:
-			if (op->inner == -1 && last_real < op->match)
+			if (last_real < op->match)
 			{
 				/* empty () loop */
 				op->count = 0;
 				ops->ops[op->match].count = 0;
 			}
-			else if (op->inner != -1 && last_real < op->inner)
+			break;
+		case OP_INNER1:
+			if (last_real < op->match)
 			{
-				/* empty }) part */
-				int rep1 = op->match, inner1 = ops->ops[op->inner].match, inner2 = op->inner, rep2 = at;
-				ops->ops[rep1].match = inner1;
+				/* empty ({ part */
+				int rep1 = op->match, inner1 = at, inner2 = op->inner, rep2 = ops->ops[op->match].inner;
+				ops->ops[rep1].type = OP_REP1;
+				ops->ops[rep1].count = EMPTY_LOOP_COUNT;
 				ops->ops[rep1].inner = -1;
 				ops->ops[inner1].type = OP_REP2;
-				ops->ops[inner1].match = rep1;
+				ops->ops[inner1].count = EMPTY_LOOP_COUNT;
 				ops->ops[inner1].inner = -1;
 				ops->ops[inner2].type = OP_REP1;
-				ops->ops[inner2].match = rep2;
 				ops->ops[inner2].inner = -1;
-				ops->ops[inner2].count = EMPTY_LOOP_COUNT;
-				ops->ops[rep2].match = inner2;
+				ops->ops[rep2].type = OP_REP2;
 				ops->ops[rep2].inner = -1;
+			}
+			break;
+		case OP_IREP2:
+			if (last_real < op->match)
+			{
+				/* empty }) part */
+				int rep1 = op->inner, inner1 = ops->ops[op->match].inner, inner2 = op->match, rep2 = at;
+				ops->ops[rep1].type = OP_REP1;
+				ops->ops[rep1].inner = -1;
+				ops->ops[inner1].type = OP_REP2;
+				ops->ops[inner1].inner = -1;
+				ops->ops[inner2].type = OP_REP1;
+				ops->ops[inner2].count = EMPTY_LOOP_COUNT;
+				ops->ops[inner2].inner = -1;
+				ops->ops[rep2].type = OP_REP2;
 				ops->ops[rep2].count = EMPTY_LOOP_COUNT;
+				ops->ops[rep2].inner = -1;
 			}
 			break;
 		}
@@ -332,9 +337,9 @@ void cleanrep(struct oplist *ops)
 	{
 		struct op *op = &ops->ops[at];
 
-		if ((op->type == OP_REP1 || op->type == OP_INNER2) && op->count == 0)
+		if ((op->type == OP_REP1 || op->type == OP_IREP1 || op->type == OP_INNER2) && op->count == 0)
 		{
-			int del_to = op->inner == -1 ? op->match : op->inner;
+			int del_to = op->match;      /* delete this far */
 			ops->len -= del_to - at + 1; /* fixup length */
 			at = del_to;                 /* skip the loop */
 			to--;                        /* don't copy anything */
@@ -373,11 +378,13 @@ void matchloop(struct oplist *ops)
 			break;
 
 		case OP_REP1:
+		case OP_IREP1:
 		case OP_INNER1:
 			idepth++;
 			break;
 
 		case OP_INNER2:
+		case OP_IREP2:
 		case OP_REP2:
 			if (!idepth) fail("[..] crossing out of a ({..}) level");
 			idepth--;

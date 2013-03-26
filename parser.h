@@ -52,14 +52,14 @@ enum optype
 	OP_WAIT,
 	OP_LOOP1, OP_LOOP2,
 	OP_REP1, OP_REP2,
-	OP_INNER1, OP_INNER2
+	OP_IREP1, OP_INNER1, OP_INNER2, OP_IREP2
 };
 
 struct op
 {
 	enum optype type;
-	int match; /* offset of matching delimiter for [({ })] pairs */
-	int inner; /* extra links between matched ( .. { and } .. ) */
+	int match; /* offset of matching delimiter for [] () ({ }) pairs */
+	int inner; /* extra links between matched {} inside () */
 	int count; /* static repetition count for the ({}) instructions */
 };
 

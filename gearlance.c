@@ -96,14 +96,15 @@ int main(int argc, char *argv[])
 	unsigned char opchars[] = {
 		[OP_INC] = '+', [OP_DEC] = '-', [OP_LEFT] = '<', [OP_RIGHT] = '>',
 		[OP_WAIT] = '.', [OP_LOOP1] = '[', [OP_LOOP2] = ']',
-		[OP_REP1] = '(', [OP_REP2] = ')', [OP_INNER1] = '{', [OP_INNER2] = '}'
+		[OP_REP1] = '(', [OP_REP2] = ')',
+		[OP_IREP1] = '(', [OP_INNER1] = '{', [OP_INNER2] = '}', [OP_IREP2] = ')',
 	};
 	for (int at = 0; at < opsA->len; at++)
 	{
 		struct op *op = &opsA->ops[at];
 		printf("%3d:  %c  ", at, opchars[op->type]);
-		if (op->match != -1) printf("(%-2d  ", op->match); else printf("     ");
-		if (op->inner != -1) printf("{%-2d  ", op->inner); else printf("     ");
+		if (op->match != -1) printf("m%-2d  ", op->match); else printf("     ");
+		if (op->inner != -1) printf("i%-2d  ", op->inner); else printf("     ");
 		if (op->count != -1) printf("*%d", op->count);
 		printf("\n");
 	}
@@ -169,12 +170,11 @@ static void run(struct oplist *opsA, struct oplist *opsB)
 		case OP_LOOP1:  *opc = &&op_loop1A;  break;
 		case OP_LOOP2:  *opc = &&op_loop2A;  break;
 		case OP_REP1:   *opc = &&op_rep1A;   break;
-		case OP_REP2:
-			if (op->inner != -1) *opc = &&op_irep2A;
-			else                 *opc = &&op_rep2A;
-			break;
-		case OP_INNER1: *opc = &&op_inner1A; break;
+		case OP_REP2:   *opc = &&op_rep2A;   break;
+		case OP_IREP1:  *opc = &&op_rep1A;   break;
+		case OP_INNER1: *opc = &&op_rep2A;   break;
 		case OP_INNER2: *opc = &&op_inner2A; break;
+		case OP_IREP2:  *opc = &&op_irep2A;  break;
 		}
 	}
 
@@ -194,12 +194,11 @@ static void run(struct oplist *opsA, struct oplist *opsB)
 		case OP_LOOP1:  *opc = &&op_loop1B;  break;
 		case OP_LOOP2:  *opc = &&op_loop2B;  break;
 		case OP_REP1:   *opc = &&op_rep1B;   break;
-		case OP_REP2:
-			if (op->inner != -1) *opc = &&op_irep2B;
-			else                 *opc = &&op_rep2B;
-			break;
-		case OP_INNER1: *opc = &&op_inner1B; break;
+		case OP_REP2:   *opc = &&op_rep2B;   break;
+		case OP_IREP1:  *opc = &&op_rep1B;   break;
+		case OP_INNER1: *opc = &&op_rep2B;   break;
 		case OP_INNER2: *opc = &&op_inner2B; break;
+		case OP_IREP2:  *opc = &&op_irep2B;  break;
 		}
 	}
 
@@ -416,16 +415,7 @@ op_rep2B:
 	else repB = *--repSB;
 	goto *opcB[++ipB];
 
-	/* complex (..{ and }..) repeats; use .inner for target, count in different dirs */
-
-op_inner1A:
-	if (--repA) ipA = oplA[ipA].inner;
-	else repA = *--repSA;
-	goto *opcA[++ipA];
-op_inner1B:
-	if (--repB) ipB = oplB[ipB].inner;
-	else repB = *--repSB;
-	goto *opcB[++ipB];
+	/* complex (..{ and }..) repeats; count in different dirs in }..) */
 
 op_inner2A:
 	*repSA++ = repA; repA = 1;
@@ -435,11 +425,11 @@ op_inner2B:
 	goto *opcB[++ipB];
 
 op_irep2A:
-	if (++repA <= oplA[ipA].count) ipA = oplA[ipA].inner;
+	if (++repA <= oplA[ipA].count) ipA = oplA[ipA].match;
 	else repA = *--repSA;
 	goto *opcA[++ipA];
 op_irep2B:
-	if (++repB <= oplB[ipB].count) ipB = oplB[ipB].inner;
+	if (++repB <= oplB[ipB].count) ipB = oplB[ipB].match;
 	else repB = *--repSB;
 	goto *opcB[++ipB];
 
