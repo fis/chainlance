@@ -1,5 +1,5 @@
 /*
- * cranklance/gearlance bfjoust interpreter; shared parser parts.
+ * cranklance/gearlance bfjoust interpreter; shared helpers.
  *
  * Copyright 2011 Heikki Kallasjoki. All rights reserved.
  *
@@ -34,60 +34,54 @@
  * implied, of Heikki Kallasjoki.
  */
 
-#ifndef CRANKLANCE_PARSER_H
-#define CRANKLANCE_PARSER_H 1
+#include <fcntl.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
-#include <stddef.h>
-#include <setjmp.h>
+#include "common.h"
 
-#define MAXCYCLES 100000
-#define MAXNEST 4096
-
-#ifndef PARSER_EXTRAFIELDS
-#define PARSER_EXTRAFIELDS /* none */
-#endif
-
-/* types */
-
-enum optype
+void die(const char *fmt, ...)
 {
-	OP_INC, OP_DEC,
-	OP_LEFT, OP_RIGHT,
-	OP_WAIT,
-	OP_LOOP1, OP_LOOP2,
-	OP_REP1, OP_REP2,
-	OP_IREP1, OP_INNER1, OP_INNER2, OP_IREP2,
-	OP_MAX
-};
+	va_list ap;
+	va_start(ap, fmt);
+	vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	fputc('\n', stderr);
 
-struct op
+	exit(1);
+}
+
+void *smalloc(size_t size)
 {
-	enum optype type;
-	int match; /* offset of matching delimiter for [] () ({ }) pairs */
-	int inner; /* extra links between matched {} inside () */
-	int count; /* static repetition count for the ({}) instructions */
-	PARSER_EXTRAFIELDS
-};
+	void *ptr = malloc(size);
+	if (!ptr) die("out of memory");
+	return ptr;
+}
 
-struct oplist
+void *srealloc(void *ptr, size_t size)
 {
-	int len, size;
-	struct op *ops;
-};
+	ptr = realloc(ptr, size);
+	if (!ptr) die("out of memory");
+	return ptr;
+}
 
-/* oplist handling */
+int sopen(const char *fname)
+{
+	int fd = open(fname, O_RDONLY);
+	if (fd == -1)
+		die("open failed: %s", fname);
+	return fd;
+}
 
-struct oplist *opl_new(void);
-void opl_free(struct oplist *o);
-void opl_append(struct oplist *o, enum optype type);
-
-/* parsing and preprocessing */
-
-void fail(const char *fmt, ...);
-
-extern char fail_msg[256];
-extern jmp_buf fail_buf;
-
-struct oplist *parse(int fd);
-
-#endif /* !CRANKLANCE_PARSER_H */
+int screat(const char *fname)
+{
+	int fd = creat(fname, 0666);
+	if (fd == -1)
+		die("creat failed: %s", fname);
+	return fd;
+}

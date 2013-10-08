@@ -39,6 +39,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "common.h"
 #include "parser.h"
 
 #define MINTAPE 10
@@ -175,6 +176,7 @@ static void run(struct oplist *opsA, struct oplist *opsB)
 		case OP_INNER1: *opc = &&op_rep2A;   break;
 		case OP_INNER2: *opc = &&op_inner2A; break;
 		case OP_IREP2:  *opc = &&op_irep2A;  break;
+		default: break;
 		}
 	}
 
@@ -199,6 +201,7 @@ static void run(struct oplist *opsA, struct oplist *opsB)
 		case OP_INNER1: *opc = &&op_rep2B;   break;
 		case OP_INNER2: *opc = &&op_inner2B; break;
 		case OP_IREP2:  *opc = &&op_irep2B;  break;
+		default: break;
 		}
 	}
 
@@ -438,3 +441,4 @@ op_doneA:
 }
 
 #include "parser.c"
+#include "common.c"

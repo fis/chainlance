@@ -433,3 +433,4 @@ op_doneA:
 
 #define PARSE_NEWLINE_AS_EOF 1
 #include "parser.c"
+#include "common.c"

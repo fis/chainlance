@@ -43,6 +43,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "common.h"
 #include "parser.h"
 
 char fail_msg[256];
@@ -327,6 +328,8 @@ void cleanrep(struct oplist *ops)
 				ops->ops[rep2].inner = -1;
 			}
 			break;
+		default:
+			fail("impossible: unknown op->type");
 		}
 	}
 
@@ -425,6 +428,16 @@ struct oplist *parse(int fd)
 	return ops;
 }
 
+void fail(const char *fmt, ...)
+{
+	va_list ap;
+	va_start(ap, fmt);
+	vsnprintf(fail_msg, sizeof fail_msg, fmt, ap);
+	va_end(ap);
+
+	longjmp(fail_buf, 1);
+}
+
 /* oplist handling, impl */
 
 struct oplist *opl_new(void)
@@ -457,49 +470,4 @@ void opl_append(struct oplist *o, enum optype type)
 	o->ops[o->len].inner = -1;
 	o->ops[o->len].count = -1;
 	o->len++;
-}
-
-/* generic helpers, impl */
-
-void die(const char *fmt, ...)
-{
-	va_list ap;
-	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	fputc('\n', stderr);
-
-	exit(1);
-}
-
-void fail(const char *fmt, ...)
-{
-	va_list ap;
-	va_start(ap, fmt);
-	vsnprintf(fail_msg, sizeof fail_msg, fmt, ap);
-	va_end(ap);
-
-	longjmp(fail_buf, 1);
-}
-
-void *smalloc(size_t size)
-{
-	void *ptr = malloc(size);
-	if (!ptr) die("out of memory");
-	return ptr;
-}
-
-void *srealloc(void *ptr, size_t size)
-{
-	ptr = realloc(ptr, size);
-	if (!ptr) die("out of memory");
-	return ptr;
-}
-
-int sopen(const char *fname)
-{
-	int fd = open(fname, O_RDONLY);
-	if (fd == -1)
-		die("open failed: %s", fname);
-	return fd;
 }
