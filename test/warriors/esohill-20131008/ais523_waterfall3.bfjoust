@@ -1,0 +1,419 @@
+Set up decoys and tripwires
+
+Cell 2: gap to ease triplock setup
+Cell 3: reverse tripwire
+Cell 4: initially used as reverse tripwire
+Also start setting up 5 and 6 so that they serve as
+decoys versus fast rush programs
+>>>+>++>++>-->+>>
+Cell 9: anti tripwire avoider decoy
+-<
+Cell 8: small decoy; also reverse tripwire to detect defenders
+Then bump cell 9 to defeat slow pokes
+----->----<<
+Cell 7: large decoy
+(+)*99<
+Interrupt decoy setup to check tripwire
+<<<-[
+  The opponent has rushed past our decoy setup
+  Switch to defend7; it's one of the few algorithms that has a
+  decent win rate with the flag already being captured and no decoys
+  The extra addition at the start is a modification to work against
+  reverse offset clears on one polarity
+  <<<(+)*64
+  ((+)*128(>)*9 (.+)*55(<)*9 )*6
+  ((+)*128(>)*10(.+)*54(<)*10)*6
+  ((+)*128(>)*11(.+)*53(<)*11)*6
+  ((+)*128(>)*12(.+)*52(<)*12)*6
+  ((+)*128(>)*13(.+)*51(<)*13)*6
+  ((+)*128(>)*14(.+)*50(<)*14)*6
+  ((+)*128(>)*15(.+)*49(<)*15)*6
+  ((+)*128(>)*16(.+)*48(<)*16)*6
+  ((+)*128(>)*17(.+)*47(<)*17)*6
+  ((+)*128(>)*18(.+)*46(<)*18)*6
+  ((+)*128(>)*19(.+)*45(<)*19)*6
+  ((+)*128(>)*20(.+)*44(<)*20)*6
+  ((+)*128(>)*21(.+)*43(<)*21)*6
+  ((+)*128(>)*22(.+)*42(<)*22)*7
+  ((+)*128(>)*23(.+)*41(<)*23)*7
+  ((+)*128(>)*24(.+)*40(<)*24)*7
+  ((+)*128(>)*25(.+)*39(<)*25)*7
+  ((+)*128(>)*26(.+)*38(<)*26)*8
+  ((+)*128(>)*27(.+)*37(<)*27)*8
+  ((+)*128(>)*28(.+)*36(<)*28)*8
+  ((+)*128(>)*29(.+)*35(<)*29)*8
+]+>>>
+Cell 6: polarity sensor
+(-)*98<
+Again interrupt decoy setup to check tripwire
+Interrupt decoy setup to check tripwire
+<<-[
+  The opponent has rushed past our decoy setup
+  Switch to defend7; it's one of the few algorithms that has a
+  decent win rate with the flag already being captured and no decoys
+  The extra addition at the start is a modification to work against
+  reverse offset clears on one polarity
+  <<<(+)*64
+  ((+)*128(>)*9 (.+)*55(<)*9 )*6
+  ((+)*128(>)*10(.+)*54(<)*10)*6
+  ((+)*128(>)*11(.+)*53(<)*11)*6
+  ((+)*128(>)*12(.+)*52(<)*12)*6
+  ((+)*128(>)*13(.+)*51(<)*13)*6
+  ((+)*128(>)*14(.+)*50(<)*14)*6
+  ((+)*128(>)*15(.+)*49(<)*15)*6
+  ((+)*128(>)*16(.+)*48(<)*16)*6
+  ((+)*128(>)*17(.+)*47(<)*17)*6
+  ((+)*128(>)*18(.+)*46(<)*18)*6
+  ((+)*128(>)*19(.+)*45(<)*19)*6
+  ((+)*128(>)*20(.+)*44(<)*20)*6
+  ((+)*128(>)*21(.+)*43(<)*21)*6
+  ((+)*128(>)*22(.+)*42(<)*22)*7
+  ((+)*128(>)*23(.+)*41(<)*23)*7
+  ((+)*128(>)*24(.+)*40(<)*24)*7
+  ((+)*128(>)*25(.+)*39(<)*25)*7
+  ((+)*128(>)*26(.+)*38(<)*26)*8
+  ((+)*128(>)*27(.+)*37(<)*27)*8
+  ((+)*128(>)*28(.+)*36(<)*28)*8
+  ((+)*128(>)*29(.+)*35(<)*29)*8
+]+<<
+Cell 1: triplock; for use against inconsistent enemies
+(-)*39>>>>
+Cell 5: 3 cycle lock
+(+)*30<
+Check reverse tripwire on cell 4
+--[
+  The opponent has rushed past our decoy setup
+  Switch to defend7; it's one of the few algorithms that has a
+  decent win rate with the flag already being captured and no decoys
+  The extra addition at the start is a modification to work against
+  reverse offset clears on one polarity
+  
+  We use cell 1 rather than 0 as the tripwire because it's nearer
+  and already set up
+  <<<(+)*64
+  ((+)*128(>)*9 (.+)*55(<)*9 )*6
+  ((+)*128(>)*10(.+)*54(<)*10)*6
+  ((+)*128(>)*11(.+)*53(<)*11)*6
+  ((+)*128(>)*12(.+)*52(<)*12)*6
+  ((+)*128(>)*13(.+)*51(<)*13)*6
+  ((+)*128(>)*14(.+)*50(<)*14)*6
+  ((+)*128(>)*15(.+)*49(<)*15)*6
+  ((+)*128(>)*16(.+)*48(<)*16)*6
+  ((+)*128(>)*17(.+)*47(<)*17)*6
+  ((+)*128(>)*18(.+)*46(<)*18)*6
+  ((+)*128(>)*19(.+)*45(<)*19)*6
+  ((+)*128(>)*20(.+)*44(<)*20)*6
+  ((+)*128(>)*21(.+)*43(<)*21)*6
+  ((+)*128(>)*22(.+)*42(<)*22)*7
+  ((+)*128(>)*23(.+)*41(<)*23)*7
+  ((+)*128(>)*24(.+)*40(<)*24)*7
+  ((+)*128(>)*25(.+)*39(<)*25)*7
+  ((+)*128(>)*26(.+)*38(<)*26)*8
+  ((+)*128(>)*27(.+)*37(<)*27)*8
+  ((+)*128(>)*28(.+)*36(<)*28)*8
+  ((+)*128(>)*29(.+)*35(<)*29)*8
+]
+Cell 4: change to 2 cycle lock
+(+)*32<<<<
+Cell 0: flag; adjusted to counter turtles
+(+)*53>>>>>>>>
+
+Use cells 8 and 3 as reverse tripwires to await the enemy
+(
+  +++++[
+    Cell 8 tripped; use main strategy
+    +++++++ change cell 8 to distinguish it from cell 3
+    We need to wait for cell 7 to clear
+    Use an offset tripwire in case it was clear already;
+    the offset is heavily skewed in order to slow down any enemy
+    clear that may happen while it's being adjusted
+    <(+)*25(
+      [-{[-[][
+            We get here only against turtle style programs
+            Because we win if they keep turtling we want them to
+            So we clear all our decoys in order to prevent them
+            changing tactics
+            <(+)*100 clear cell 6
+            <(-)*32  clear cell 5
+            <(-)*32  clear cell 4
+            <-       clear cell 3
+            We don't clear cell 1; rather we triplock
+            This is in order to defeat reverse offset clears that
+            look like turtles
+            <<
+            ([[](+)*100(>)*8 -(.-)*41(<)*8 {
+            ([[](+)*100(>)*9 -(.-)*40(<)*9 {
+            ([[](+)*100(>)*10-(.-)*39(<)*10{
+            ([[](+)*100(>)*11-(.-)*38(<)*11{
+            ([[](+)*100(>)*12-(.-)*37(<)*12{
+            ([[](+)*100(>)*13-(.-)*36(<)*13{
+            ([[](+)*100(>)*14-(.-)*35(<)*14{
+            ([[](+)*100(>)*15-(.-)*34(<)*15{
+            ([[](+)*100(>)*16-(.-)*33(<)*16{
+            ([[](+)*100(>)*17-(.-)*32(<)*17{
+            ([[](+)*100(>)*18-(.-)*31(<)*18{
+            ([[](+)*100(>)*19-(.-)*30(<)*19{
+            ([[](+)*100(>)*20-(.-)*29(<)*20{
+            ([[](+)*100(>)*21-(.-)*28(<)*21{
+            ([[](+)*100(>)*22-(.-)*27(<)*22{
+            ([[](+)*100(>)*23-(.-)*26(<)*23{
+            ([[](+)*100(>)*24-(.-)*25(<)*24{
+            ([[](+)*100(>)*25-(.-)*24(<)*25{
+            ([[](+)*100(>)*26-(.-)*23(<)*26{
+            ([[](+)*100(>)*27-(.-)*22(<)*27{
+            ([[](+)*100(>)*28-(.-)*21(<)*28{
+            }])%12}])%12}])%11}])%11}])%10}])%10}])%10}])%9}])%9}])%9
+            }])%8}])%8}])%8}])%8}])%8}])%7}])%7}])%7}])%7}])%7}])%7
+            
+            Reverse offset clears potentially get here on one polarity
+            Use defend7 tuned to that polarity to lock and destroy it
+            <
+            ((-)*128(>)*9 (.+)*55(<)*9 )*6
+            ((-)*128(>)*10(.+)*54(<)*10)*6
+            ((-)*128(>)*11(.+)*53(<)*11)*6
+            ((-)*128(>)*12(.+)*52(<)*12)*6
+            ((-)*128(>)*13(.+)*51(<)*13)*6
+            ((-)*128(>)*14(.+)*50(<)*14)*6
+            ((-)*128(>)*15(.+)*49(<)*15)*6
+            ((-)*128(>)*16(.+)*48(<)*16)*6
+            ((-)*128(>)*17(.+)*47(<)*17)*6
+            ((-)*128(>)*18(.+)*46(<)*18)*6
+            ((-)*128(>)*19(.+)*45(<)*19)*6
+            ((-)*128(>)*20(.+)*44(<)*20)*6
+            ((-)*128(>)*21(.+)*43(<)*21)*6
+            ((-)*128(>)*22(.+)*42(<)*22)*7
+            ((-)*128(>)*23(.+)*41(<)*23)*7
+            ((-)*128(>)*24(.+)*40(<)*24)*7
+            ((-)*128(>)*25(.+)*39(<)*25)*7
+            ((-)*128(>)*26(.+)*38(<)*26)*8
+            ((-)*128(>)*27(.+)*37(<)*27)*8
+            ((-)*128(>)*28(.+)*36(<)*28)*8
+            
+          ]<<<<<]}[<<<<<]]
+    )%27
+    We're now either on cell 7 or 2
+    Use the reverse tripwire on cell 3 to check
+    >-[on cell 8 <<<<<-]+>>>..
+    
+    We use cell 6 to determine the enemy polarity
+    We adjust it upwards at the rate of 1 in 3
+    If it's cleared quickly enough; we face an upwards enemy
+    Otherwise we face an downwards enemy
+    (
+      [
+        [+{
+          
+          Opponent is going downwards
+          However we don't know if they have a consistent polarity
+          For 2 cycle clears; rely on them being consistent or alternating
+          For 3 cycle clears; we can't do that
+          However; if the opponent is doing a 3 cycle clear they are
+          currently locked
+          
+          Let's convert the 3 cycle lock cell to a reverse tripwire; we
+          don't need it for its intended purpose
+          (+)*10<(-)*30>
+          
+          Now try to 3 cycle lock for a long time just to see if it works
+          If it doesn't we abort to our original strategy
+          
+          (
+            (+)*40
+            <--[
+
+              Opponent broke the lock
+              
+              <
+              
+              We want to try to 2 cycle lock against a downwards opponent
+              Meanwhile we use a reverse tripwire to check if the lock is broken
+              If the tripwire is tripped do an inline triplock
+              If even that fails; and in a detectable way; shudder and hope for a draw
+              The shudder strategy is chosen based on the sort of programs that would
+              evade our locks; it's programs that are primarily based on upwards
+              movement
+              
+              We spend 82 cycles locking; 5 checking tripwires; 77 clearing every line
+              
+              ((+)*82 <-[ <<[](+)*100>(+)*15[-]<[](+)*100>>(+)*15[-]<< [[](+)*100>>[>]->[+[--([-{[<+]}])%11]]<[<]<] <((+)*100)*1000 ]+> <<<(-)*71>>>)*1
+              ((+)*82 <-[ <<[](+)*100>(+)*15[-]<[](+)*100>>(+)*15[-]<< [[](+)*100>>[>]->[+[--([-{[<+]}])%11]]<[<]<] <((+)*100)*1000 ]+> (>)*5+(.+)*33(<)*5)*8
+              ((+)*82 <-[ <<[](+)*100>(+)*15[-]<[](+)*100>>(+)*15[-]<< [[](+)*100>>[>]->[+[--([-{[<+]}])%11]]<[<]<] <((+)*100)*1000 ]+> (>)*6+(.+)*32(<)*6)*8
+              ((+)*82 <-[ <<[](+)*100>(+)*15[-]<[](+)*100>>(+)*15[-]<< [[](+)*100>>[>]->[+[--([-{[<+]}])%11]]<[<]<] <((+)*100)*1000 ]+> (>)*7+(.+)*31(<)*7)*9
+              ((+)*82 <-[ <<[](+)*100>(+)*15[-]<[](+)*100>>(+)*15[-]<< [[](+)*100>>[>]->[+[--([-{[<+]}])%11]]<[<]<] <((+)*100)*1000 ]+> (>)*8+(.+)*30(<)*8)*9
+              ((+)*82 <-[ <<[](+)*100>(+)*15[-]<[](+)*100>>(+)*15[-]<< [[](+)*100>>[>]->[+[--([-{[<+]}])%11]]<[<]<] <((+)*100)*1000 ]+> (>)*9+(.+)*29(<)*9)*9
+              
+              Our lock still seems intact by this point; it's likely a perfect lock
+              Abandon tripwire checks to save time and space; we now have 82 cycles clearing
+              
+              ((+)*82 (>)*10(-.)*31(<)*10)*9
+              ((+)*82 (>)*11(-.)*30(<)*11)*9
+              ((+)*82 (>)*12(-.)*29(<)*12)*9
+              ((+)*82 (>)*13(-.)*28(<)*13)*10
+              ((+)*82 (>)*14(-.)*27(<)*14)*10
+              ((+)*82 (>)*15(-.)*26(<)*15)*10
+              ((+)*82 (>)*16(-.)*25(<)*16)*11
+              ((+)*82 (>)*17(-.)*24(<)*17)*11
+              ((+)*82 (>)*18(-.)*23(<)*18)*12
+              ((+)*82 (>)*19(-.)*22(<)*19)*12
+              ((+)*82 (>)*20(-.)*21(<)*20)*13
+              ((+)*82 (>)*21(-.)*20(<)*21)*13
+              ((+)*82 (>)*22(-.)*19(<)*22)*14
+              ((+)*82 (>)*23(-.)*18(<)*23)*15
+              ((+)*82 (>)*24(-.)*17(<)*24)*16
+              ((+)*82 (>)*25(-.)*16(<)*25)*16
+              
+            ]++>(.)*73
+          )*120
+          
+          Looks like we have a lock
+          Just do a full tape clear; randomize polarity in case we
+          misdetected a defence program as a locked 3 cycle clear
+          
+          ((+)*40(>)*3 (-.)*37(<)*3 )*7
+          ((+)*40(>)*4 (+.)*36(<)*4 )*8
+          ((+)*40(>)*5 (+.)*35(<)*5 )*8
+          ((+)*40(>)*6 (-.)*34(<)*6 )*8
+          ((+)*40(>)*7 (-.)*33(<)*7 )*8
+          ((+)*40(>)*8 (+.)*32(<)*8 )*8
+          ((+)*40(>)*9 (+.)*31(<)*9 )*9
+          ((+)*40(>)*10(-.)*30(<)*10)*9
+          ((+)*40(>)*11(-.)*29(<)*11)*9
+          ((+)*40(>)*12(+.)*28(<)*12)*10
+          ((+)*40(>)*13(+.)*27(<)*13)*10
+          ((+)*40(>)*14(-.)*26(<)*14)*10
+          ((+)*40(>)*15(-.)*25(<)*15)*11
+          ((+)*40(>)*16(+.)*24(<)*16)*11
+          ((+)*40(>)*17(+.)*23(<)*17)*12
+          ((+)*40(>)*18(-.)*22(<)*18)*12
+          ((+)*40(>)*19(-.)*21(<)*19)*13
+          ((+)*40(>)*20(+.)*20(<)*20)*13
+          ((+)*40(>)*21(+.)*19(<)*21)*14
+          ((+)*40(>)*22(-.)*18(<)*22)*15
+          ((+)*40(>)*23(-.)*17(<)*23)*16
+          
+          }]
+      ]
+      <<
+      
+      Fix decoy values for this polarity
+      (-)*80>(-)*120<
+
+      Every 516 cycles we adjust:
+      cell 5 down by 86 twice
+      cell 4 down by 86 three times; actually 87 then 87 then 84
+      
+      We spend 434 cycles doing the lock; 15 checking tripwires; 67 clearing
+      If the tripwire is tripped do an inline triplock
+      If even that fails; and in a detectable way; shudder and hope for a draw
+      The shudder strategy is chosen based on the sort of programs that would
+      evade our locks; it's programs that are primarily based on upwards
+      movement
+      
+      (((-)*87>(-)*86<      <-[ <<[](-)*100>(-)*15[+]<[](-)*100>>(-)*15[+]<< [[](-)*100>>[>]+>[-[++([+{[<-]}])%11]]<[<]<] <((-)*100)*1000 ]+> )*2(-)*84
+        <<<(-)*61>>>        <-[ <<[](-)*100>(-)*15[+]<[](-)*100>>(-)*15[+]<< [[](-)*100>>[>]+>[-[++([+{[<-]}])%11]]<[<]<] <((-)*100)*1000 ]+> )*1
+      (((-)*87>(-)*86<      <-[ <<[](-)*100>(-)*15[+]<[](-)*100>>(-)*15[+]<< [[](-)*100>>[>]+>[-[++([+{[<-]}])%11]]<[<]<] <((-)*100)*1000 ]+> )*2(-)*84
+        (>)*5(-.)*28-(<)*5  <-[ <<[](-)*100>(-)*15[+]<[](-)*100>>(-)*15[+]<< [[](-)*100>>[>]+>[-[++([+{[<-]}])%11]]<[<]<] <((-)*100)*1000 ]+> )*9
+      (((-)*87>(-)*86<      <-[ <<[](-)*100>(-)*15[+]<[](-)*100>>(-)*15[+]<< [[](-)*100>>[>]+>[-[++([+{[<-]}])%11]]<[<]<] <((-)*100)*1000 ]+> )*2(-)*84
+        (>)*6(-.)*27-(<)*6  <-[ <<[](-)*100>(-)*15[+]<[](-)*100>>(-)*15[+]<< [[](-)*100>>[>]+>[-[++([+{[<-]}])%11]]<[<]<] <((-)*100)*1000 ]+> )*10
+      (((-)*87>(-)*86<      <-[ <<[](-)*100>(-)*15[+]<[](-)*100>>(-)*15[+]<< [[](-)*100>>[>]+>[-[++([+{[<-]}])%11]]<[<]<] <((-)*100)*1000 ]+> )*2(-)*84
+        (>)*7(-.)*26-(<)*7  <-[ <<[](-)*100>(-)*15[+]<[](-)*100>>(-)*15[+]<< [[](-)*100>>[>]+>[-[++([+{[<-]}])%11]]<[<]<] <((-)*100)*1000 ]+> )*10
+      (((-)*87>(-)*86<      <-[ <<[](-)*100>(-)*15[+]<[](-)*100>>(-)*15[+]<< [[](-)*100>>[>]+>[-[++([+{[<-]}])%11]]<[<]<] <((-)*100)*1000 ]+> )*2(-)*84
+        (>)*8(-.)*25-(<)*8  <-[ <<[](-)*100>(-)*15[+]<[](-)*100>>(-)*15[+]<< [[](-)*100>>[>]+>[-[++([+{[<-]}])%11]]<[<]<] <((-)*100)*1000 ]+> )*10
+      (((-)*87>(-)*86<      <-[ <<[](-)*100>(-)*15[+]<[](-)*100>>(-)*15[+]<< [[](-)*100>>[>]+>[-[++([+{[<-]}])%11]]<[<]<] <((-)*100)*1000 ]+> )*2(-)*84
+        (>)*9(-.)*24-(<)*9  <-[ <<[](-)*100>(-)*15[+]<[](-)*100>>(-)*15[+]<< [[](-)*100>>[>]+>[-[++([+{[<-]}])%11]]<[<]<] <((-)*100)*1000 ]+> )*11
+      
+      Our lock still seems intact by this point; it's likely a perfect lock
+      Abandon tripwire checks to save time and space; we now have 82 cycles clearing
+      
+      (((-)*87>(-)*86<)*2(-)*84 (>)*10(+.)*31(<)*10)*9
+      (((-)*87>(-)*86<)*2(-)*84 (>)*11(+.)*30(<)*11)*9
+      (((-)*87>(-)*86<)*2(-)*84 (>)*12(+.)*29(<)*12)*9
+      (((-)*87>(-)*86<)*2(-)*84 (>)*13(+.)*28(<)*13)*10
+      (((-)*87>(-)*86<)*2(-)*84 (>)*14(+.)*27(<)*14)*10
+      (((-)*87>(-)*86<)*2(-)*84 (>)*15(+.)*26(<)*15)*10
+      (((-)*87>(-)*86<)*2(-)*84 (>)*16(+.)*25(<)*16)*11
+      (((-)*87>(-)*86<)*2(-)*84 (>)*17(+.)*24(<)*17)*11
+      (((-)*87>(-)*86<)*2(-)*84 (>)*18(+.)*23(<)*18)*12
+      (((-)*87>(-)*86<)*2(-)*84 (>)*19(+.)*22(<)*19)*12
+      (((-)*87>(-)*86<)*2(-)*84 (>)*20(+.)*21(<)*20)*13
+      (((-)*87>(-)*86<)*2(-)*84 (>)*21(+.)*20(<)*21)*13
+      
+      
+      We face the risk of a timeout at this point
+      Use our lock to set up large decoys, then rush
+      
+      ((-)*87>(-)*86<)*2(-)*84 <<<(-)*76>>>
+      ((-)*87>(-)*86<)*2(-)*84 <<(-)*78>>
+      ((-)*87>(-)*86<)*2(-)*84 <(+)*80>
+      ((-)*87>(-)*86<)*2(-)*84 (>)*21 (>(+)*40[-])*4
+      
+    )%81
+  ]-----<<<<<
+  (-[
+      Cell 3 tripped; we face a tripwire avoider or a short tape
+      Try to triplock the opponent; we can use a longer algorithm
+      because this isn't repeated as much as the inline triplocks are
+      <<
+      ([[](+)*100(>)*8 -(.-)*41(<)*8 {
+      ([[](+)*100(>)*9 -(.-)*40(<)*9 {
+      ([[](+)*100(>)*10-(.-)*39(<)*10{
+      ([[](+)*100(>)*11-(.-)*38(<)*11{
+      ([[](+)*100(>)*12-(.-)*37(<)*12{
+      ([[](+)*100(>)*13-(.-)*36(<)*13{
+      ([[](+)*100(>)*14-(.-)*35(<)*14{
+      ([[](+)*100(>)*15-(.-)*34(<)*15{
+      ([[](+)*100(>)*16-(.-)*33(<)*16{
+      ([[](+)*100(>)*17-(.-)*32(<)*17{
+      ([[](+)*100(>)*18-(.-)*31(<)*18{
+      ([[](+)*100(>)*19-(.-)*30(<)*19{
+      ([[](+)*100(>)*20-(.-)*29(<)*20{
+      ([[](+)*100(>)*21-(.-)*28(<)*21{
+      ([[](+)*100(>)*22-(.-)*27(<)*22{
+      ([[](+)*100(>)*23-(.-)*26(<)*23{
+      ([[](+)*100(>)*24-(.-)*25(<)*24{
+      ([[](+)*100(>)*25-(.-)*24(<)*25{
+      ([[](+)*100(>)*26-(.-)*23(<)*26{
+      ([[](+)*100(>)*27-(.-)*22(<)*27{
+      ([[](+)*100(>)*28-(.-)*21(<)*28{
+      }])%12}])%12}])%11}])%11}])%10}])%10}])%10}])%9}])%9}])%9
+      }])%8}])%8}])%8}])%8}])%8}])%7}])%7}])%7}])%7}])%7}])%7
+      
+      Most likely reason to get here is when playing a reverse offset clear;
+      it ends up here on one polarity
+      Use defend7 tuned to that polarity to lock and destroy it
+      <
+      ((-)*128(>)*9 (.+)*55(<)*9 )*6
+      ((-)*128(>)*10(.+)*54(<)*10)*6
+      ((-)*128(>)*11(.+)*53(<)*11)*6
+      ((-)*128(>)*12(.+)*52(<)*12)*6
+      ((-)*128(>)*13(.+)*51(<)*13)*6
+      ((-)*128(>)*14(.+)*50(<)*14)*6
+      ((-)*128(>)*15(.+)*49(<)*15)*6
+      ((-)*128(>)*16(.+)*48(<)*16)*6
+      ((-)*128(>)*17(.+)*47(<)*17)*6
+      ((-)*128(>)*18(.+)*46(<)*18)*6
+      ((-)*128(>)*19(.+)*45(<)*19)*6
+      ((-)*128(>)*20(.+)*44(<)*20)*6
+      ((-)*128(>)*21(.+)*43(<)*21)*6
+      ((-)*128(>)*22(.+)*42(<)*22)*7
+      ((-)*128(>)*23(.+)*41(<)*23)*7
+      ((-)*128(>)*24(.+)*40(<)*24)*7
+      ((-)*128(>)*25(.+)*39(<)*25)*7
+      ((-)*128(>)*26(.+)*38(<)*26)*8
+      ((-)*128(>)*27(.+)*37(<)*27)*8
+      ((-)*128(>)*28(.+)*36(<)*28)*8
+      ((-)*128(>)*29(.+)*35(<)*29)*8
+    ]+(.)*12)*10>>>>>
+)*7
+
+We're playing against defence; use a counterdefence clear
+The reverse offset 4 cycle clear is used to both confuse defence
+programs and beat them quickly; the offset means that it isn't
+locked the way 4 cycle clears normally are and the even period is
+necessary to detect shudders and fall through
+Assume the tape isn't length 10 or the enemy decoys would have hit
+our tripwire
+Lay a trail to help outrun enemies that wait for us then switch to a rush
+>+++++
+(>[+[+[+[----[-[-[(-)*116[+--][..++++-----[..+++++------]]>[..+++++------[..+++++------]]]]]]]]][..+++++------[..+++++------]]-----)*20
+

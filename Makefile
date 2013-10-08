@@ -1,6 +1,6 @@
 LANCES = cranklance gearlance
 
-.PHONY : clean test
+.PHONY : all clean test
 
 all: chainlance $(LANCES) torquelance torquelance-compile
 
