@@ -153,33 +153,29 @@ struct jitnfo
 };
 
 #define OPTABLE(p) {	  \
-		[OP_INC] = { &op_inc##p, &size_op_inc##p, 0, 0 }, \
-		[OP_DEC] = { &op_dec##p, &size_op_dec##p, 0, 0 }, \
-		[OP_LEFT] = { &op_left##p, &size_op_left##p, 0, 0 }, \
-		[OP_RIGHT] = { &op_right##p, &size_op_right##p, 0, 0 }, \
-		[OP_WAIT] = { &op_wait##p, &size_op_wait##p, 0, 0 }, \
-		[OP_LOOP1] = { &op_loop1##p, &size_op_loop1##p, &op_loop1##p##_rel, 0 }, \
-		[OP_LOOP2] = { &op_loop2##p, &size_op_loop2##p, &op_loop2##p##_rel, 0 }, \
-		[OP_REP1] = { &op_rep1##p, &size_op_rep1##p, 0, &op_rep1##p##_count }, \
-		[OP_REP2] = { &op_rep2##p, &size_op_rep2##p, &op_rep2##p##_rel, 0 }, \
-		[OP_IREP1] = { &op_rep1##p, &size_op_rep1##p, 0, &op_rep1##p##_count }, \
+		[OP_INC]    = { &op_inc##p, &size_op_inc##p, 0, 0 }, \
+		[OP_DEC]    = { &op_dec##p, &size_op_dec##p, 0, 0 }, \
+		[OP_LEFT]   = { &op_left##p, &size_op_left##p, 0, 0 }, \
+		[OP_RIGHT]  = { &op_right##p, &size_op_right##p, 0, 0 }, \
+		[OP_WAIT]   = { &op_wait##p, &size_op_wait##p, 0, 0 }, \
+		[OP_LOOP1]  = { &op_loop1##p, &size_op_loop1##p, &op_loop1##p##_rel, 0 }, \
+		[OP_LOOP2]  = { &op_loop2##p, &size_op_loop2##p, &op_loop2##p##_rel, 0 }, \
+		[OP_REP1]   = { &op_rep1##p, &size_op_rep1##p, 0, &op_rep1##p##_count }, \
+		[OP_REP2]   = { &op_rep2##p, &size_op_rep2##p, &op_rep2##p##_rel, 0 }, \
+		[OP_IREP1]  = { &op_rep1##p, &size_op_rep1##p, 0, &op_rep1##p##_count }, \
 		[OP_INNER1] = { &op_rep2##p, &size_op_rep2##p, &op_rep2##p##_rel, 0 }, \
 		[OP_INNER2] = { &op_inner2##p, &size_op_inner2##p, 0, 0 }, \
-		[OP_IREP2] = { &op_irep2##p, &size_op_irep2##p, &op_irep2##p##_rel, &op_irep2##p##_count }, \
+		[OP_IREP2]  = { &op_irep2##p, &size_op_irep2##p, &op_irep2##p##_rel, &op_irep2##p##_count }, \
+		[OP_DONE]   = { &op_done##p, &size_op_done##p, 0, 0 }, \
 	}
 
 static struct jitnfo optable[2][OP_MAX] = {
 	OPTABLE(A), OPTABLE(B)
 };
-static struct jitnfo opdone[2] = {
-	{ &op_doneA, &size_op_doneA, 0, 0 },
-	{ &op_doneB, &size_op_doneB, 0, 0 }
-};
 
 static char *compile(struct oplist *ops, unsigned *outsize, unsigned mode_B)
 {
 	struct op *opl = ops->ops;
-	struct jitnfo *done = &opdone[mode_B];
 
 	/* compute program size and offsets */
 
@@ -192,11 +188,11 @@ static char *compile(struct oplist *ops, unsigned *outsize, unsigned mode_B)
 		size += AV(optable[mode_B][op->type].size);
 	}
 
-	*outsize = size + AV(done->size);
+	*outsize = size;
 
 	/* allocate memory for compiled program */
 
-	char *base = smalloc(*outsize);
+	char *base = smalloc(size);
 
 	/* generate machine code */
 
@@ -217,8 +213,6 @@ static char *compile(struct oplist *ops, unsigned *outsize, unsigned mode_B)
 		if (AV(nfo->count))
 			*(unsigned *)(base + op->code + AV(nfo->count)) = op->count;
 	}
-
-	memcpy(base + size, done->code, AV(done->size));
 
 	return base;
 }

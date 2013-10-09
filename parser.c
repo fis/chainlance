@@ -187,6 +187,8 @@ struct oplist *readops(int fd)
 		}
 	}
 
+	opl_append(ops, OP_DONE);
+
 	return ops;
 }
 
@@ -280,7 +282,7 @@ void cleanrep(struct oplist *ops)
 		switch (op->type)
 		{
 		case OP_INC: case OP_DEC: case OP_LEFT: case OP_RIGHT:
-		case OP_LOOP1: case OP_LOOP2: case OP_WAIT:
+		case OP_LOOP1: case OP_LOOP2: case OP_WAIT: case OP_DONE:
 			last_real = at;
 			break;
 		case OP_REP1: case OP_IREP1: case OP_INNER2:

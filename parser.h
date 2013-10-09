@@ -57,6 +57,7 @@ enum optype
 	OP_LOOP1, OP_LOOP2,
 	OP_REP1, OP_REP2,
 	OP_IREP1, OP_INNER1, OP_INNER2, OP_IREP2,
+	OP_DONE, /* appended at end of program */
 	OP_MAX
 };
 

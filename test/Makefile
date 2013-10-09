@@ -6,8 +6,9 @@ test-gearlance: reference.out
 	time ./test.sh ../gearlance
 
 test-torquelance: reference.out
-	mkdir compiled
-	./test.sh ./test-torquelance.sh
+	mkdir -p compiled
+	$(RM) compiled/*
+	time ./test.sh ./test-torquelance.sh
 	$(RM) -r compiled
 
 reference.out: warriors.sh warriors.idx egojsout.js

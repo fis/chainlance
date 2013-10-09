@@ -99,6 +99,7 @@ int main(int argc, char *argv[])
 		[OP_WAIT] = '.', [OP_LOOP1] = '[', [OP_LOOP2] = ']',
 		[OP_REP1] = '(', [OP_REP2] = ')',
 		[OP_IREP1] = '(', [OP_INNER1] = '{', [OP_INNER2] = '}', [OP_IREP2] = ')',
+		[OP_DONE] = '_',
 	};
 	for (int at = 0; at < opsA->len; at++)
 	{
@@ -176,11 +177,10 @@ static void run(struct oplist *opsA, struct oplist *opsB)
 		case OP_INNER1: *opc = &&op_rep2A;   break;
 		case OP_INNER2: *opc = &&op_inner2A; break;
 		case OP_IREP2:  *opc = &&op_irep2A;  break;
+		case OP_DONE:   *opc = &&op_doneA;   break;
 		default: break;
 		}
 	}
-
-	opcA[opsA->len] = &&op_doneA;
 
 	for (int at = 0; at < opsB->len; at++)
 	{
@@ -201,11 +201,10 @@ static void run(struct oplist *opsA, struct oplist *opsB)
 		case OP_INNER1: *opc = &&op_rep2B;   break;
 		case OP_INNER2: *opc = &&op_inner2B; break;
 		case OP_IREP2:  *opc = &&op_irep2B;  break;
+		case OP_DONE:   *opc = &&nextcycle;  break; /* slight shortcut */
 		default: break;
 		}
 	}
-
-	opcB[opsB->len] = &&nextcycle; /* a slight shortcut */
 
 	/* state-holding variables */
 
