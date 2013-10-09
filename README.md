@@ -40,8 +40,8 @@ checks for termination conditions.
 
 To use, simply call `gearlance left.bfjoust right.bfjoust`.  The
 output will list results of each match (`<` for a left win, `>` for a
-right win and `X` for a tie) followed by the combined score (left wins
-- right wins, from -42 to 42).
+right win and `X` for a tie) followed by the combined score calculated
+as (left wins) - (right wins), ranging from -42 to 42.
 
 In general, seems to outperform the torquelance/chainlance compilation
 approaches.  A proper optimizing compiler for two concurrently (but in
