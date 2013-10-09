@@ -164,4 +164,4 @@ reference results.
 ### Visualization
 
 Lives in the `vis/` directory.  Needs documentation.  Used to generate
-(egostats)[http://zem.fi/egostats/] every now and then.
+[egostats](http://zem.fi/egostats/) every now and then.
