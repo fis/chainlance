@@ -1,11 +1,11 @@
 /*
  * Copyright (c) 2013 Heikki Kallasjoki
  *
- * This file is a modified copy of the EgoJSOut software, altered to
+ * This file is a modified copy of the EgoJSout software, altered to
  * work from within a Node.js program, for regression testing the
  * chainlance/cranklance/gearlance/torquelance family of BFJoust
  * engines.  It is licensed under the same license as the original
- * EgoJSOut; see below.
+ * EgoJSout; see below.
  */
 
 /*
