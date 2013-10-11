@@ -46,26 +46,26 @@ op_decB:
 op_leftA:
         decq %rsi
         cmpq %r14, %rsi
-        jge 0f
+        jae 0f
         jmpq *(%rsp)
 0:      endA op_leftA
 op_leftB:
         incq %rdi
         cmpq %r15, %rdi
-        jle 0f
+        jbe 0f
         jmpq *8(%rsp)
 0:      endB op_leftB
 
 op_rightA:
         incq %rsi
         cmpq %r15, %rsi
-        jle 0f
+        jbe 0f
         jmpq *(%rsp)
 0:      endA op_rightA
 op_rightB:
         decq %rdi
         cmpq %r14, %rdi
-        jge 0f
+        jae 0f
         jmpq *8(%rsp)
 0:      endB op_rightB
 

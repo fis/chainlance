@@ -1,6 +1,6 @@
 .PHONY : all test-gearlance test-torquelance
 
-all: reference.out test-gearlance test-torquelance
+all: reference.out test-gearlance test-torquelance test-wrenchlance
 
 test-gearlance: reference.out
 	time ./test.sh ../gearlance
@@ -9,6 +9,12 @@ test-torquelance: reference.out
 	mkdir -p compiled
 	$(RM) compiled/*
 	time ./test.sh ./test-torquelance.sh
+	$(RM) -r compiled
+
+test-wrenchlance: reference.out
+	mkdir -p compiled
+	$(RM) compiled/*
+	time ./test.sh ./test-wrenchlance.sh
 	$(RM) -r compiled
 
 reference.out: warriors.sh warriors.idx egojsout.js

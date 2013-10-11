@@ -21,8 +21,7 @@ The following systems, in arbitrary order, are included:
   programs.
 * **chainlance**: Old thing, compiles a pair of programs to x86-64
   assembly source.
-* *wrenchlance: To be implemented. Halfway between torquelance and
-  chainlance.*
+* **wrenchlance**: Halfway between torquelance and chainlance.
 
 See below for details on individual systems.
 
@@ -43,15 +42,15 @@ output will list results of each match (`<` for a left win, `>` for a
 right win and `X` for a tie) followed by the combined score calculated
 as (left wins) - (right wins), ranging from -42 to 42.
 
-In general, seems to outperform the torquelance/chainlance compilation
-approaches.  A proper optimizing compiler for two concurrently (but in
-a synchronized way) running BF Joust programs is left as an exercise
-for the reader.
+In general, seems to outperform the wrenchlance/torquelance/chainlance
+compilation approaches, even when discounting compilation time.  A
+proper optimizing compiler for two concurrently (but in a synchronized
+way) running BF Joust programs is left as an exercise for the reader.
 
 There exists an unpublished gearlance variant that dispatches based on
 a (left instruction, right instruction) pair, which obviously squares
 the number of ops.  In theory, this avoids some amount of jumping
-around.  In practice, it seems not worth the hassle.
+around.  In practice, it seems not worth the hassle either.
 
 Etymology: Chains and gears are encountered in similar places, and
 gearlance was based on chainlance.
@@ -128,14 +127,23 @@ Etymology: From the combination of *chainsaw* (powerful tool) and
 
 ### wrenchlance
 
-*Hypothetical entry.  Does not quite exist yet.*
+Concept: ahead-of-time compile and link the execution engine and the
+right program (with both polarities) into an executable.  This lets
+you use regular (hopefully also more processor-friendly) relative
+branches in it.  The executable will then take a torquelance-style
+left program binary as an argument, load it to memory, and run a
+tournament against it.
 
-Wrenchlance concept: ahead-of-time compile and link the execution
-engine and the right program (with both polarities) into an
-executable.  This lets you use regular (hopefully also more
-processor-friendly) relative branches in it.  The executable will then
-take a torquelance-style left program binary as an argument, load it
-to memory, and run a tournament against it.
+Arguably amusing idea, but does not really seem to be worth it.
+
+To use:
+
+    wrenchlance-left left.bfjoust left.bin
+    wrenchlance-right right.bfjoust | \
+      gcc -std=gnu99 -fwhole-program -O2 -march=native \
+          wrenchlance-stub.c wrenchlance-header.s -x assembler - \
+          -o right
+    ./right left.bin
 
 Etymology: Something you apply torque with.
 
