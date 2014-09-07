@@ -297,7 +297,7 @@ def plot_ptapeavg(pn, p, key, logc=False):
     tapes /= tapecount
 
     if logc:
-        tapes[tapes == 0] = 0.001
+        tapes[tapes == 0] = 1
         tapes = np.log10(tapes)
 
     for tlen in xrange(MINTAPE, MAXTAPE):
