@@ -52,7 +52,27 @@ static struct {
 
 /* actual interpretation */
 
-static void run(struct oplist *opsA, struct oplist *opsB);
+enum core_action
+{
+	core_compile_a,
+	core_compile_b,
+	core_run, /* note: this action flips polarity of program B */
+};
+
+union opcode
+{
+	void *xt;
+	union opcode *match;
+	int count;
+};
+
+struct opcodes
+{
+	unsigned len;
+	union opcode ops[];
+};
+
+static struct opcodes *core(enum core_action act, struct oplist *ops, struct opcodes *codeA, struct opcodes *codeB);
 
 /* main application */
 
@@ -100,9 +120,15 @@ int main(int argc, char *argv[])
 	return 0;
 #endif
 
-	/* run them */
+	/* compile and run them */
 
-	run(opsA, opsB);
+	struct opcodes *codeA = core(core_compile_a, opsA, 0, 0);
+	struct opcodes *codeB = core(core_compile_b, opsB, 0, 0);
+
+	core(core_run, 0, codeA, codeB);
+
+	free(codeA);
+	free(codeB);
 
 	/* summarize results */
 
@@ -136,61 +162,86 @@ int main(int argc, char *argv[])
 
 static unsigned char tape[MAXTAPE];
 
-static void run(struct oplist *opsA, struct oplist *opsB)
+static struct opcodes *core(enum core_action act, struct oplist *ops, struct opcodes *codeA, struct opcodes *codeB)
 {
-	struct op *oplA = opsA->ops, *oplB = opsB->ops;
+	static void * const xtableA[OP_MAX] = {
+		[OP_INC] = &&op_incA, [OP_DEC] = &&op_decA,
+		[OP_LEFT] = &&op_leftA, [OP_RIGHT] = &&op_rightA,
+		[OP_WAIT] = &&op_waitA,
+		[OP_LOOP1] = &&op_loop1A, [OP_LOOP2] = &&op_loop2A,
+		[OP_REP1] = &&op_rep1A, [OP_REP2] = &&op_rep2A,
+		[OP_IREP1] = &&op_rep1A, [OP_INNER1] = &&op_rep2A,
+		[OP_INNER2] = &&op_inner2A, [OP_IREP2] = &&op_irep2A,
+		[OP_DONE] = &&op_doneA,
+	};
+	static void * const xtableB[OP_MAX] = {
+		[OP_INC] = &&op_incB, [OP_DEC] = &&op_decB,
+		[OP_LEFT] = &&op_leftB, [OP_RIGHT] = &&op_rightB,
+		[OP_WAIT] = &&op_waitB,
+		[OP_LOOP1] = &&op_loop1B, [OP_LOOP2] = &&op_loop2B,
+		[OP_REP1] = &&op_rep1B, [OP_REP2] = &&op_rep2B,
+		[OP_IREP1] = &&op_rep1B, [OP_INNER1] = &&op_rep2B,
+		[OP_INNER2] = &&op_inner2B, [OP_IREP2] = &&op_irep2B,
+		[OP_DONE] = &&nextcycle, /* shortcut */
+	};
 
-	/* convert opcode types into pointers for both progs */
+	/* compilation to threaded code */
 
-	void **opcA = smalloc((opsA->len+1) * sizeof *opcA);
-	void **opcB = smalloc((opsB->len+1) * sizeof *opcB);
-
-	for (unsigned at = 0; at < opsA->len; at++)
+	if (act == core_compile_a || act == core_compile_b)
 	{
-		struct op *op = &oplA[at];
-		void **opc = &opcA[at];
-		switch (op->type)
-		{
-		case OP_INC:    *opc = &&op_incA;    break;
-		case OP_DEC:    *opc = &&op_decA;    break;
-		case OP_LEFT:   *opc = &&op_leftA;   break;
-		case OP_RIGHT:  *opc = &&op_rightA;  break;
-		case OP_WAIT:   *opc = &&op_waitA;   break;
-		case OP_LOOP1:  *opc = &&op_loop1A;  break;
-		case OP_LOOP2:  *opc = &&op_loop2A;  break;
-		case OP_REP1:   *opc = &&op_rep1A;   break;
-		case OP_REP2:   *opc = &&op_rep2A;   break;
-		case OP_IREP1:  *opc = &&op_rep1A;   break;
-		case OP_INNER1: *opc = &&op_rep2A;   break;
-		case OP_INNER2: *opc = &&op_inner2A; break;
-		case OP_IREP2:  *opc = &&op_irep2A;  break;
-		case OP_DONE:   *opc = &&op_doneA;   break;
-		default: break;
-		}
-	}
+		unsigned *offsets = smalloc(ops->len * sizeof *offsets);
+		unsigned len = 0;
 
-	for (unsigned at = 0; at < opsB->len; at++)
-	{
-		struct op *op = &oplB[at];
-		void **opc = &opcB[at];
-		switch (op->type)
+		for (unsigned at = 0; at < ops->len; at++)
 		{
-		case OP_INC:    *opc = &&op_incB;    break;
-		case OP_DEC:    *opc = &&op_decB;    break;
-		case OP_LEFT:   *opc = &&op_leftB;   break;
-		case OP_RIGHT:  *opc = &&op_rightB;  break;
-		case OP_WAIT:   *opc = &&op_waitB;   break;
-		case OP_LOOP1:  *opc = &&op_loop1B;  break;
-		case OP_LOOP2:  *opc = &&op_loop2B;  break;
-		case OP_REP1:   *opc = &&op_rep1B;   break;
-		case OP_REP2:   *opc = &&op_rep2B;   break;
-		case OP_IREP1:  *opc = &&op_rep1B;   break;
-		case OP_INNER1: *opc = &&op_rep2B;   break;
-		case OP_INNER2: *opc = &&op_inner2B; break;
-		case OP_IREP2:  *opc = &&op_irep2B;  break;
-		case OP_DONE:   *opc = &&nextcycle;  break; /* slight shortcut */
-		default: break;
+			offsets[at] = len;
+
+			switch (ops->ops[at].type)
+			{
+			case OP_IREP2:
+				len += 3;
+				break;
+			case OP_LOOP1: case OP_LOOP2: case OP_REP1: case OP_REP2: case OP_IREP1: case OP_INNER1:
+				len += 2;
+				break;
+			default:
+				len += 1;
+				break;
+			}
 		}
+
+		struct opcodes *code = smalloc(sizeof *code + len * sizeof *code->ops);
+
+		void * const *xtable = (act == core_compile_a ? xtableA : xtableB);
+		union opcode *opc = code->ops;
+
+		for (unsigned at = 0; at < ops->len; at++)
+		{
+			struct op *op = &ops->ops[at];
+
+			opc->xt = xtable[op->type];
+			opc++;
+
+			switch (op->type)
+			{
+			case OP_LOOP1: case OP_LOOP2: case OP_REP2: case OP_INNER1:
+				opc->match = &code->ops[offsets[op->match+1]];
+				opc++;
+				break;
+			case OP_REP1: case OP_IREP1:
+				opc->count = op->count;
+				opc++;
+				break;
+			case OP_IREP2:
+				opc->count = op->count; opc++;
+				opc->match = &code->ops[offsets[op->match+1]]; opc++;
+				break;
+			default: /* no extra operands */
+				break;
+			}
+		}
+
+		return code;
 	}
 
 	/* state-holding variables */
@@ -202,7 +253,7 @@ static void run(struct oplist *opsA, struct oplist *opsB)
 	static unsigned char tapemax[2][MAXTAPE];
 #endif
 
-	int ipA = 0, ipB = 0;
+	union opcode *ipA = 0, *ipB = 0;
 	unsigned char *ptrA = 0, *ptrB = 0, bcache = 0;
 	int repA = 0, repB = 0, *repSA = 0, *repSB = 0;
 	int deathsA = 0, deathsB = 0;
@@ -231,7 +282,7 @@ static void run(struct oplist *opsA, struct oplist *opsB)
 	ret = &&sym; \
 	for (tapesize = MINTAPE; tapesize <= MAXTAPE; tapesize++) \
 	{ \
-		ipA = 0, ipB = 0; \
+		ipA = &codeA->ops[0], ipB = &codeB->ops[0]; \
 	  \
 		memset(tape, 0, tapesize); \
 		ptrA = &tape[0], ptrB = &tape[tapesize-1]; \
@@ -245,7 +296,7 @@ static void run(struct oplist *opsA, struct oplist *opsB)
 		CRANK(memset(tapemax, 0, sizeof tapemax)); \
 	  \
 		score = 0; \
-		goto *opcA[0]; \
+		goto *ipA->xt; \
 	sym: \
 		scores[pol][tapesize] = score; \
 		CRANK(EXECUTE_STATS(pol)); \
@@ -256,22 +307,20 @@ static void run(struct oplist *opsA, struct oplist *opsB)
 
 	EXECUTE_ALL(done_normal, 0);
 
-	for (unsigned at = 0; at < opsB->len; at++)
+	/* FIXME: try to make this loop not interpret all operands as xts */
+	for (union opcode *op = codeB->ops; op->xt != xtableB[OP_DONE]; op++)
 	{
-		enum optype op = oplB[at].type;
-		if (op == OP_INC) opcB[at] = &&op_decB;
-		else if (op == OP_DEC) opcB[at] = &&op_incB;
+		if (op->xt == xtableB[OP_INC]) op->xt = xtableB[OP_DEC];
+		else if (op->xt == xtableB[OP_DEC]) op->xt = xtableB[OP_INC];
 	}
 
 	EXECUTE_ALL(done_flipped, 1);
 
-	free(opcA);
-	free(opcB);
-	return;
+	return 0;
 
 	/* actual core */
 
-#define NEXTA ipA++; goto *opcB[ipB]
+#define NEXTA ipA++; goto *ipB->xt
 #define NEXTB ipB++; goto nextcycle
 
 /* #define TRACE 1 */
@@ -290,7 +339,7 @@ nextcycle:
 		       ? ((ptrB - tape) == i ? 'X' : 'A')
 		       : ((ptrB - tape) == i ? 'B' : ' '),
 		       tape[i]);
-	printf("  dA %d  dB %d   ipA %d ipB %d   repA %d repB %d\n", deathsA, deathsB, ipA, ipB, repA, repB);
+	printf("  dA %d  dB %d   ipA %td ipB %td   repA %d repB %d\n", deathsA, deathsB, ipA-codeA->ops, ipB-codeB->ops, repA, repB);
 #endif
 
 	if (deathsA >= 2 && deathsB >= 2)
@@ -315,11 +364,11 @@ nextcycle:
 		goto *ret;
 
 	bcache = *ptrB;
-	goto *opcA[ipA];
+	goto *ipA->xt;
 
 fallA:
 	deathsA = 2;
-	goto *opcB[ipB];
+	goto *ipB->xt;
 
 fallB:
 	if (!tape[0]) deathsA++;
@@ -374,56 +423,66 @@ op_waitB:
 	NEXTB;
 
 op_loop1A:
-	if (!*ptrA) ipA = oplA[ipA].match;
+	ipA++;
+	if (!*ptrA) ipA = ipA->match - 1;
 	NEXTA;
 op_loop1B:
-	if (!bcache) ipB = oplB[ipB].match;
+	ipB++;
+	if (!bcache) ipB = ipB->match - 1;
 	NEXTB;
 op_loop2A:
-	if (*ptrA) ipA = oplA[ipA].match;
+	ipA++;
+	if (*ptrA) ipA = ipA->match - 1;
 	NEXTA;
 op_loop2B:
-	if (bcache) ipB = oplB[ipB].match;
+	ipB++;
+	if (bcache) ipB = ipB->match - 1;
 	NEXTB;
 
 	/* simple (..) repeats with no corresponding {..} block */
 
 op_rep1A:
-	*repSA++ = repA; repA = oplA[ipA].count;
-	goto *opcA[++ipA];
+	ipA++;
+	*repSA++ = repA; repA = ipA->count;
+	goto *(++ipA)->xt;
 op_rep1B:
-	*repSB++ = repB; repB = oplB[ipB].count;
-	goto *opcB[++ipB];
+	ipB++;
+	*repSB++ = repB; repB = ipB->count;
+	goto *(++ipB)->xt;
 
 op_rep2A:
-	if (--repA) ipA = oplA[ipA].match;
+	ipA++;
+	if (--repA) ipA = ipA->match - 1;
 	else repA = *--repSA;
-	goto *opcA[++ipA];
+	goto *(++ipA)->xt;
 op_rep2B:
-	if (--repB) ipB = oplB[ipB].match;
+	ipB++;
+	if (--repB) ipB = ipB->match - 1;
 	else repB = *--repSB;
-	goto *opcB[++ipB];
+	goto *(++ipB)->xt;
 
 	/* complex (..{ and }..) repeats; count in different dirs in }..) */
 
 op_inner2A:
 	*repSA++ = repA; repA = 1;
-	goto *opcA[++ipA];
+	goto *(++ipA)->xt;
 op_inner2B:
 	*repSB++ = repB; repB = 1;
-	goto *opcB[++ipB];
+	goto *(++ipB)->xt;
 
 op_irep2A:
-	if (++repA <= oplA[ipA].count) ipA = oplA[ipA].match;
+	ipA += 3;
+	if (++repA <= ipA[-2].count) ipA = ipA[-1].match;
 	else repA = *--repSA;
-	goto *opcA[++ipA];
+	goto *ipA->xt;
 op_irep2B:
-	if (++repB <= oplB[ipB].count) ipB = oplB[ipB].match;
+	ipB += 3;
+	if (++repB <= ipB[-2].count) ipB = ipB[-1].match;
 	else repB = *--repSB;
-	goto *opcB[++ipB];
+	goto *ipB->xt;
 
 op_doneA:
-	goto *opcB[ipB];
+	goto *ipB->xt;
 }
 
 #include "parser.c"
