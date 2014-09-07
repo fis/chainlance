@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
 	{
 		struct op *opl = ops->ops;
 
-		for (int at = 0; at < ops->len; at++)
+		for (unsigned at = 0; at < ops->len; at++)
 		{
 			struct op *op = &opl[at];
 			if (op->type == OP_INC)
@@ -168,7 +168,7 @@ static char *compile(struct oplist *ops, unsigned *outsize, unsigned mode_B)
 
 	unsigned size = 0;
 
-	for (int at = 0; at < ops->len; at++)
+	for (unsigned at = 0; at < ops->len; at++)
 	{
 		struct op *op = &opl[at];
 		op->code = size;
@@ -183,7 +183,7 @@ static char *compile(struct oplist *ops, unsigned *outsize, unsigned mode_B)
 
 	/* generate machine code */
 
-	for (int at = 0; at < ops->len; at++)
+	for (unsigned at = 0; at < ops->len; at++)
 	{
 		struct op *op = &opl[at];
 		struct jitnfo *nfo = &optable[mode_B][op->type];

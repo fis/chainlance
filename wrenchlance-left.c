@@ -136,7 +136,7 @@ static char *compile(struct oplist *ops, unsigned *outsize)
 	unsigned size = 0;
 
 	depth = 0;
-	for (int at = 0; at < ops->len; at++)
+	for (unsigned at = 0; at < ops->len; at++)
 	{
 		struct op *op = &opl[at];
 		struct jitnfo *nfo = &optable[op->type];
@@ -161,7 +161,7 @@ static char *compile(struct oplist *ops, unsigned *outsize)
 	/* generate machine code */
 
 	depth = 0;
-	for (int at = 0; at < ops->len; at++)
+	for (unsigned at = 0; at < ops->len; at++)
 	{
 		struct op *op = &opl[at];
 		struct jitnfo *nfo = &optable[op->type];

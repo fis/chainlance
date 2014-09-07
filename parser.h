@@ -59,15 +59,15 @@ struct op
 
 struct oplist
 {
-	int len, size;
-	struct op *ops;
+	unsigned len, size;
+	struct op ops[];
 };
 
 /* oplist handling */
 
 struct oplist *opl_new(void);
 void opl_free(struct oplist *o);
-void opl_append(struct oplist *o, enum optype type);
+struct oplist *opl_append(struct oplist *o, enum optype type);
 
 /* parsing and preprocessing */
 

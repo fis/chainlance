@@ -156,30 +156,30 @@ struct oplist *readops(int fd)
 
 		switch (ch)
 		{
-		case '+': opl_append(ops, OP_INC);    break;
-		case '-': opl_append(ops, OP_DEC);    break;
-		case '<': opl_append(ops, OP_LEFT);   break;
-		case '>': opl_append(ops, OP_RIGHT);  break;
-		case '.': opl_append(ops, OP_WAIT);   break;
-		case '[': opl_append(ops, OP_LOOP1);  break;
-		case ']': opl_append(ops, OP_LOOP2);  break;
-		case '(': opl_append(ops, OP_REP1);   break;
+		case '+': ops = opl_append(ops, OP_INC);    break;
+		case '-': ops = opl_append(ops, OP_DEC);    break;
+		case '<': ops = opl_append(ops, OP_LEFT);   break;
+		case '>': ops = opl_append(ops, OP_RIGHT);  break;
+		case '.': ops = opl_append(ops, OP_WAIT);   break;
+		case '[': ops = opl_append(ops, OP_LOOP1);  break;
+		case ']': ops = opl_append(ops, OP_LOOP2);  break;
+		case '(': ops = opl_append(ops, OP_REP1);   break;
 		case ')':
 			/* need to extract the count */
 			c = readrepc(fd);
 			if (c < 0) c = MAXCYCLES;
-			opl_append(ops, OP_REP2);
+			ops = opl_append(ops, OP_REP2);
 			ops->ops[ops->len-1].count = c;
 			break;
-		case '{': opl_append(ops, OP_INNER1); break;
-		case '}': opl_append(ops, OP_INNER2); break;
+		case '{': ops = opl_append(ops, OP_INNER1); break;
+		case '}': ops = opl_append(ops, OP_INNER2); break;
 		default:
 			/* ignore unexpected commands */
 			break;
 		}
 	}
 
-	opl_append(ops, OP_DONE);
+	ops = opl_append(ops, OP_DONE);
 
 	return ops;
 }
@@ -188,10 +188,10 @@ void matchrep(struct oplist *ops)
 {
 	/* match (..) pairs and inner {..} blocks */
 
-	int stack[MAXNEST], istack[MAXNEST], idstack[MAXNEST];
-	int depth = 0, idepth = 0, isdepth = 0;
+	unsigned stack[MAXNEST], istack[MAXNEST], idstack[MAXNEST];
+	unsigned depth = 0, idepth = 0, isdepth = 0;
 
-	for (int at = 0; at < ops->len; at++)
+	for (unsigned at = 0; at < ops->len; at++)
 	{
 		struct op *op = &ops->ops[at];
 
@@ -268,7 +268,7 @@ void cleanrep(struct oplist *ops)
 
 	int last_real = -1;
 
-	for (int at = 0; at < ops->len; at++)
+	for (unsigned at = 0; at < ops->len; at++)
 	{
 		struct op *op = &ops->ops[at];
 		switch (op->type)
@@ -329,14 +329,14 @@ void cleanrep(struct oplist *ops)
 
 	/* clean out (...)*0 loops */
 
-	int orig_len = ops->len;
-	for (int at = 0, to = 0; at < orig_len; at++, to++)
+	unsigned orig_len = ops->len;
+	for (unsigned at = 0, to = 0; at < orig_len; at++, to++)
 	{
 		struct op *op = &ops->ops[at];
 
 		if ((op->type == OP_REP1 || op->type == OP_IREP1 || op->type == OP_INNER2) && op->count == 0)
 		{
-			int del_to = op->match;      /* delete this far */
+			unsigned del_to = op->match; /* delete this far */
 			ops->len -= del_to - at + 1; /* fixup length */
 			at = del_to;                 /* skip the loop */
 			to--;                        /* don't copy anything */
@@ -356,10 +356,10 @@ void matchloop(struct oplist *ops)
 {
 	/* match [..] pairs */
 
-	int stack[MAXNEST], idstack[MAXNEST];
-	int depth = 0, idepth = 0;
+	unsigned stack[MAXNEST], idstack[MAXNEST];
+	unsigned depth = 0, idepth = 0;
 
-	for (int at = 0; at < ops->len; at++)
+	for (unsigned at = 0; at < ops->len; at++)
 	{
 		struct op *op = &ops->ops[at];
 
@@ -436,27 +436,27 @@ void fail(const char *fmt, ...)
 
 struct oplist *opl_new(void)
 {
-	struct oplist *o = smalloc(sizeof *o);
+	const unsigned size = 32;
+
+	struct oplist *o = smalloc(sizeof *o + size * sizeof *o->ops);
 
 	o->len = 0;
-	o->size = 32;
-	o->ops = smalloc(o->size * sizeof *o->ops);
+	o->size = size;
 
 	return o;
 }
 
 void opl_free(struct oplist *o)
 {
-	free(o->ops);
 	free(o);
 }
 
-void opl_append(struct oplist *o, enum optype type)
+struct oplist *opl_append(struct oplist *o, enum optype type)
 {
 	if (o->len == o->size)
 	{
 		o->size += o->size >> 1;
-		o->ops = srealloc(o->ops, o->size * sizeof *o->ops);
+		o = srealloc(o, sizeof *o + o->size * sizeof *o->ops);
 	}
 
 	o->ops[o->len].type = type;
@@ -464,4 +464,6 @@ void opl_append(struct oplist *o, enum optype type)
 	o->ops[o->len].inner = -1;
 	o->ops[o->len].count = -1;
 	o->len++;
+
+	return o;
 }

@@ -145,7 +145,7 @@ static void run(struct oplist *opsA, struct oplist *opsB)
 	void **opcA = smalloc((opsA->len+1) * sizeof *opcA);
 	void **opcB = smalloc((opsB->len+1) * sizeof *opcB);
 
-	for (int at = 0; at < opsA->len; at++)
+	for (unsigned at = 0; at < opsA->len; at++)
 	{
 		struct op *op = &oplA[at];
 		void **opc = &opcA[at];
@@ -169,7 +169,7 @@ static void run(struct oplist *opsA, struct oplist *opsB)
 		}
 	}
 
-	for (int at = 0; at < opsB->len; at++)
+	for (unsigned at = 0; at < opsB->len; at++)
 	{
 		struct op *op = &oplB[at];
 		void **opc = &opcB[at];
@@ -256,7 +256,7 @@ static void run(struct oplist *opsA, struct oplist *opsB)
 
 	EXECUTE_ALL(done_normal, 0);
 
-	for (int at = 0; at < opsB->len; at++)
+	for (unsigned at = 0; at < opsB->len; at++)
 	{
 		enum optype op = oplB[at].type;
 		if (op == OP_INC) opcB[at] = &&op_decB;

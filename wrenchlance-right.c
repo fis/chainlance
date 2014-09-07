@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
 
 	struct op *opl = ops->ops;
 
-	for (int at = 0; at < ops->len; at++)
+	for (unsigned at = 0; at < ops->len; at++)
 	{
 		struct op *op = &opl[at];
 		if (op->type == OP_INC)
@@ -225,7 +225,7 @@ static void compile(struct oplist *ops, int kettle)
 	struct op *opl = ops->ops;
 	int depth = 0;
 
-	for (int at = 0; at < ops->len; at++)
+	for (unsigned at = 0; at < ops->len; at++)
 	{
 		struct op *op = &opl[at];
 		struct opnfo *nfo = &optable[op->type];
