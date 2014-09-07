@@ -40,112 +40,117 @@ jmp_buf fail_buf;
    (0 and 1 are sensible values.) */
 #define EMPTY_LOOP_COUNT 0
 
+/* helper functions for buffered reading with ungetch */
+
+#define BUF_SIZE (65536+4096)
+#define READ_SIZE 65536
+
+static unsigned char buf[BUF_SIZE];
+static unsigned buf_at = 0, buf_size = 0;
+
+static int nextc(int fd)
+{
+	if (buf_at >= buf_size)
+	{
+		ssize_t t = read(fd, buf, READ_SIZE);
+		if (t < 0) die("read error");
+		if (t == 0) return -1;
+
+		buf_at = 0;
+		buf_size = t;
+	}
+
+#ifdef PARSE_NEWLINE_AS_EOF
+	if (buf[buf_at] == '\n') return buf_at++, -1;
+#endif
+	return buf[buf_at++];
+}
+
+static void unc(int fd, int c)
+{
+	if (buf_at == 0)
+	{
+		memmove(buf+1, buf, buf_size);
+		buf_at++;
+		buf_size++;
+	}
+#ifdef PARSE_NEWLINE_AS_EOF
+	if (c == -1) c = '\n';
+#endif
+	buf[--buf_at] = c;
+}
+
 /* parsing and preprocessing, impl */
+
+static int nextcmd(int fd)
+{
+	while (1)
+	{
+		int c = nextc(fd);
+		switch (c)
+		{
+		case -1:
+		case '+': case '-': case '<': case '>': case '.': case ',': case '[': case ']':
+		case '(': case ')': case '{': case '}': case '*': case '%':
+		case '0': case '1': case '2': case '3': case '4':
+		case '5': case '6': case '7': case '8': case '9':
+			return c;
+
+		default:
+			/* ignore this character */
+			break;
+		}
+	}
+}
+
+static int readrepc(int fd)
+{
+	int c = 0, neg = 0, ch;
+
+	ch = nextcmd(fd);
+	if (ch != '*' && ch != '%')
+	{
+		/* treat garbage as ()*0 in case it's inside a comment */
+		unc(fd, ch);
+		return 0;
+	}
+
+	ch = nextcmd(fd);
+	if (ch == '-')
+	{
+		neg = 1;
+		ch = nextc(fd);
+	}
+
+	while (1)
+	{
+		if (ch < '0' || ch > '9')
+			break;
+
+		c = c*10 + (ch - '0');
+		if (c > MAXCYCLES)
+		{
+			c = MAXCYCLES;
+			ch = 0;
+			break;
+		}
+
+		ch = nextc(fd);
+	}
+
+	unc(fd, ch);
+
+	return neg ? -c : c;
+}
 
 struct oplist *readops(int fd)
 {
-	/* lexical tokenizing into initial oplist */
-
-	/* helper functions to do buffered reading with ungetch support */
-
-	static unsigned char buf[65536];
-	static unsigned buf_at = 0, buf_size = 0;
-
-	int nextc(void)
-	{
-		if (buf_at >= buf_size)
-		{
-			ssize_t t = read(fd, buf, sizeof buf);
-			if (t < 0) die("read error");
-			if (t == 0) return -1;
-
-			buf_at = 0;
-			buf_size = t;
-		}
-
-#ifdef PARSE_NEWLINE_AS_EOF
-		if (buf[buf_at] == '\n') return buf_at++, -1;
-#endif
-		return buf[buf_at++];
-	}
-
-	int nextcmd(void)
-	{
-		while (1)
-		{
-			int c = nextc();
-			switch (c)
-			{
-			case -1:
-			case '+': case '-': case '<': case '>': case '.': case ',': case '[': case ']':
-			case '(': case ')': case '{': case '}': case '*': case '%':
-			case '0': case '1': case '2': case '3': case '4':
-			case '5': case '6': case '7': case '8': case '9':
-				return c;
-
-			default:
-				/* ignore this character */
-				break;
-			}
-		}
-	}
-
-	void unc(int c)
-	{
-#ifdef PARSE_NEWLINE_AS_EOF
-		if (c == -1) c = '\n';
-#endif
-		buf[--buf_at] = c;
-	}
-
-	/* helper function to read the count after a repetition operation */
-
-	int readrepc(void)
-	{
-		int c = 0, neg = 0, ch;
-
-		ch = nextcmd();
-		if (ch != '*' && ch != '%')
-		{
-			/* treat garbage as ()*0 in case it's inside a comment */
-			unc(ch);
-			return 0;
-		}
-
-		ch = nextcmd();
-		if (ch == '-')
-		{
-			neg = 1;
-			ch = nextc();
-		}
-
-		while (1)
-		{
-			if (ch < '0' || ch > '9')
-				break;
-
-			c = c*10 + (ch - '0');
-			if (c > MAXCYCLES)
-			{
-				c = MAXCYCLES;
-				ch = 0;
-				break;
-			}
-
-			ch = nextc();
-		}
-
-		unc(ch);
-
-		return neg ? -c : c;
-	}
-
 	/* main code to read the list of ops */
 
 	struct oplist *ops = opl_new();
 	int ch;
 
-	while ((ch = nextcmd()) >= 0)
+	while ((ch = nextcmd(fd)) >= 0)
 	{
 		int c;
 
@@ -161,7 +166,7 @@ struct oplist *readops(int fd)
 		case '(': opl_append(ops, OP_REP1);   break;
 		case ')':
 			/* need to extract the count */
-			c = readrepc();
+			c = readrepc(fd);
 			if (c < 0) c = MAXCYCLES;
 			opl_append(ops, OP_REP2);
 			ops->ops[ops->len-1].count = c;
