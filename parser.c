@@ -66,7 +66,7 @@ static int nextc(int fd)
 	return buf[buf_at++];
 }
 
-static void unc(int fd, int c)
+static void unc(int c)
 {
 	if (buf_at == 0)
 	{
@@ -111,7 +111,7 @@ static int readrepc(int fd)
 	if (ch != '*' && ch != '%')
 	{
 		/* treat garbage as ()*0 in case it's inside a comment */
-		unc(fd, ch);
+		unc(ch);
 		return 0;
 	}
 
@@ -138,7 +138,7 @@ static int readrepc(int fd)
 		ch = nextc(fd);
 	}
 
-	unc(fd, ch);
+	unc(ch);
 
 	return neg ? -c : c;
 }
