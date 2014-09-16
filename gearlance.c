@@ -76,6 +76,7 @@ static struct opcodes *core(enum core_action act, struct oplist *ops, struct opc
 
 /* main application */
 
+#ifndef NO_MAIN
 int main(int argc, char *argv[])
 {
 	/* check args */
@@ -157,6 +158,7 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
+#endif /* !NO_MAIN */
 
 /* actual interpretation, impl */
 

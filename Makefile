@@ -1,16 +1,19 @@
 GEARLANCES = cranklance gearlance
+PROGS = chainlance $(GEARLANCES) gearlanced genelance torquelance torquelance-compile wrenchlance-left wrenchlance-right
 PARSER = parser.c parser.h common.c common.h
 GCC = gcc -std=gnu99 -O2 -fwhole-program -march=native -Wall -Wextra
 
 .PHONY : all clean test
 
-all: chainlance $(GEARLANCES) torquelance torquelance-compile \
-	wrenchlance-left wrenchlance-right
+all: $(PROGS)
 
 chainlance: chainlance.c
 	gcc -o chainlance -std=gnu99 -g -Wall chainlance.c
 
 $(GEARLANCES): %: %.c gearlance.c $(PARSER)
+	$(GCC) -o $@ $<
+
+gearlanced: gearlanced.c gearlance.c $(PARSER)
 	$(GCC) -o $@ $<
 
 genelance: genelance.c $(PARSER)
@@ -29,11 +32,10 @@ wrenchlance-right: wrenchlance-right.c $(PARSER)
 	$(GCC) -o $@ $<
 
 clean:
-	$(RM) chainlance cranklance gearlance genelance
-	$(RM) torquelance torquelance-header.o
-	$(RM) torquelance-compile torquelance-ops.o
-	$(RM) wrenchlance-left wrenchlance-right wrenchlance-ops.o
+	$(RM) $(PROGS)
+	$(RM) torquelance-header.o torquelance-ops.o wrenchlance-ops.o
 
+# TODO: obsoleted test code, see test/ instead
 test: chainlance
 	./chainlance test.b test.b > test.asm
 	nasm -o test.o -f elf64 -g -Ox test.asm

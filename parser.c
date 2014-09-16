@@ -42,6 +42,22 @@ jmp_buf fail_buf;
 
 /* helper functions for buffered reading with ungetch */
 
+#ifdef PARSE_STDIN
+
+static int nextc(int fd)
+{
+	(void)fd; /* unused */
+	int c = getchar();
+	return c == '\n' ? -1 : c;
+}
+
+static void unc(int c)
+{
+	ungetc(c, stdin);
+}
+
+#else /* PARSE_STDIN */
+
 #define BUF_SIZE (65536+4096)
 #define READ_SIZE 65536
 
@@ -79,6 +95,8 @@ static void unc(int c)
 #endif
 	buf[--buf_at] = c;
 }
+
+#endif /* PARSE_STDIN */
 
 /* parsing and preprocessing, impl */
 
