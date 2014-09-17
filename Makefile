@@ -16,7 +16,7 @@ $(GEARLANCES): %: %.c gearlance.c $(PARSER)
 gearlanced: gearlanced.c gearlance.c $(PARSER)
 	$(GCC) -o $@ $<
 
-genelance: genelance.c $(PARSER)
+genelance: genelance.c gearlance.c $(PARSER)
 	$(GCC) -o $@ $<
 
 torquelance: torquelance.c torquelance-header.o common.c common.h parser.h
