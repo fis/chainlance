@@ -53,7 +53,7 @@ static int nextc(int fd)
 
 static void unc(int c)
 {
-	ungetc(c, stdin);
+	ungetc(c == -1 ? '\n' : c, stdin);
 }
 
 #else /* PARSE_STDIN */
