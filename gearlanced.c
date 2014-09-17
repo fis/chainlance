@@ -9,10 +9,6 @@
  * the program will read commands from stdin, and reply results to
  * stdout.  The protocol is as follows.
  *
- * "set I\nP\n":
- * Set the I'th program (where 0 <= I < N) to P.  Returns either
- * "ok\n" or "error: ...\n".
- *
  * "test\nP\n":
  * Test program P against those currently on the hill.  Will return
  * either "error: ...\n" or "ok\n" followed by N lines of output.
@@ -21,6 +17,16 @@
  * where each C corresponds to a particular tape length/polarity
  * combination, and is either '<' (the program on the hill wins),
  * '>' (program P wins) or 'X' (tie).
+ *
+ * "set I\nP\n":
+ * Set the I'th program (where 0 <= I < N) to P.  Returns either
+ * "ok\n" or "error: ...\n".
+ *
+ * "unset I\n":
+ * Remove the I'th program (where 0 <= I < N), by setting it to the
+ * always-lose one.  This is used to "blank" the program being
+ * replaced on the hill, for efficiency reasons.  Returns "ok\n" or
+ * "error: ...\n" (only if I is not a number or out of bounds).
  *
  * An EOF condition in place of a command will terminate the program.
  */
@@ -94,7 +100,7 @@ int main(int argc, char *argv[])
 
 	/* main loop */
 
-	char cmd[128]; /* enough for any "set I" command */
+	char cmd[128]; /* enough for any "unset I" command */
 
 	while (fgets(cmd, sizeof cmd, stdin))
 	{
@@ -114,15 +120,21 @@ int main(int argc, char *argv[])
 
 			for (unsigned i = 0; i < hillsize; i++)
 			{
-				core(core_run, 0, hill[i], code);
+				if (!hill[i])
+				{
+					for (unsigned pol = 0; pol < 2; pol++)
+						for (unsigned tlen = MINTAPE; tlen <= MAXTAPE; tlen++)
+							scores[pol][tlen] = -1;
+				}
+				else
+					core(core_run, 0, hill[i], code);
 
 				for (unsigned pol = 0; pol < 2; pol++)
 				{
 					for (unsigned tlen = MINTAPE; tlen <= MAXTAPE; tlen++)
 						putchar(scores[pol][tlen] ? (scores[pol][tlen] > 0 ? '<' : '>') : 'X');
-					putchar(' ');
+					putchar(pol == 0 ? ' ' : '\n');
 				}
-				putchar('\n');
 			}
 		}
 		else if (strncmp(cmd, "set ", 4) == 0)
@@ -139,6 +151,19 @@ int main(int argc, char *argv[])
 
 			free(hill[prog]);
 			hill[prog] = code;
+
+			printf("ok\n");
+		}
+		else if (strncmp(cmd, "unset ", 6) == 0)
+		{
+			unsigned prog = num(cmd + 6);
+			if (prog > hillsize) {
+				printf("error: program %u does not exist\n", prog);
+				continue;
+			}
+
+			free(hill[prog]);
+			hill[prog] = 0;
 
 			printf("ok\n");
 		}
