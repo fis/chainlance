@@ -10,11 +10,14 @@ First, it would be best to learn about
 This repository holds a family of BF Joust implementations.  One of
 them (gearlance) has the (dubious?) distinction of serving as the
 implementation behind the "egojoust" hill on `#esoteric` of freenode.
+(And also the up-and-coming "zem.fi" replacement hill.)
 
 The following systems, in arbitrary order, are included:
 
 * **gearlance**: A threaded-code computed-goto kind of an interpreter.
 * **cranklance**: The above, but including statistics-collection code.
+* **gearlanced**: Convenience interface for using gearlance to
+  maintain a BF Joust hill efficiently.
 * **genelance**: Convenience interface for using gearlance to evaluate
   programs against a fixed set.
 * **torquelance**: A chainlance rehash, with separate compilation of
@@ -63,6 +66,16 @@ below).  Identical usage; more complicated output format.
 
 Etymology: Related to gearlance, but attempting to evoke imagery of
 hand-cranking a machine step by step.
+
+### gearlanced
+
+gearlance was recently retrofitted to support threaded-code
+compilation as a separate step from running a joust.  gearlanced (note
+the `d`) provides an interface for keeping a hill of pre-parsed and
+pre-compiled "left programs", and testing new challengers as a single
+"right program".
+
+Etymology: Gearlance, daemon. Even though it is not a daemon.
 
 ### genelance
 
@@ -173,3 +186,10 @@ reference results.
 
 Lives in the `vis/` directory.  Needs documentation.  Used to generate
 [egostats](http://zem.fi/egostats/) every now and then.
+
+### Python glue
+
+The `zhill/` package, and the `zhillbot.py` script, form the basis of
+the zem.fi BF Joust hill.  The `web/` directory contains the static
+website parts.  This part is also not documented, and probably not
+very useful, except possibly as a (cautionary?) example.
