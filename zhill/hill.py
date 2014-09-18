@@ -42,7 +42,8 @@ class Hill:
 
         # verify that hill directory is a Git repo
 
-        sp.check_call(('git', 'rev-parse', 'HEAD'), stdout=sp.DEVNULL, stderr=sp.DEVNULL)
+        with open('/dev/null', 'wb') as devnull:
+            sp.check_call(('git', 'rev-parse', 'HEAD'), stdout=devnull, stderr=devnull)
 
         # load configuration
 
