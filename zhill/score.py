@@ -28,6 +28,7 @@ def trad_score(hill):
     base = dict((p, 0) for p in hill)
     for progA, progB in hill.pairs():
         dp = sum(hill.results(progA, progB))
+        # tweak:   dp/k => (dp+k)/(2*k)   (-dp)/k => ((-dp)+k)/(2*k)
         if dp > 0:
             base[progA] += worth[progB] * dp / k
         elif dp < 0:

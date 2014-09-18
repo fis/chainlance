@@ -30,6 +30,7 @@ from zhill.score import scorings
 #   'points': sum of duel points for scoring
 #   'score': current score under the scoring mechanic
 #   'rank': current index in _ranking
+#   'prevrank': previous index (if any) before the latest challenge
 #   'file': stored source file, or None if a pseudo-program
 
 class Hill:
@@ -107,7 +108,13 @@ class Hill:
         self._max_score = self._scoring['max'](self)
         self._rescore()
 
+        for p in self._progs.values():
+            p['prevrank'] = p['rank']
+
         pass
+
+    def dir(self):
+        return self._dir
 
     def cfg(self):
         return self._cfg
@@ -207,16 +214,18 @@ class Hill:
 
         err, result = self._gear.test(code)
         if err is not None:
-            return '{0} failed: {1}'.format(newprog, err)
+            return '{0} failed: {1}'.format(newprog, err), None
 
         err = self._gear.set(newid, code)
         if err is not None:
-            return '{0} impossibly failed: {1}'.format(newprog, err)
+            return '{0} impossibly failed: {1}'.format(newprog, err), None
 
         # replace old program with new in hill data structures
 
         newp = { 'id': newid,
                  'name': newprog }
+        if replaced['name'] == newprog:
+            newp['rank'] = replaced['rank'] # for change in reports
 
         del self._progs[replaced['name']]
         self._progs[newprog] = newp
@@ -250,16 +259,28 @@ class Hill:
 
         # return summary information about the new program
 
-        return '{0}: points {1:.2f}, score {2:.2f}/{3}, rank {4:d}/{5:d}'.format(
+        rankchg = ''
+        if 'prevrank' in newp:
+            delta = newp['prevrank'] - newp['rank']
+            if delta == 0:
+                rankchg = '--'
+            else:
+                rankchg = '{0:+d}'.format(delta)
+            rankchg = ' (change: ' + rankchg + ')'
+
+        return None, '{0}: points {1:.2f}, score {2:.2f}/{3}, rank {4:d}/{5:d}{6}'.format(
             newprog,
             newp['points'],
             newp['score'], self._max_score,
-            1+newp['rank'], len(self._progs))
+            1+newp['rank'], len(self._progs), rankchg)
 
     # point and score computations
 
     def _rescore(self):
         n = len(self._progs)
+
+        for p in self._progs.values():
+            if 'rank' in p: p['prevrank'] = p['rank']
 
         # recompute points for all programs
 
@@ -296,10 +317,17 @@ class Hill:
             if r < 0: return '-'
             if r > 0: return '+'
             return '0'
+        def chg(p):
+            if 'prevrank' not in p:
+                return 'new'
+            delta = p['prevrank'] - p['rank']
+            if delta == 0:
+                return ' --'
+            return '{0:+3d}'.format(delta)
 
-        out.write('Pos/ID   Score  Points  Program\n')
+        out.write('Rank/chg   Score  Points  Program\n')
         for rank, (prog, points, score) in enumerate(self.ranking()):
-            out.write('{0:6d} {1:7.2f} {2:7.2f}  {3}\n'.format(rank+1, score, points, prog))
+            out.write('{0:4d} {1} {2:7.2f} {3:7.2f}  {4}\n'.format(rank+1, chg(self._progs[prog]), score, points, prog))
         out.write('\n')
 
         out.write('   | ' +
