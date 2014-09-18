@@ -1,3 +1,4 @@
+import json
 import os
 import subprocess as sp
 from configparser import ConfigParser
@@ -364,6 +365,28 @@ class Hill:
             else:
                 out.write('{0} wins.\n'.format(prog if tot > 0 else opp))
             out.write('\n')
+
+    def write_json(self, out):
+        data = {}
+
+        n = len(self._ranking)
+
+        data['progs'] = self._ranking
+        data['prevrank'] = [self._progs[p].get('prevrank') for p in self._ranking]
+
+        data['results'] = [[self.results(self._ranking[a], self._ranking[b]) for b in range(a+1, n)]
+                           for a in range(n-1)]
+
+        scores = {}
+        for name, funcs in scorings.items():
+            s = funcs['score'](self)
+            scores[name] = {
+                'max': float(funcs['max'](self)),
+                'score': [s[p] for p in self._ranking]
+            }
+        data['scores'] = scores
+
+        json.dump(data, out, separators=(',',':'))
 
 # git helper
 
