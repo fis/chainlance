@@ -43,8 +43,7 @@ class Hill:
 
         # verify that hill directory is a Git repo
 
-        with open('/dev/null', 'wb') as devnull:
-            sp.check_call(('git', 'rev-parse', 'HEAD'), stdout=devnull, stderr=devnull)
+        self._commit = git_getcommit()
 
         # load configuration
 
@@ -201,6 +200,7 @@ class Hill:
             commitmsg = 'Replacing {0} by {1}'.format(replaced['name'], newprog)
 
         git('commit', '-q', '-m', commitmsg)
+        self._commit = git_getcommit()
 
         return newfile
 
@@ -386,9 +386,16 @@ class Hill:
             }
         data['scores'] = scores
 
+        data['commit'] = self._commit
+
         json.dump(data, out, separators=(',',':'))
 
 # git helper
 
 def git(*args):
     sp.check_call(('git',) + args)
+
+def git_getcommit():
+    with open('/dev/null', 'wb') as devnull:
+        commit = sp.check_output(('git', 'rev-parse', 'HEAD'), stderr=devnull)
+    return commit.decode('ascii').strip()
