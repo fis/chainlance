@@ -75,11 +75,11 @@ module Bot
           File.open(json, 'w') { |f| hill.write_json(f, cfg['jsonvar']) } unless json.nil?
 
         rescue GearException => err
-          m.reply(err.message)
+          m.reply(err.message, true)
           break
 
         rescue => err
-          m.reply('I broke down! Ask fizzie to help! The details are in the log!')
+          m.reply('I broke down! Ask fizzie to help! The details are in the log!', true)
           log.write(err.inspect + "\n")
           log.write(err.backtrace.join("\n") + "\n")
           log.flush
