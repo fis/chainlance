@@ -180,7 +180,7 @@ class Hill
       commitmsg = "Replacing #{replaced['name']} by #{newprog}"
     end
 
-    git('commit', '-q', '-m', commitmsg)
+    git('commit', '-q', '-m', commitmsg) if git_changes?
     @commit = git_HEAD
 
     newfile
@@ -373,6 +373,16 @@ class Hill
     end
   end
   private :git
+
+  def git_changes?
+    Dir.chdir(@dir) do
+      git = Process.spawn('git', 'diff-index', '--cached', '--quiet', 'HEAD')
+      Process.wait(git)
+      raise "git diff-index failed weirdly: #{$?.exitstatus}" if $?.exitstatus > 1
+      $?.exitstatus == 1
+    end
+  end
+  private :git_changes?
 
   def git_HEAD
     Dir.chdir(@dir) do
