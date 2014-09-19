@@ -369,7 +369,7 @@ class Hill
     Dir.chdir(@dir) do
       git = Process.spawn('git', *args)
       Process.wait(git)
-      raise 'git failed' if $?.exitstatus != 0
+      raise "git #{args.join(' ')} (in #{@dir}) failed: #{$?.exitstatus}" if $?.exitstatus != 0
     end
   end
   private :git
@@ -377,7 +377,7 @@ class Hill
   def git_HEAD
     Dir.chdir(@dir) do
       commit = `git rev-parse HEAD`
-      raise 'git rev-parse failed' if $?.exitstatus != 0
+      raise "git rev-parse HEAD failed: #{$?.exitstatus}" if $?.exitstatus != 0
       commit.chomp
     end
   end
