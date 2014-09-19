@@ -180,8 +180,11 @@ class Hill
       commitmsg = "Replacing #{replaced['name']} by #{newprog}"
     end
 
-    git('commit', '-q', '-m', commitmsg) if git_changes?
-    @commit = git_HEAD
+    if git_changes?
+      git('commit', '-q', '-m', commitmsg)
+      git('push', @cfg['push'], 'master') if @cfg['push']
+      @commit = git_HEAD
+    end
 
     newfile
   end
