@@ -182,7 +182,7 @@ class Hill
 
     if git_changes?
       git('commit', '-q', '-m', commitmsg)
-      git('push', @cfg['push'], 'master') if @cfg['push']
+      git('push', @cfg['hill']['push'], 'master') if @cfg['hill']['push']
       @commit = git_HEAD
     end
 
