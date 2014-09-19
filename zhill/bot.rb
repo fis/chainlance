@@ -1,6 +1,7 @@
 require 'cinch'
 require 'date'
 require 'open-uri'
+require 'thread'
 
 require_relative 'gear'
 
@@ -9,6 +10,8 @@ module Bot
     cfg = hill.cfg['irc']
     command = cfg['command']
     log = File.open(File.join(hill.dir, 'hill.log'), 'a')
+
+    hill_mutex = Mutex.new
 
     Cinch::Bot.new do
       configure do |c|
@@ -58,21 +61,24 @@ module Bot
         end
 
         begin
-          # run challenge
+          summary = nil
+          hill_mutex.synchronize do
+            # run challenge
 
-          summary = hill.challenge(prog, code)
+            summary = hill.challenge(prog, code)
+
+            # update web reports
+
+            report = cfg['report']
+            File.open(report, 'w') { |f| hill.write_report(f) } unless report.nil?
+
+            breakdown = cfg['breakdown']
+            File.open(breakdown, 'w') { |f| hill.write_breakdown(prog, f) } unless breakdown.nil?
+
+            json = cfg['json']
+            File.open(json, 'w') { |f| hill.write_json(f, cfg['jsonvar']) } unless json.nil?
+          end
           m.reply(summary)
-
-          # update web reports
-
-          report = cfg['report']
-          File.open(report, 'w') { |f| hill.write_report(f) } unless report.nil?
-
-          breakdown = cfg['breakdown']
-          File.open(breakdown, 'w') { |f| hill.write_breakdown(prog, f) } unless breakdown.nil?
-
-          json = cfg['json']
-          File.open(json, 'w') { |f| hill.write_json(f, cfg['jsonvar']) } unless json.nil?
 
         rescue GearException => err
           m.reply(err.message, true)
