@@ -366,7 +366,7 @@ class Hill:
                 out.write('{0} wins.\n'.format(prog if tot > 0 else opp))
             out.write('\n')
 
-    def write_json(self, out):
+    def write_json(self, out, varname=None):
         data = {}
 
         n = len(self._ranking)
@@ -388,7 +388,11 @@ class Hill:
 
         data['commit'] = self._commit
 
+        if varname is not None:
+            out.write('var {0}='.format(varname))
         json.dump(data, out, separators=(',',':'))
+        if varname is not None:
+            out.write(';')
 
 # git helper
 
