@@ -15,17 +15,17 @@ class Gear
     @gear_in.flush
 
     result = @gear_out.readline.chomp
-    raise GearError, result if result != 'ok'
+    raise GearException, result if result != 'ok'
 
     Array.new(@hillsize) do |i|
       points = @gear_out.readline.chomp.split
       if points.length != 2 || points[0].length != points[1].length
-        raise GearError, "gearlanced produced gibberish: #{points.inspect}"
+        raise GearException, "gearlanced produced gibberish: #{points.inspect}"
       end
 
       points = points[0] + points[1]
       if points.tr('<>X', '').length > 0
-        raise GearError, 'gearlanced produced gibberish points: #{points}'
+        raise GearException, 'gearlanced produced gibberish points: #{points}'
       end
 
       pointmap = { '<' => -1, 'X' => 0, '>' => 1 }
@@ -39,7 +39,7 @@ class Gear
     @gear_in.flush
 
     result = @gear_out.readline.chomp
-    raise GearError, result if result != 'ok'
+    raise GearException, result if result != 'ok'
   end
 
   def unset(i)
@@ -47,7 +47,7 @@ class Gear
     @gear_in.flush
 
     result = @gear_out.readline.chomp
-    raise GearError, result if result != 'ok'
+    raise GearException, result if result != 'ok'
   end
 end
 

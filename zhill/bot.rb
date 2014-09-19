@@ -80,6 +80,7 @@ module Bot
 
         rescue => err
           m.reply('I broke down! Ask fizzie to help! The details are in the log!')
+          log.write(err.inspect + "\n")
           log.write(err.backtrace.join("\n") + "\n")
           log.flush
           m.bot.quit('Abandon ship, abandon ship!')
