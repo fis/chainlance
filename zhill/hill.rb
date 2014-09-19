@@ -336,6 +336,7 @@ class Hill
                 res[t,t].map { |r| sym[r] }.join +
                 " #{tot}\n")
       out.write(tot == 0 ? "Tie.\n" : "#{tot > 0 ? prog : opp} wins.\n")
+      out.write("\n")
     end
   end
 
