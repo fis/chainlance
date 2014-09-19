@@ -31,7 +31,7 @@ module Bot
         code = msg[2]
 
         prog = orig_prog.gsub(/[^a-zA-Z0-9_-]/, '')
-        if prog.length < 3*orig_prog.length/4
+        if prog.length == 0 || prog.length < 3*orig_prog.length/4
           m.reply('Program name looks like gibberish. Did you forget it?', true)
           break
         end
