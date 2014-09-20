@@ -1,0 +1,21 @@
+text_extensions: [ 'css', 'html', 'js', 'scss' ]
+output_dir: output
+index_filenames: [ 'index.html' ]
+enable_output_diff: false
+
+prune:
+  auto_prune: true
+  exclude: [ 'report.js' ]
+
+data_sources:
+  - type: filesystem_unified
+    type: filesystem_unified
+    items_root: /
+    layouts_root: /
+    allow_periods_in_identifiers: false
+    encoding: utf-8
+  - type: static
+
+checks:
+  internal_links:
+    exclude: []

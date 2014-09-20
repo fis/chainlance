@@ -1,0 +1,5 @@
+/bootstrap/
+/*.log
+/output/
+/tmp/
+/.sass-cache/
