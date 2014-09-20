@@ -1,6 +1,6 @@
-.PHONY : all test-gearlance test-torquelance
+.PHONY : all test-gearlance test-torquelance test-gearlanced
 
-all: reference.out test-gearlance test-torquelance test-wrenchlance
+all: reference.out test-gearlance test-torquelance test-wrenchlance test-gearlanced
 
 test-gearlance: reference.out
 	time ./test.sh ../gearlance
@@ -16,6 +16,9 @@ test-wrenchlance: reference.out
 	$(RM) compiled/*
 	time ./test.sh ./test-wrenchlance.sh
 	$(RM) -r compiled
+
+test-gearlanced: reference.out
+	time ./test-gearlanced.sh ../gearlanced
 
 reference.out: warriors.sh warriors.idx egojsout.js
 	./warriors.sh | while read left right; do \
