@@ -129,11 +129,12 @@ int main(int argc, char *argv[])
 				else
 					core(core_run, 0, hill[i], code);
 
-				for (unsigned pol = 0; pol < 2; pol++)
+				int dir = (i % 2 == 0 ? 1 : -1);
+				for (int pol = dir > 0 ? 0 : 1; dir > 0 ? pol <= 1 : pol >= 0; pol += dir)
 				{
 					for (unsigned tlen = MINTAPE; tlen <= MAXTAPE; tlen++)
 						putchar(scores[pol][tlen] ? (scores[pol][tlen] > 0 ? '<' : '>') : 'X');
-					putchar(pol == 0 ? ' ' : '\n');
+					putchar(pol == (dir > 0 ? 0 : 1) ? ' ' : '\n');
 				}
 			}
 		}
