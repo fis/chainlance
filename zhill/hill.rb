@@ -361,6 +361,7 @@ class Hill
       }
     end
     data['scores'] = scores
+    data['scoringMethod'] = @cfg['hill']['scoring']
 
     out.write("var #{varname}=") unless varname.nil?
     JSON.dump(data, out)
