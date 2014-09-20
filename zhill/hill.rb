@@ -23,13 +23,13 @@ require_relative 'score'
 # @scoring: current scoring mechanism
 #
 # progobj:
-#   'id': integer index in @hill and in gear
-#   'name': program canonical name
-#   'points': sum of duel points for scoring
-#   'score': current score under the scoring mechanic
-#   'rank': current index in @ranking
-#   'prevrank': previous index (if any) before the latest challenge
-#   'file': stored source file (unless a pseudo-program)
+#   :id - integer index in @hill and in gear
+#   :name - program canonical name
+#   :points - sum of duel points for scoring
+#   :score - current score under the scoring mechanic
+#   :rank - current index in @ranking
+#   :prevrank - previous index (if any) before the latest challenge
+#   :file - stored source file (unless a pseudo-program)
 
 class Hill
   include Enumerable
@@ -64,19 +64,19 @@ class Hill
     (0 .. nprogs-1).each do |id|
       # prepare program
 
-      p = { 'id' => id }
+      p = { :id => id }
       code = nil
 
       if id < progfiles.length
-        p['file'] = progfiles[id]
-        p['name'] = File.basename(p['file'], '.bfjoust')
-        File.open(p['file']) { |f| code = f.read }
+        p[:file] = progfiles[id]
+        p[:name] = File.basename(p[:file], '.bfjoust')
+        File.open(p[:file]) { |f| code = f.read }
       else
-        p['name'] = "dummy-#{id}"
+        p[:name] = "dummy-#{id}"
         code = '<'
       end
 
-      prog = p['name']
+      prog = p[:name]
 
       # insert into data structures
 
@@ -104,7 +104,7 @@ class Hill
     @max_score = @scoring.max(self)
     rescore
 
-    @progs.each_value { |p| p['prevrank'] = p['rank'] }
+    @progs.each_value { |p| p[:prevrank] = p[:rank] }
   end
 
   # implement a set-like abstraction for the program names
@@ -115,7 +115,7 @@ class Hill
   def [](id); @hill[id]; end
 
   def include?(prog); @progs.key?(prog); end
-  def id(prog); @progs[prog]['id']; end
+  def id(prog); @progs[prog][:id]; end
 
   def pairs
     n = @hill.length
@@ -141,22 +141,22 @@ class Hill
     progA = @progs[progA]
     progB = @progs[progB]
 
-    return [0] * (2*@tapecount) if progA['id'] == progB['id']
+    return [0] * (2*@tapecount) if progA[:id] == progB[:id]
 
     scale = 1
-    scale, progA, progB = -1, progB, progA if progA['id'] > progB['id']
+    scale, progA, progB = -1, progB, progA if progA[:id] > progB[:id]
 
-    @results[progA['name']][progB['name']].map { |p| scale*p }
+    @results[progA[:name]][progB[:name]].map { |p| scale*p }
   end
 
   def points(prog)
-    @progs[prog]['points']
+    @progs[prog][:points]
   end
 
   def ranking
     @ranking.each_with_index do |prog, rank|
       p = @progs[prog]
-      yield rank, prog, p['points'], p['score']
+      yield rank, prog, p[:points], p[:score]
     end
   end
 
@@ -165,19 +165,19 @@ class Hill
   def save(replaced, newprog, code)
     newfile = File.join(@dir, newprog + '.bfjoust')
 
-    if replaced.key?('file') && replaced['file'] != newfile
-      git('rm', '-q', '--', replaced['file'])
-      replaced['file'] = nil
+    if replaced.key?(:file) && replaced[:file] != newfile
+      git('rm', '-q', '--', replaced[:file])
+      replaced[:file] = nil
     end
 
     File.open(newfile, 'w') { |f| f.write(code) }
     git('add', '--', newfile)
 
     commitmsg = nil
-    if replaced['name'] == newprog
+    if replaced[:name] == newprog
       commitmsg = "Updating #{newprog}"
     else
-      commitmsg = "Replacing #{replaced['name']} by #{newprog}"
+      commitmsg = "Replacing #{replaced[:name]} by #{newprog}"
     end
 
     if git_changes?
@@ -196,7 +196,7 @@ class Hill
     # select a program to replace
 
     replaced = @progs[newprog] || @progs[@ranking[-1]]
-    newid = replaced['id']
+    newid = replaced[:id]
 
     # test for parse errors, compute scores, replace old program
 
@@ -205,18 +205,18 @@ class Hill
 
     # replace old program with new in hill data structures
 
-    newp = { 'id' => newid, 'name' => newprog }
-    newp['rank'] = replaced['rank'] if replaced['name'] == newprog
+    newp = { :id => newid, :name => newprog }
+    newp[:rank] = replaced[:rank] if replaced[:name] == newprog
 
-    @progs.delete(replaced['name'])
+    @progs.delete(replaced[:name])
     @progs[newprog] = newp
 
     @hill[newid] = newprog
 
     # remove old results
 
-    @results.delete(replaced['name'])
-    @hill[0,newid].each { |progA| @results[progA].delete(replaced['name']) }
+    @results.delete(replaced[:name])
+    @hill[0,newid].each { |progA| @results[progA].delete(replaced[:name]) }
 
     # insert in new results
 
@@ -237,28 +237,28 @@ class Hill
 
     # update source repository
 
-    newp['file'] = save(replaced, newprog, code)
+    newp[:file] = save(replaced, newprog, code)
 
     # return summary information about the new program
 
     rankchg = ''
-    if newp.key?('prevrank')
-      delta = newp['prevrank'] - newp['rank']
+    if newp.key?(:prevrank)
+      delta = newp[:prevrank] - newp[:rank]
       rankchg = " (change: #{delta == 0 ? '--' : '%+d' % delta})"
     end
 
     '%s: points %.2f, score %.2f/%s, rank %d/%d%s' %
       [newprog,
-       newp['points'],
-       newp['score'], @max_score,
-       newp['rank'] + 1, @progs.length, rankchg]
+       newp[:points],
+       newp[:score], @max_score,
+       newp[:rank] + 1, @progs.length, rankchg]
   end
 
   def rescore
     n = @progs.length
 
     @progs.each_value do |p|
-      p['prevrank'] = p['rank'] if p.key?('rank')
+      p[:prevrank] = p[:rank] if p.key?(:rank)
     end
 
     # recompute points for all programs
@@ -271,17 +271,17 @@ class Hill
       points[idB] -= s
     end
 
-    points.each_with_index { |p, i| @progs[@hill[i]]['points'] = p.to_f / (2*@tapecount) }
+    points.each_with_index { |p, i| @progs[@hill[i]][:points] = p.to_f / (2*@tapecount) }
 
     # recompute scores
 
     scores = @scoring.score(self)
-    @progs.each { |prog, p| p['score'] = scores[prog] }
+    @progs.each { |prog, p| p[:score] = scores[prog] }
 
     # recompute ranking
 
-    @ranking = @hill.sort { |a, b| @progs[b]['score'] <=> @progs[a]['score'] }
-    @ranking.each_with_index { |prog, r| @progs[prog]['rank'] = r }
+    @ranking = @hill.sort { |a, b| @progs[b][:score] <=> @progs[a][:score] }
+    @ranking.each_with_index { |prog, r| @progs[prog][:rank] = r }
   end
   private :rescore
 
@@ -292,8 +292,8 @@ class Hill
 
     sym = ->(r) { r < 0 ? '-' : r > 0 ? '+' : '0' }
     chg = lambda do |p|
-      if p.key?('prevrank')
-        delta = p['prevrank'] - p['rank']
+      if p.key?(:prevrank)
+        delta = p[:prevrank] - p[:rank]
         delta == 0 ? ' --' : '%+3d' % delta
       else
         'new'
@@ -346,7 +346,7 @@ class Hill
     data = {
       'commit' => @commit,
       'progs' => @ranking,
-      'prevrank' => @ranking.map { |p| @progs[p]['prevrank'] },
+      'prevrank' => @ranking.map { |p| @progs[p][:prevrank] },
       'results' => (0..n-2).map do |a|
         (a+1..n-1).map { |b| results(@ranking[a], @ranking[b]) }
       end
