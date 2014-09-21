@@ -117,3 +117,13 @@ table.matrix {
 .ml40 { @include loss(40); }
 .ml41 { @include loss(41); }
 .ml42 { @include loss(42); }
+
+/* game page */
+
+#ejForm textarea {
+    margin-top: 2ex;
+    font-family: monospace;
+}
+#ejForm input[type=button] {
+    margin-top: 2ex;
+}
