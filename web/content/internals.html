@@ -1,7 +1,107 @@
 ---
 title: Internals
+needMath: true
 ---
-<h3>Useless details about the hill</h3>
+<h3>Supported scoring methods</h3>
+<h4>Definitions</h4>
 <p>
-	This page still under construction...
+	Let $N$ be the number of programs on the hill, and $T$ be the total number of different tape-length and polarity configurations.
+	On this hill, $T=42$, from 21 tape lengths (10 to 30), and the <em>sieve</em> and <em>kettle</em> polarities.
+</p>
+<p>
+	Let $P = \{1, 2, \dots, N\}$ be the set of programs, and $a \in P, b \in P$ be two arbitrary programs.
+</p>
+<p>
+	Let $\mat{r}_{a,b} = \begin{bmatrix} r_{a,b}^{(1)} &amp; \cdots &amp; r_{a,b}^{(T)} \end{bmatrix}$ be the result vector of program $a$ battling program $b$.
+	For a particular tape length/polarity configuration $i$,
+	\[ r_{a,b}^{(i)} = \left\{ \begin{array}{ll} +1 &amp; \text{if $a$ wins,} \\ 0 & \text{if the match is a tie,} \\ -1 &amp; \text{if $a$ loses.} \end{array} \right. \]
+	As a shorthand, define the <em>win margin</em> $r_{a,b} = \sum_{i=1}^T r_{a,b}^{(i)}$, where $r_{a,b} \in [-T,T]$.
+	Some identities (due to e.g. symmetry of BF Joust):
+	\[ \begin{aligned}
+	r_{a,b}^{(i)} &amp;= -r_{b,a}^{(i)} &amp; r_{a,a}^{(i)} &amp;= 0 \\
+	r_{a,b} &amp;= -r_{b,a} &amp; r_{a,a} &amp;= 0
+	\end{aligned} \]
+</p>
+<p>
+	Finally, define the <em>points</em> $p_a$ of program $a$ as
+	\[ \begin{aligned}
+	p_a &amp;= \frac{1}{T} \sum_{b \in P} r_{a,b}
+	&amp;
+	p_a &amp;\in [-(N-1), N-1]
+	\end{aligned} \]
+</p>
+<p>
+	Let $s_a$ be the final score of program $a$.
+	The hill knows of the following metrics to define $s_a$.
+</p>
+<h4>Markov scoring</h4>
+<p>
+	The standard scoring mechanism (used to define the hill ranking) is the <em>Markov score</em>.
+	Conceptually, each program is allocated a uniform score, and for each battle between programs, both programs wager a fraction of $\frac{1}{N}$ of their score.
+	If $a$ wins over $b$, $a$ is given a portion of $\frac{1}{T}$ of $b$'s wager based on each win.
+	In case of a tie, both programs keep their own scores.
+	This process is then iterated until it reaches a stationary point, and those are the final scores.
+</p>
+<p>
+	Define a first-order Markov chain with a transition probability $t_{a,b}$ (for $a \not= b$) of
+	\[ t_{a,b} = \frac{\sum_{i=1}^T \max(0, r_{b,a}^{(i)})}{NT}. \]
+	Set the self-transition probability $t_{a,a}$ to
+	\[ t_{a,a} = 1 - \sum_{b \in P,\ b \not= a} t_{a,b} \]
+	so that the transition matrix is stochastic.
+</p>
+<p>
+	Let $p(a)$ be the stationary distribution reached from the uniform initial distribution.
+	Unlike the "traditional" scoring, there is no fixed score for a "perfect" program, so we scale the highest score to 100.
+	The Markov score $s_a$ of program $a$ is
+	\[ s_a = 100 \frac{p(a)}{\max_{b \in P} p(b)} \]
+</p>
+<p>
+	(Note that this can be implemented by locating the eigenvector of the transition matrix $[\mat{T}]_{ab} = t_{a,b}$ with an eigenvalue of 1, since a stationary distribution $\mat{p}$ has $\mat{p} = \mat{p} \mat{T}$.
+	In practice, there is always a single unique stationary distribution.)
+</p>
+<h4>Traditional (and tweaked traditional) scoring</h4>
+<p>
+	The "traditional" scoring is based on the (now defunct?) <a href="http://codu.org/eso/bfjoust/">codu.org hill</a>; see the <a href="http://codu.org/eso/bfjoust/SCORES">SCORES</a> document there for exact details.
+</p>
+<p>
+	The <em>worth</em> $w_a$ of program $a$ is $w_a = \frac{p_a + N}{2(N-1)}$ ($w_a \in [1, 2N-1]$ and the average worth is $N$).
+</p>
+<p>
+	The <em>base score</em> $b_a$ is computed as
+	\[ b_a = \sum_{b \in p,\ r_{a,b} > 0} w_b \, f(r_{a,b}, T); \]
+	that is, for each program $b$ that $a$ beats (positive win margin $r_{a,b}$), some fraction (given by function $f$) of $b$'s worth is included in $a$'s base score.
+	This operation explicitly gives more emphasis on winning against "strong" programs.
+</p>
+<p>
+	The traditional scoring uses the simple weight function $f(r, T) = \frac{r}{T}$, where low-margin wins are not considered significantly different from ties.
+	The "tweaked" form uses $f(r, T) = \frac{r+T}{2T}$ instead; this gives more weight to the act of winning, with a "full win" ($r=T$) considered only approximately twice as good as a slight win.
+<p>
+	The final score is scaled to the $[0, 100]$ range and defined as
+	\[ s_a = \frac{200 b_a}{N-1}. \]
+</p>
+<h4>Iterated (and tweaked iterated) scoring</h4>
+<p>
+	Inspired by the traditional scoring, but iterated until convergence to a fixed point.
+</p>
+<p>
+	Define initial score vector $\mat{s}^{(0)} = \begin{bmatrix} s_1^{(0)} &amp; \cdots &amp; s_N^{(0)} \end{bmatrix}$,
+	\[ s_a^{(0)} = \frac{p_a + N - 1}{2(N - 1)}. \]
+	Note that $\left\| \mat{s}^{(0)} \right\|_1 = \frac{N}{2}$.
+	Also define the <em>positive win margin matrix</em> $\mat{D}$,
+	\[ [\mat{D}]_{ab} = \max(0, \frac{r_{a,b}}{T}). \]
+</p>
+<p>
+	Define recursively
+	\[ \begin{aligned}
+	\mat{u}^{(i)} &amp;= \mat{D} \mat{s}^{(i-1)}, \\
+	\mat{s}^{(i)} &amp;= \frac{N}{2 \left\| \mat{u}^{(i)} \right\|_1} \mat{u}^{(i)}.
+	\end{aligned} \]
+</p>
+<p>
+	Iterate until $\mat{s}^{(j)} \approx \mat{s}^{(j-1)}$.
+	Final scores are then
+	\[ s_a = 100 s_a^{(j)}. \]
+</p>
+<p>
+	The tweaked version is again otherwise identical, with the exception of using $\frac{r_{a,b}+T}{2T}$ in matrix $\mat{D}$ (again only for winning programs).
 </p>

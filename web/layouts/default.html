@@ -57,6 +57,17 @@
              (@item[:scripts] || '').split.each do |s|
                  %> <script src="<%= s %>"></script> <%
              end
+             if @item[:needMath]
+                %>
+                <script src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
+                <script type="text/javascript">
+                    MathJax.Hub.Config({
+                        TeX: { Macros: { mat: ["{\\bf #1}", 1] } },
+                        tex2jax: { inlineMath: [ ['$','$'], ["\\(","\\)"] ] }
+                    });
+                </script>
+                <%
+             end
         %>
     </body>
 </html>
