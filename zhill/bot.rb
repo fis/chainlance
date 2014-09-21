@@ -40,7 +40,7 @@ module Bot
         end
 
         nick = m.user.nick
-        prog = nick + '~' + prog
+        prog = nick + '.' + prog
 
         tstamp = DateTime.now.strftime('%Y-%m-%d %H:%M:%S')
         log.write("#{tstamp} #{nick} #{code}\n")
