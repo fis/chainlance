@@ -4,8 +4,15 @@ function Zhill(data)
 }
 
 (function () {
+    Zhill.scoringMethodOrder = [
+        'markov', 'trad', 'tradtwist', 'iter', 'itertwist'
+    ];
     Zhill.scoringMethods = {
-        'markov': 'Markov'
+        'markov': 'Markov',
+        'trad': 'Trad.',
+        'tradtwist': 'Tweaked',
+        'iter': 'Iter.',
+        'itertwist': 'Tweaked iter.'
     };
     Zhill.tapeCount = 21;
 

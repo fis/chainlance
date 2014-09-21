@@ -1,5 +1,8 @@
-var tableBody;
+var tableBody, tableHead;
 var tableRows = [];
+var columns = [];
+var columnAddButtons = {};
+var extraBlock;
 
 var sorts = {
     'rank': { 'key': function (p) { return p.rank; }, 'dom': [] },
@@ -10,8 +13,13 @@ function scoresort(sm) { return function (p) { return p.score[sm]; } }
 for (var sm in Zhill.scoringMethods)
     sorts[sm] = { 'key': scoresort(sm), 'dom': [] };
 
+var currentSort = { 'kind': 'rank', 'descending': true };
+
 function sort(kind, descending)
 {
+    currentSort.kind = kind;
+    currentSort.descending = descending;
+
     var keyf = sorts[kind].key;
     var cmpf = function (a, b) {
         var x = keyf((descending ? a : b).prog);
@@ -48,7 +56,80 @@ function sortUpdateIcons(kind, descending)
 
 function sortClick(kind, descending)
 {
-    return function () { sort(kind, descending); }
+    return function () { sort(kind, descending); };
+}
+
+function addColumnClick(sm)
+{
+    return function () {
+        var c = {
+            'sort': sm,
+            'head': makeHead(sm, Zhill.scoringMethods[sm], true)
+        };
+        columns.push(c);
+
+        tableHead.append(c.head);
+
+        for (var i = 0; i < tableRows.length; i++)
+        {
+            var r = tableRows[i];
+            var cell = $('<td/>').text(r.prog.score[sm].toFixed(2));
+            r.domScores.push(cell);
+            r.domRow.append(cell);
+        }
+
+        columnAddButtons[sm].detach();
+    };
+}
+
+function delColumnClick(sm)
+{
+    return function () {
+        if (currentSort.kind == sm)
+            sort('rank', true);
+
+        var idx;
+        for (idx = 0; idx < columns.length; idx++)
+            if (columns[idx].sort === sm)
+                break;
+        if (idx == columns.length)
+            return; /* impossible */
+        var c = columns[idx];
+        columns.splice(idx, 1);
+
+        tableHead.children().slice(3+idx, 3+idx+1).remove();
+
+        for (var i = 0; i < tableRows.length; i++)
+        {
+            var r = tableRows[i];
+            var cell = r.domScores[idx];
+            r.domScores.splice(idx, 1);
+            cell.remove();
+        }
+
+        extraBlock.append(columnAddButtons[sm]);
+    };
+}
+
+function makeHead(sort, label, remove)
+{
+    var th = $('<th/>');
+
+    var sortAsc = $('<span class="sorticon glyphicon glyphicon-chevron-down"></span>');
+    var sortDesc = $('<span class="sorticon glyphicon glyphicon-chevron-up"></span>');
+    sortAsc.click(sortClick(sort, false));
+    sortDesc.click(sortClick(sort, true));
+    sorts[sort].dom = [sortAsc, sortDesc];
+    th.append(sortAsc, label, sortDesc);
+
+    if (remove)
+    {
+        var del = $('<span class="sorticon glyphicon glyphicon-remove"></span>');
+        del.click(delColumnClick(sort));
+        th.append(del);
+    }
+
+    return th;
 }
 
 function build()
@@ -58,25 +139,18 @@ function build()
 
     var table = $('<table class="table table-condensed table-hover" />');
 
-    var row = $('<tr/>');
+    tableHead = $('<tr/>');
     var heads = [{ 'sort': 'rank', 'label': 'Rank', 'colspan': '2' },
                  { 'sort': 'name', 'label': 'Prog' },
-                 { 'sort': 'points', 'label': 'Points' },
-                 { 'sort': sm, 'label': Zhill.scoringMethods[sm] }];
+                 { 'sort': 'points', 'label': 'Points' }]
     for (var i = 0; i < heads.length; i++)
     {
         var h = heads[i];
-        var th = $('<th/>');
+        var th = makeHead(h.sort, h.label, false);
         if (h.colspan) th.attr('colspan', h.colspan);
-        var sortAsc = $('<span class="sorticon glyphicon glyphicon-chevron-down"></span>');
-        var sortDesc = $('<span class="sorticon glyphicon glyphicon-chevron-up"></span>');
-        sortAsc.click(sortClick(h.sort, false));
-        sortDesc.click(sortClick(h.sort, true));
-        sorts[h.sort].dom = [sortAsc, sortDesc];
-        th.append(sortAsc, h.label, sortDesc);
-        row.append(th);
+        tableHead.append(th);
     }
-    table.append($('<thead/>').append(row));
+    table.append($('<thead/>').append(tableHead));
     sortUpdateIcons('rank', true);
 
     tableBody = $('<tbody/>');
@@ -92,8 +166,7 @@ function build()
         var changeCell = $('<td/>').text(zhill.delta(prog));
         var progCell = $('<td/>').append(link);
         var pointsCell = $('<td/>').text(prog.points.toFixed(2));
-        var scoreCells = [$('<td/>').text(prog.score[sm].toFixed(2))];
-        var row = $('<tr/>').append(rankCell, changeCell, progCell, pointsCell, scoreCells);
+        var row = $('<tr/>').append(rankCell, changeCell, progCell, pointsCell);
 
         tableBody.append(row);
         tableRows.push({
@@ -101,13 +174,29 @@ function build()
             'domRank': rankCell,
             'domProg': progCell,
             'domPoints': pointsCell,
-            'domScores': scoreCells,
+            'domScores': [],
             'domRow': row
         });
     }
     table.append(tableBody);
 
-    $('#scoretable').empty().append($('<div class="table-responsive"/>').append(table));
+    extraBlock = $('<blockquote>More columns:<br></blockquote>');
+    for (var i = 0; i < Zhill.scoringMethodOrder.length; i++)
+    {
+        var sid = Zhill.scoringMethodOrder[i];
+        var label = Zhill.scoringMethods[sid];
+        var btn = $('<button type="button" class="btn btn-default btn-sm"><span class="glyphicon glyphicon-plus-sign"></span> '+label+'</button>');
+        btn.click(addColumnClick(sid));
+        extraBlock.append(btn);
+        columnAddButtons[sid] = btn;
+    }
+
+    addColumnClick(sm)();
+
+    $('#scoretable')
+        .empty()
+        .append($('<div class="extracolumns"/>').append(extraBlock),
+                $('<div class="table-responsive"/>').append(table));
 }
 
 $(build);
