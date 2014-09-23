@@ -84,7 +84,7 @@ function Zhill(data)
     {
         if (typeof prog === 'string') prog = this.progMap[prog];
 
-        if (!prog.prevRank)
+        if (prog.prevRank === null)
             return 'new';
         var delta = prog.prevRank - prog.rank;
         if (delta == 0)

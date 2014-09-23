@@ -32,6 +32,7 @@ var EgoJSout = new (function() {
         var ret = document.createElement("input");
         ret.type = "button";
         ret.value = lbl;
+        ret.className = 'btn btn-default';
         return ret;
     }
     function inv(nm, val) {
@@ -71,35 +72,39 @@ var EgoJSout = new (function() {
     ejForm.appendChild(permaForm);
     ejForm = permaForm;
 
+    ejForm.appendChild($('<h4>Left program:</h4>').get(0));
     var prog1TA = document.createElement("textarea");
+    prog1TA.className = 'form-control';
     prog1TA.name = "l";
     prog1TA.rows = 5;
-    prog1TA.cols = 80;
-    prog1TA.disabled = true;
     ejForm.appendChild(prog1TA);
     ejForm.appendChild(br());
 
     var progL1 = document.createElement("select");
+    progL1.className = 'form-control';
     ejForm.appendChild(progL1);
     ejForm.appendChild(br());
 
+    ejForm.appendChild($('<h4>Right program:</h4>').get(0));
     var prog2TA = document.createElement("textarea");
+    prog2TA.className = 'form-control';
     prog2TA.name = "r";
     prog2TA.rows = 5;
-    prog2TA.cols = 80;
-    prog2TA.disabled = true;
     ejForm.appendChild(prog2TA);
     ejForm.appendChild(br());
 
     var progL2 = document.createElement("select");
+    progL2.className = 'form-control';
     ejForm.appendChild(progL2);
     ejForm.appendChild(br());
 
     var permaB = btn("Permalink programs");
     permaB.style.cssFloat = "right";
+    permaB.disabled = true;
     ejForm.appendChild(permaB);
 
     var goB = btn("Run");
+    goB.className = 'btn btn-primary';
     ejForm.appendChild(goB);
     ejForm.appendChild(br());
 
@@ -486,9 +491,9 @@ var EgoJSout = new (function() {
         if (outp !== null) {
             ejOut.innerHTML = "";
 
-            // add the permalink
-            var pl = btn("Permalink run");
-            ejOut.appendChild(pl);
+            // add the permalink  ##DISABLED
+            //var pl = btn("Permalink run");
+            //ejOut.appendChild(pl);
 
             // description
             ejOut.appendChild(br());
@@ -698,7 +703,124 @@ var EgoJSout = new (function() {
         run();
     };
 
-    // or just run automatically
+    // blank default program
+    opt(progL1, "");
+    opt(progL2, "");
+
+    // make edits switch the selected program name to blank
+    prog1TA.oninput = prog2TA.oninput = function() {
+        var el = progL1;
+        if (this == prog2TA) el = progL2;
+        el.value = "";
+        permaB.disabled = true;
+    };
+
+    // get the program list
+    var sortProgs = zhill.progNames;
+    sortProgs.sort();
+    for (var i = 0; i < sortProgs.length; i++)
+    {
+        var p = sortProgs[i];
+        opt(progL1, p);
+        opt(progL2, p);
+    }
+
+    // program download helper
+    function fetchCode(prog, done) {
+        var commit;
+        var match = prog.match(/^([0-9a-f]+),([^,]+)$/);
+        if (match)
+            commit = match[1], prog = match[2];
+        else
+            commit = zhill.commit;
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "/git/?p=hill;a=blob_plain;f=" + prog + ".bfjoust;hb=" + commit, true);
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState == 4) {
+                if (xhr.status == 200) {
+                    done(xhr.responseText);
+                }
+            }
+        };
+        try {
+            xhr.send();
+        } catch (ex) {}
+    }
+
+    // and set it up to download on change
+    progL1.onchange = progL2.onchange = function() {
+        var el = prog1TA;
+        if (this === progL2) el = prog2TA;
+        el.value = "";
+
+        // download it and set it up
+        if (this.value !== "") {
+            fetchCode(this.value, function (code) {
+                el.value = code;
+                if (progL1.value !== "" && progL2.value !== "")
+                    permaB.disabled = false;
+            });
+        }
+    };
+
+    var match;
+
+    // autorun a full joust with selected programs
+    function setprog(list, ta, commit, prog, code) {
+        ta.value = code;
+        if (zhill.commit.substring(0, commit.length) === commit)
+            list.value = prog;
+        else {
+            opt(list, commit + ',' + prog);
+            list.value = commit + ',' + prog;
+        }
+    }
+    match = window.location.hash.match(/^#joust,([^,]+),([^,]+),([0-9a-f]+)(?:,([0-9a-f]+))?$/);
+    if (match) {
+        var jleft = match[1], jright = match[2], jleftcommit = match[3], jrightcommit = match[4];
+        if (jrightcommit === undefined) jrightcommit = jleftcommit;
+        // try to fetch programs
+        var done = function (codeleft, coderight) {
+            setprog(progL1, prog1TA, jleftcommit, jleft, codeleft);
+            setprog(progL2, prog2TA, jrightcommit, jright, coderight);
+            permaB.disabled = false;
+            // go
+            goB.onclick();
+        };
+        fetchCode(jleftcommit+','+jleft, function (code1) {
+            fetchCode(jrightcommit+','+jright, function (code2) {
+                done(code1, code2);
+            });
+        });
+    }
+
+    // permalink generation
+    permaB.onclick = function () {
+        var left = progL1.value, right = progL2.value;
+        if (left === "" || right === "") {
+            permaB.disabled = true;
+            return; // should have been disabled already
+        }
+        var leftcommit = zhill.commit.substring(0, 7);
+        var rightcommit = leftcommit;
+        var t;
+        t = left.indexOf(',');
+        if (t > 0) {
+            leftcommit = left.substring(0, t);
+            left = left.substring(t+1);
+        }
+        t = right.indexOf(',');
+        if (t > 0) {
+            rightcommit = right.substring(0, t);
+            right = right.substring(t+1);
+        }
+        var hash = '#joust,' + left + ',' + right + ',' + leftcommit;
+        if (rightcommit !== leftcommit)
+            hash += ',' + rightcommit;
+        window.location.hash = hash;
+    }
+
+    // old egojsout autorun
     if ("query" in window) {
         window.addEventListener("load", function() {
             if ("l" in query && "r" in query) {
@@ -725,41 +847,4 @@ var EgoJSout = new (function() {
             }
         }, false);
     }
-
-    // blank default program
-    opt(progL1, "");
-    opt(progL2, "");
-
-    // get the program list
-    var sortProgs = zhill.progNames;
-    sortProgs.sort();
-    for (var i = 0; i < sortProgs.length; i++)
-    {
-        var p = sortProgs[i];
-        opt(progL1, p);
-        opt(progL2, p);
-    }
-
-    // and set it up to download on change
-    progL1.onchange = progL2.onchange = function() {
-        var el = prog1TA;
-        if (this === progL2) el = prog2TA;
-        el.value = "";
-
-        // download it and set it up
-        if (this.value !== "") {
-            var xhr = new XMLHttpRequest();
-            xhr.open("GET", "/git/?p=hill;a=blob_plain;f=" + this.value + ".bfjoust;hb=" + zhill.commit, true);
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState == 4) {
-                    if (xhr.status == 200) {
-                        el.value = xhr.responseText;
-                    }
-                }
-            };
-            try {
-                xhr.send();
-            } catch (ex) {}
-        }
-    };
 })();

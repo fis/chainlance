@@ -76,23 +76,32 @@ function build()
                 s += results[i];
 
             if (a == b)
-            {
                 cell.addClass('me');
-            }
-            else if (s < 0)
-            {
-                cell.addClass('ml' + (-s));
-                cell.append($('<span class="glyphicon glyphicon-minus"></span>'));
-            }
-            else if (s > 0)
-            {
-                cell.addClass('mw' + s);
-                cell.append($('<span class="glyphicon glyphicon-plus"></span>'));
-            }
-            else
-            {
-                cell.addClass('mt');
-                cell.append($('<span class="glyphicon glyphicon-remove"></span>'));
+            else {
+                var link = $('<a/>');
+                link.attr('href',
+                          '../game/#joust,' + progA['name'] +
+                          ',' + progB['name'] +
+                          ',' + zhill.commit.substring(0, 7));
+                cell.append(link);
+
+                if (s < 0)
+                {
+                    cell.css('background-color', 'rgb(213,213,'+(213-s)+')');
+                    link.css('color', 'rgb(0,0,'+(3*-s)+')');
+                    link.append($('<span class="glyphicon glyphicon-minus"></span>'));
+                }
+                else if (s > 0)
+                {
+                    cell.css('background-color', 'rgb('+(213+s)+',213,213)');
+                    link.css('color', 'rgb('+(3*s)+',0,0)');
+                    link.append($('<span class="glyphicon glyphicon-plus"></span>'));
+                }
+                else
+                {
+                    cell.addClass('mt');
+                    link.append($('<span class="glyphicon glyphicon-remove"></span>'));
+                }
             }
 
             cell.hover(hover(progA, progB, true), hover(progA, progB, false));
