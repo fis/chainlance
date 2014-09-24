@@ -716,8 +716,7 @@ var EgoJSout = new (function() {
     };
 
     // get the program list
-    var sortProgs = zhill.progNames;
-    sortProgs.sort();
+    var sortProgs = zhill.progNameOrder;
     for (var i = 0; i < sortProgs.length; i++)
     {
         var p = sortProgs[i];

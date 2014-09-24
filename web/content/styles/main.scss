@@ -31,6 +31,15 @@ table.matrix {
 .mt { background-color: rgb(213,213,213); }
 .mt > a { color: black; }
 
+/* breakdown page */
+
+a.view { font-size: small; }
+span.result { font-weight: bold; font-family: monospace; font-size: large; white-space: pre; }
+span.loss { color: #0000fc; }
+span.tie { color: #888888; }
+span.win { color: #d20000; }
+span.winner { font-weight: bold; }
+
 /* game page */
 
 #ejForm textarea {

@@ -78,6 +78,11 @@ function Zhill(data)
             this.progs.push(p);
             this.progMap[this.progNames[i]] = p;
         }
+
+        // helpful occasionally
+
+        this.progNameOrder = this.progNames.slice(0);
+        this.progNameOrder.sort();
     };
 
     Zhill.prototype.delta = function(prog)
