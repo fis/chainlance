@@ -187,9 +187,9 @@ reference results.
 Lives in the `vis/` directory.  Needs documentation.  Used to generate
 [egostats](http://zem.fi/egostats/) every now and then.
 
-### Python glue
+### Ruby glue
 
-The `zhill/` package, and the `zhillbot.py` script, form the basis of
+The `zhill/` directory, and the `zhillbot.rb` script, form the base of
 the zem.fi BF Joust hill.  The `web/` directory contains the static
 website parts.  This part is also not documented, and probably not
 very useful, except possibly as a (cautionary?) example.

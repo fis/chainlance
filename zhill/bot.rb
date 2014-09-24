@@ -22,6 +22,12 @@ module Bot
         c.channels = cfg['channels'].split
       end
 
+      if cfg['help']
+        on :message, cfg['help'] do |m|
+          m.reply('I do !bfjoust; see http://zem.fi/bfjoust/ for more information.', true)
+        end
+      end
+
       on :message, /^#{Regexp.escape(command)}/ do |m|
         msg = m.message.split(' ', 3)
 
