@@ -40,8 +40,11 @@ module Bot
         code = msg[2]
 
         prog = orig_prog.gsub(/[^a-zA-Z0-9_-]/, '')
-        if prog.length == 0 || prog.length < 3*orig_prog.length/4
-          m.reply('Program name looks like gibberish. Did you forget it?', true)
+        if prog != orig_prog
+          m.reply("Program name (#{orig_prog}) is restricted to characters in [a-zA-Z0-9_-], sorry.", true)
+          break
+        elsif prog.length > 48
+          m.reply('Program name is overly long. 48 characters should be enough for everyone.', true)
           break
         end
 
