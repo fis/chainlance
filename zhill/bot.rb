@@ -71,6 +71,7 @@ module Bot
 
         begin
           summary = nil
+
           hill_mutex.synchronize do
             # run challenge
 
@@ -87,7 +88,11 @@ module Bot
             json = cfg['json']
             File.open(json, 'w') { |f| hill.write_json(f, cfg['jsonvar']) } unless json.nil?
           end
+
           m.reply(summary)
+          if cfg['summarychannel'] && m.target.name != cfg['summarychannel']
+            Channel(cfg['summarychannel']).msg(summary)
+          end
 
         rescue GearException => err
           m.reply(err.message, true)
