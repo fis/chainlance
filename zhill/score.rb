@@ -55,13 +55,13 @@ module Scoring
         break if (d-pd).abs.mean(1).to_f < 0.000001
       end
 
-      d /= d.max(1).to_f
-      d *= 100
+      #d /= d.max(1).to_f
+      d *= 1000
 
       Hash[hill.each_with_index.map { |p, i| [p, d[0,i]] }]
     end
 
-    def max(_); '100'; end
+    def max(_); '1000'; end
   end
 
   # "trad" method: conventional egojoust scoring

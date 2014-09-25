@@ -244,13 +244,13 @@ class Hill
     rankchg = ''
     if newp.key?(:prevrank)
       delta = newp[:prevrank] - newp[:rank]
-      rankchg = " (change: #{delta == 0 ? '--' : '%+d' % delta})"
+      rankchg = " (#{delta == 0 ? '--' : '%+d' % delta})"
     end
 
-    '%s: points %.2f, score %.2f/%s, rank %d/%d%s' %
+    '%s: points %.2f, score %.2f, rank %d/%d%s' %
       [newprog,
        newp[:points],
-       newp[:score], @max_score,
+       newp[:score],
        newp[:rank] + 1, @progs.length, rankchg]
   end
 

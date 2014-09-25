@@ -56,9 +56,8 @@ needMath: true
 </p>
 <p>
 	Let $p(a)$ be the stationary distribution reached from the uniform initial distribution.
-	Unlike the "traditional" scoring, there is no fixed score for a "perfect" program, so we scale the highest score to 100.
-	The Markov score $s_a$ of program $a$ is
-	\[ s_a = 100 \frac{p(a)}{\max_{b \in P} p(b)} \]
+	To get numbers more closely approximating the traditional scores, we set the Markov score $s_a$ of a program to
+	\[ s_a = 1000 \frac{p(a)}. \]
 </p>
 <p>
 	(Note that this can be implemented by locating the eigenvector of the transition matrix $[\mat{T}]_{ab} = t_{a,b}$ with an eigenvalue of 1, since a stationary distribution $\mat{p}$ has $\mat{p} = \mat{p} \mat{T}$.
