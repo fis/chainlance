@@ -83,7 +83,7 @@ module Scoring
     end
 
     def score(hill)
-      n = hill.length
+      n = hill.size
       k = 2 * hill.tapecount
 
       worth = hill.map { |p| (hill.points(p) + n) / (2 * (n-1)) }
@@ -114,7 +114,7 @@ module Scoring
     end
 
     def score(hill)
-      n = hill.length
+      n = hill.size
       k = 2 * hill.tapecount
 
       # pre-compute "positive scaled i-vs-j duel points" matrix D

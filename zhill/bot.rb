@@ -6,10 +6,11 @@ require 'thread'
 require_relative 'gear'
 
 module Bot
-  def Bot.make(hill)
-    cfg = hill.cfg['irc']
+  def Bot.make(hill_manager)
+    cfg = hill_manager.cfg['irc']
     command = cfg['command']
-    log = File.open(File.join(hill.dir, 'hill.log'), 'a')
+    testcommand = cfg['testcommand']
+    log = File.open(File.join(hill_manager.dir, 'hill.log'), 'a')
 
     hill_mutex = Mutex.new
 
@@ -28,17 +29,7 @@ module Bot
         end
       end
 
-      on :message, /^#{Regexp.escape(command)}/ do |m|
-        msg = m.message.split(' ', 3)
-
-        if msg.length <= 2
-          m.reply("\"#{command} progname code\". See http://zem.fi/bfjoust/ for documentation.", true)
-          break
-        end
-
-        orig_prog = msg[1]
-        code = msg[2]
-
+      joust = lambda do |m, orig_prog, code, try_only|
         prog = orig_prog.gsub(/[^a-zA-Z0-9_-]/, '')
         if prog != orig_prog
           m.reply("Program name (#{orig_prog}) is restricted to characters in [a-zA-Z0-9_-], sorry.", true)
@@ -75,22 +66,22 @@ module Bot
           hill_mutex.synchronize do
             # run challenge
 
-            summary = hill.challenge(prog, code)
+            summary = hill_manager.challenge(prog, code, try_only)
 
             # update web reports
 
             report = cfg['report']
-            File.open(report, 'w') { |f| hill.write_report(f) } unless report.nil?
+            File.open(report, 'w') { |f| hill_manager.write_report(f) } unless report.nil?
 
             breakdown = cfg['breakdown']
-            File.open(breakdown, 'w') { |f| hill.write_breakdown(prog, f) } unless breakdown.nil?
+            File.open(breakdown, 'w') { |f| hill_manager.write_breakdown(prog, f) } unless breakdown.nil?
 
             json = cfg['json']
-            File.open(json, 'w') { |f| hill.write_json(f, cfg['jsonvar']) } unless json.nil?
+            File.open(json, 'w') { |f| hill_manager.write_json(f, cfg['jsonvar']) } unless json.nil?
           end
 
           m.reply(summary)
-          if cfg['summarychannel'] && m.target.name != cfg['summarychannel']
+          if cfg['summarychannel'] && m.target.name != cfg['summarychannel'] && !try_only
             Channel(cfg['summarychannel']).msg(summary)
           end
 
@@ -104,6 +95,30 @@ module Bot
           log.write(err.backtrace.join("\n") + "\n")
           log.flush
           m.bot.quit('Abandon ship, abandon ship!')
+        end
+      end
+
+      on :message, /^#{Regexp.escape(command)}/ do |m|
+        msg = m.message.split(' ', 3)
+
+        if msg.length <= 2
+          m.reply("\"#{command} progname code\". See http://zem.fi/bfjoust/ for documentation.", true)
+          break
+        end
+
+        joust.call(m, msg[1], msg[2], false)
+      end
+
+      unless testcommand.nil?
+        on :message, /^#{Regexp.escape(testcommand)}/ do |m|
+          msg = m.message.split(' ', 3)
+
+          if msg.length <= 2
+            m.reply("\"#{command} progname code\". See http://zem.fi/bfjoust/ for documentation.", true)
+            break
+          end
+
+          joust.call(m, msg[1], msg[2], true)
         end
       end
     end

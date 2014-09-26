@@ -8,7 +8,7 @@ if ARGV.length != 1
   exit
 end
 
-hill = Hill.new(ARGV[0])
-bot = Bot.make(hill)
+hill_manager = HillManager.new(ARGV[0])
+bot = Bot.make(hill_manager)
 
 bot.start
