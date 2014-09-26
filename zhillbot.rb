@@ -11,6 +11,6 @@ end
 
 hill_manager = HillManager.new(ARGV[0])
 server = Server.new(hill_manager)
-bot = Bot.make(hill_manager, server)
+bot = Bot.make(hill_manager.cfg['irc'], server)
 
 bot.start

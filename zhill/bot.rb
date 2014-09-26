@@ -1,14 +1,11 @@
 require 'cinch'
-require 'date'
 
 require_relative 'gear'
 
 module Bot
-  def Bot.make(hill_manager, server)
-    cfg = hill_manager.cfg['irc']
+  def Bot.make(cfg, server)
     command = cfg['command']
     testcommand = cfg['testcommand']
-    log = File.open(File.join(hill_manager.dir, 'hill.log'), 'a')
 
     Cinch::Bot.new do
       configure do |c|
@@ -25,6 +22,12 @@ module Bot
         end
       end
 
+      if cfg['summarychannel']
+        server.herald do |message|
+          Channel(cfg['summarychannel']).msg(message)
+        end
+      end
+
       joust = lambda do |m, orig_prog, code, try_only|
         prog = orig_prog.gsub(/[^a-zA-Z0-9_-]/, '')
         if prog != orig_prog
@@ -38,15 +41,10 @@ module Bot
         nick = m.user.nick
         prog = nick + '.' + prog
 
-        tstamp = DateTime.now.strftime('%Y-%m-%d %H:%M:%S')
-        log.write("#{tstamp} #{nick} #{code}\n")
-        log.flush
-
+        server.log(prog + ' ' + code)
         server.joust(prog, code, try_only) do |result, message|
           if result == :fatal
-            m.reply('I broke down! Ask fizzie to help! The details are in the log!', true)
-            log.write("Fatal error from joust server:\n#{message}\n")
-            log.flush
+            m.reply('I broke down! Ask fizzie to help! The details are in the log! ' + message, true)
             m.bot.quit('Abandon ship, abandon ship!')
           end
 
@@ -76,7 +74,7 @@ module Bot
           msg = m.message.split(' ', 3)
 
           if msg.length <= 2
-            m.reply("\"#{command} progname code\". See http://zem.fi/bfjoust/ for documentation.", true)
+            m.reply("\"#{testcommand} progname code\". See http://zem.fi/bfjoust/ for documentation.", true)
             break
           end
 
