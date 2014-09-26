@@ -1,18 +1,14 @@
 require 'cinch'
 require 'date'
-require 'open-uri'
-require 'thread'
 
 require_relative 'gear'
 
 module Bot
-  def Bot.make(hill_manager)
+  def Bot.make(hill_manager, server)
     cfg = hill_manager.cfg['irc']
     command = cfg['command']
     testcommand = cfg['testcommand']
     log = File.open(File.join(hill_manager.dir, 'hill.log'), 'a')
-
-    hill_mutex = Mutex.new
 
     Cinch::Bot.new do
       configure do |c|
@@ -46,57 +42,21 @@ module Bot
         log.write("#{tstamp} #{nick} #{code}\n")
         log.flush
 
-        if /^(?:https?|ftp):\/\// =~ code
-          maxsize = 2*1024*1024
-
-          begin
-            open(code) do |f|
-              code = f.read(maxsize + 1)
-              raise "maximum size limit (#{maxsize} bytes) exceeded" if code.length > maxsize
-            end
-          rescue => err
-            m.reply("URL fetch problems: #{err.message}", true)
-            break
-          end
-        end
-
-        begin
-          summary = nil
-
-          hill_mutex.synchronize do
-            # run challenge
-
-            summary = hill_manager.challenge(prog, code, try_only)
-
-            # update web reports
-
-            unless try_only
-              report = cfg['report']
-              File.open(report, 'w') { |f| hill_manager.write_report(f) } unless report.nil?
-
-              breakdown = cfg['breakdown']
-              File.open(breakdown, 'w') { |f| hill_manager.write_breakdown(prog, f) } unless breakdown.nil?
-
-              json = cfg['json']
-              File.open(json, 'w') { |f| hill_manager.write_json(f, cfg['jsonvar']) } unless json.nil?
-            end
+        server.joust(prog, code, try_only) do |result, message|
+          if result == :fatal
+            m.reply('I broke down! Ask fizzie to help! The details are in the log!', true)
+            log.write("Fatal error from joust server:\n#{message}\n")
+            log.flush
+            m.bot.quit('Abandon ship, abandon ship!')
           end
 
-          m.reply(summary)
-          if cfg['summarychannel'] && m.target.name != cfg['summarychannel'] && !try_only
-            Channel(cfg['summarychannel']).msg(summary)
+          m.reply(message, result == :error)
+          if result == :ok &&
+              cfg['summarychannel'] &&
+              m.target.name != cfg['summarychannel'] &&
+              !try_only
+            Channel(cfg['summarychannel']).msg(message)
           end
-
-        rescue GearException => err
-          m.reply(err.message, true)
-          break
-
-        rescue => err
-          m.reply('I broke down! Ask fizzie to help! The details are in the log!', true)
-          log.write(err.inspect + "\n")
-          log.write(err.backtrace.join("\n") + "\n")
-          log.flush
-          m.bot.quit('Abandon ship, abandon ship!')
         end
       end
 
