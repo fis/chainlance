@@ -70,14 +70,16 @@ module Bot
 
             # update web reports
 
-            report = cfg['report']
-            File.open(report, 'w') { |f| hill_manager.write_report(f) } unless report.nil?
+            unless try_only
+              report = cfg['report']
+              File.open(report, 'w') { |f| hill_manager.write_report(f) } unless report.nil?
 
-            breakdown = cfg['breakdown']
-            File.open(breakdown, 'w') { |f| hill_manager.write_breakdown(prog, f) } unless breakdown.nil?
+              breakdown = cfg['breakdown']
+              File.open(breakdown, 'w') { |f| hill_manager.write_breakdown(prog, f) } unless breakdown.nil?
 
-            json = cfg['json']
-            File.open(json, 'w') { |f| hill_manager.write_json(f, cfg['jsonvar']) } unless json.nil?
+              json = cfg['json']
+              File.open(json, 'w') { |f| hill_manager.write_json(f, cfg['jsonvar']) } unless json.nil?
+            end
           end
 
           m.reply(summary)
