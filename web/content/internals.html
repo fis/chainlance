@@ -43,7 +43,7 @@ needMath: true
 <p>
 	The standard scoring mechanism (used to define the hill ranking) is the <em>Markov score</em>.
 	Conceptually, each program is allocated a uniform score, and for each battle between programs, both programs wager a fraction of $\frac{1}{N}$ of their score.
-	If $a$ wins over $b$, $a$ is given a portion of $\frac{1}{T}$ of $b$'s wager based on each win.
+	If $b$ wins over $a$, $b$ is given a portion of $\frac{1}{T}$ of $a$'s wager based on each win.
 	In case of a tie, both programs keep their own scores.
 	This process is then iterated until it reaches a stationary point, and those are the final scores.
 </p>
@@ -57,7 +57,7 @@ needMath: true
 <p>
 	Let $p(a)$ be the stationary distribution reached from the uniform initial distribution.
 	To get numbers more closely approximating the traditional scores, we set the Markov score $s_a$ of a program to
-	\[ s_a = 1000 \frac{p(a)}. \]
+	\[ s_a = 1000 p(a). \]
 </p>
 <p>
 	(Note that this can be implemented by locating the eigenvector of the transition matrix $[\mat{T}]_{ab} = t_{a,b}$ with an eigenvalue of 1, since a stationary distribution $\mat{p}$ has $\mat{p} = \mat{p} \mat{T}$.

@@ -144,6 +144,7 @@ class SocketServer
       raise "socket path (#{socketpath}) in use by a non-socket"
     end
     @socket = UNIXServer.new(socketpath)
+    File.chmod(0777, socketpath)
 
     Thread.new { serve }
   end

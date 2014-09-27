@@ -2,6 +2,19 @@ body {
     padding-top: 50px;
 }
 
+/* about page */
+
+p#joustResult {
+    padding: 4px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-family: monospace;
+}
+
+textarea#code {
+    font-family: monospace;
+}
+
 /* scores page */
 
 .sorticon {
