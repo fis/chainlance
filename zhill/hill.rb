@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 require 'json'
 require 'yaml'
 
@@ -32,9 +33,30 @@ require_relative 'score'
 #   :rank - current index in @ranking
 #   :file - stored source file (unless a pseudo-program)
 
-class HillManager
-  attr_reader :dir, :cfg, :hill
+# BF Joust hill manager.
+#
+# This class is responsible for high-level management of a BF Joust
+# hill, as physically represented by a hill Git repository directory.
 
+class HillManager
+  # Absolute path to the hill directory.
+  attr_reader :dir
+  # Parsed YAML configuration file for the hill.
+  attr_reader :cfg
+  # A Hill object containing the current programs and their scores.
+  attr_reader :hill
+
+  # Constructs a new hill manager for a repository at +hilldir+.
+  #
+  # Configuration will be read from the file +hilldir/hill.yaml+.  The
+  # +hill+ section has the following known configuration keys.
+  #
+  # [size]        Size of the hill, in number of programs.
+  # [scoring]     One of the scoring method names from the Scoring module.
+  # [gearlanced]  Path to the +gearlanced+ tool for jousting.
+  # [tapecount]   Number of tape lengths, normally always 21.
+  # [tiebreak]    *TODO* Secret key for tie-breaking.
+  # [push]        Optional; name of a remote repository to push after each commit.
   def initialize(hilldir)
     @dir = File.absolute_path(hilldir)
 
@@ -71,8 +93,15 @@ class HillManager
     end
   end
 
-  # a new challenger appears (or an old one is changed)
-
+  # Computes the results and ranking of a new challenger.
+  #
+  # +newprog+ is the name of the new program, and +code+ its source
+  # code.  This method will replace one program on the hill: either an
+  # old version, if a program named +newprog+ currently exists, or
+  # otherwise the last-ranked program.  If +try_only+ is false, the
+  # current hill is permanently updated.  In any case, a single-line
+  # summary message about the new program's ranking (in the modified
+  # hill) will be returned.
   def challenge(newprog, code, try_only=false)
     # make sure program parses and compute match results
 
@@ -111,11 +140,16 @@ class HillManager
        new_hill.rank(newprog) + 1, new_hill.size, rankchg]
   end
 
-  # hill source file management
-
+  # Permanently saves the source code of a new program.
+  #
+  # +replaced+ must be the name of a program currently on the hill;
+  # +newprog+ will be used as the basis of the new program's source
+  # file name, and +code+ will be written there.
   def save(replaced, newprog, code)
     oldfile = @files[replaced]
     newfile = File.join(@dir, newprog + '.bfjoust')
+
+    # remove old file (if not a dummy program) unless replacing it
 
     unless oldfile.nil? || oldfile == newfile
       git('rm', '-q', '--', oldfile)
@@ -123,8 +157,12 @@ class HillManager
     end
     @files[newprog] = newfile
 
+    # store new code and register for commit
+
     File.open(newfile, 'w') { |f| f.write(code) }
     git('add', '--', newfile)
+
+    # if any changes were made, commit and maybe push
 
     commitmsg = nil
     if replaced == newprog
@@ -141,8 +179,7 @@ class HillManager
   end
   private :save
 
-  # internal helper methods for git use
-
+  # Runs a Git command with the given arguments.
   def git(*args)
     Dir.chdir(@dir) do
       git = Process.spawn('git', *args)
@@ -152,6 +189,7 @@ class HillManager
   end
   private :git
 
+  # Tests whether the repository directory has changes for a commit.
   def git_changes?
     Dir.chdir(@dir) do
       git = Process.spawn('git', 'diff-index', '--cached', '--quiet', 'HEAD')
@@ -162,6 +200,7 @@ class HillManager
   end
   private :git_changes?
 
+  # Returns the commit hash of the current HEAD.
   def git_HEAD
     Dir.chdir(@dir) do
       commit = `git rev-parse HEAD`
@@ -171,8 +210,10 @@ class HillManager
   end
   private :git_HEAD
 
-  # reports
-
+  # Writes a plaintext report.
+  #
+  # +out+ must be an IO object to write the report to.  The formatting
+  # of the report follows the traditional style.
   def write_report(out)
     n = @hill.size
 
@@ -206,6 +247,10 @@ class HillManager
     end
   end
 
+  # Writes a plaintext breakdown file.
+  #
+  # The breakdown will be written from the perspective of program
+  # +prog+, into IO object +out+.  The style is traditional.
   def write_breakdown(prog, out)
     sym = { -1 => '>', 0 => 'X', +1 => '<' }
     t = @hill.tapecount
@@ -226,6 +271,38 @@ class HillManager
     end
   end
 
+  # Writes a JSON report of current hill state.
+  #
+  # The report will be written to IO object +out+.  If +varname+ is
+  # not +nil+, an assignment to +varname+ will be written around the
+  # JSON object, so that the end result can be directly included as a
+  # JavaScript file.
+  #
+  # The JSON object will have the following properties:
+  #
+  # [commit]         Commit hash for the hill represented by the report.
+  # [progs]          List of program names, ordered by rank (best first).
+  # [prevrank]       Array of "old" rankings for each program.
+  # [results]        Results for each joust; see below.
+  # [scores]         Scores according to all methods; see below.
+  # [scoringMethod]  Name of the scoring method in use.
+  #
+  # If there are _N_ programs on the hill, the *results* property is
+  # an array of length _N_-1, and the element _i_ (from 0 .. _N_-2) is
+  # itself an array of length _N_-1-_i_.  The element
+  # *results*(_i_,_j_) contains the results of the match between
+  # programs _i_ (as the left program) and _i_+1+_j_ (as the right
+  # program), where those numbers are indices into *progs*.  Each such
+  # element is (yet another) array of length 2*_T_, where _T_ is the
+  # number of tape lengths, containing +1, 0 or -1 depending on
+  # whether the _left_ program wins, ties or loses the corresponding
+  # configuration, respectively.
+  #
+  # The *scores* property is an object, with one property named after
+  # each known scoring method.  The values of these properties are
+  # again objects, containing two properties: *max* (theoretical
+  # maximum score) and *score* (an array of scores, in the same order
+  # as *progs*).
   def write_json(out, varname=nil)
     n = @hill.size
 
@@ -257,10 +334,21 @@ class HillManager
   end
 end
 
+# A BF Joust hill, tracking programs and their scores.
+#
+# This class maintains a set of programs and the results of a BF Joust
+# battle between any pair of programs.  It also handles the updating
+# of those results when one program is replaced.
+
 class Hill
   include Enumerable
-  attr_reader :tapecount, :results
+  # Number of different tape lengths, normally 21 (for 10 .. 30).
+  attr_reader :tapecount
 
+  # Constructs a new hill.
+  #
+  # *cfg* should be the +hill+ section from a hill YAML configuration
+  # file.  For the list of keys, see HillManager::new.
   def initialize(cfg)
     @scoring = Scoring::Methods[cfg['scoring']]
     @tapecount = cfg['tapecount'].to_i
@@ -289,15 +377,26 @@ class Hill
 
   # implement a set-like abstraction for the program names
 
-  def length; @hill.length; end
+  # Number of programs in this hill.
   def size; @hill.length; end
-  def each(&block); @hill.each(&block); end
+  alias_method :length, :size
+  # Enumerates the program names in hill index order.
+  def each(&block) # :yields: name
+    @hill.each(&block)
+  end
+  # Returns a program name corresponding to a hill index.
   def [](id); @hill[id]; end
 
+  # Checks whether program named +prog+ exists on the hill.
   def include?(prog); @progs.key?(prog); end
+  # Returns the hill index of program named +prog+.
   def id(prog); @progs[prog]; end
 
-  def pairs
+  # Enumerates all pairs of program names in hill index order.
+  #
+  # Order: (0, 1), (0, 2), ..., (0, _N_), (1, 2), (1, 3), ...,
+  # (1, _N_), ..., (_N_-1, _N_).
+  def pairs # :yields: progA, progB
     n = @hill.length
     (0 .. n-2).each do |idA|
       (idA+1 .. n-1).each do |idB|
@@ -306,7 +405,8 @@ class Hill
     end
   end
 
-  def id_pairs
+  # Enumerates all pairs of programs in the same order as #pairs.
+  def id_pairs # :yields: idA, progA, idB, progB
     n = @hill.length
     (0 .. n-2).each do |idA|
       (idA+1 .. n-1).each do |idB|
@@ -315,14 +415,17 @@ class Hill
     end
   end
 
-  # replace a program on the hill
-
+  # Replace a program and return a new, modified hill.
+  #
+  # The program named +replaced+ will be replaced by a program named
+  # +newprog+, where +results+ must be the results of that program
+  # against the current hill, as determined by Gear#test.
   def replace(replaced, newprog, results)
     new_hill = dup
     new_hill.replace!(replaced, newprog, results)
     new_hill
   end
-
+  # Internal parts of the #replace method to construct the modifed hill.
   def replace!(replaced, newprog, results)
     # replace the program in the hill data structures
 
@@ -364,15 +467,27 @@ class Hill
 
   # accessors to raw results, points, scores, ranking
 
+  # Results of the battle between +progA+ and +progB+.
   def results(progA, progB); @results[@progs[progA], @progs[progB]]; end
+  # Duel points for program +prog+.
   def points(prog); @points[@progs[prog]]; end
+  # Score (under current scoring method) for program +prog+.
   def score(prog); @scores[prog]; end
 
+  # Current rank of program +prog+.
   def rank(prog); @ranks[prog]; end
+  # Previous rank of program +prog+.
   def oldrank(prog); @oldranks[prog]; end
+  # Checks if program +prog+ existed in the previous revision of the hill.
   def oldrank?(prog); @oldranks.include?(prog); end
 
-  def ranking
+  # Enumerates the hill programs ordered by rank.
+  #
+  # The yielded value +rank+ is the 0-based ranking.
+  #
+  # If a block is not provided, returns an array of program names
+  # ordered by ranking (best first).
+  def ranking # :yields: rank, prog, points, score
     return @ranking unless block_given?
     @ranking.each_with_index do |prog, rank|
       yield rank, prog, @points[@progs[prog]], @scores[prog]
@@ -380,9 +495,22 @@ class Hill
   end
 end
 
+# Efficiently stored matrix of results.
+#
+# This class stores the (conceptual) _N_ × _N_ matrix of results by
+# only keeping the upper triangular part (without the main diagonal),
+# as the other half can be reconstructed from symmetry, and the
+# diagonal is all zeros.
+
 class ResultMatrix
+  # Size of the matrix.
   attr_reader :size
 
+  # Constructs a new result matrix.
+  #
+  # The matrix will be of size +size+, and each element will have
+  # 2*+tapecount+ entries.  (This is used to synthesize the zero results
+  # on the diagonal, when requested.)
   def initialize(size, tapecount)
     @size = size
     @tapecount = tapecount
@@ -390,6 +518,7 @@ class ResultMatrix
     @data = Array.new(size-1) { |i| Array.new(size-1 - i) }
   end
 
+  # Returns the results for pair (+a+, +b+).
   def [](a, b)
     return [0] * (2*@tapecount) if a == b
     if a < b
@@ -399,6 +528,10 @@ class ResultMatrix
     end
   end
 
+  # Updates the results of battle (+a+, +b+).
+  #
+  # The results of (+b+, +a+) will automatically reflect this change,
+  # and an attempt to modify (+a+, +a+) is silently ignored.
   def []=(a, b, results)
     return if a == b
 
@@ -409,12 +542,17 @@ class ResultMatrix
     end
   end
 
+  # Returns a new result matrix with the results of one program replaced.
+  #
+  # +idA+ is the index of the program being replaced, and +results+
+  # the results (as returned by Gear#test) of it battling all the
+  # other programs in the matrix.
   def replace(idA, results)
     new_matrix = dup
     new_matrix.replace!(idA, results)
     new_matrix
   end
-
+  # Internal parts of the replace method to construct the modified matrix.
   def replace!(idA, results)
     results.each_with_index do |r, idB|
       self[idA, idB] = r

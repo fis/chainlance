@@ -3,7 +3,7 @@ PROGS = chainlance $(GEARLANCES) gearlanced genelance torquelance torquelance-co
 PARSER = parser.c parser.h common.c common.h
 GCC = gcc -std=gnu99 -O2 -fwhole-program -march=native -Wall -Wextra
 
-.PHONY : all clean test
+.PHONY : all clean test rdoc
 
 all: $(PROGS)
 
@@ -34,6 +34,9 @@ wrenchlance-right: wrenchlance-right.c $(PARSER)
 clean:
 	$(RM) $(PROGS)
 	$(RM) torquelance-header.o torquelance-ops.o wrenchlance-ops.o
+
+rdoc:
+	rdoc -o rdoc zhillbot.rb zhill
 
 # TODO: obsoleted test code, see test/ instead
 test: chainlance

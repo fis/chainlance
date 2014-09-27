@@ -1,21 +1,26 @@
 require 'nmatrix'
 
-module Scoring
-  # "points" method: sum of raw duel points, moved to range [0, 2*(N-1)]
+# BF Joust scoring methods module.
+#
+# For details on the scoring methods, see {zem.fi hill internals}[http://zem.fi/bfjoust/internals/].
 
+module Scoring
+  # The "points" method: sum of raw duel points, moved to range [0, 2*(N-1)].
   class Points
+    # Scores for a Hill.
     def score(hill)
       n = hill.size
       Hash[hill.map { |p| [p, hill.points(p) + n - 1] }]
     end
 
+    # Theoretical maximum score for a Hill.
     def max(hill)
       (2 * (hill.size - 1)).to_s
     end
   end
 
-  # "markov" method: stationary distribution of a Markov chain
-
+  # The "markov" method: stationary distribution of a Markov chain.
+  #--
   # let there be a (first-order) Markov chain, with the transition
   # probabilities defined as
   #
@@ -28,8 +33,9 @@ module Scoring
   # - an entirely winning program may have a small score: bad
   #
   # simple fix: normalize to [0, 100] by scaling with max score
-
+  # better fix: just multiply by 1000
   class Markov
+    # Scores for a Hill.
     def score(hill)
       n = hill.size
       k = 2 * hill.tapecount
@@ -61,11 +67,12 @@ module Scoring
       Hash[hill.each_with_index.map { |p, i| [p, d[0,i]] }]
     end
 
+    # Theoretical maximum score for a Hill (constant).
     def max(_); '1000'; end
   end
 
-  # "trad" method: conventional egojoust scoring
-
+  # The "trad" method: conventional egojoust scoring.
+  #--
   # N = number of programs, M = N-1, K = maximum duel points (2*tapecount)
   # worth of p = (points of p + N) / (M*2)
   # base score of p:
@@ -76,12 +83,13 @@ module Scoring
   #
   # as a tweak to reward narrow wins more,
   # the D/K term can be replaced with (D+K)/(2K)
-
   class Trad
+    # Construct a new scorer with a given weight function.
     def initialize(weightf)
       @weightf = weightf
     end
 
+    # Scores for a Hill.
     def score(hill)
       n = hill.size
       k = 2 * hill.tapecount
@@ -101,18 +109,20 @@ module Scoring
       Hash[hill.each_with_index.map { |p, i| [p, 200 * base[i] / (n-1)] }]
     end
 
+    # Theoretical maximum score for a Hill (constant).
     def max(_); '100'; end
   end
 
-  # "iterative" method: fixed point of a trad-inspired scoring scheme
-
-  # see zem.fi/tmp/bfjoust.html for now
-
+  # The "iterative" method: fixed point of a trad-inspired scoring scheme.
+  #--
+  # see http://zem.fi/bfjoust/internals/ for now
   class Iter
+    # Construct a new scorer with a given weight function.
     def initialize(weightf)
       @weightf = weightf
     end
 
+    # Scores for a Hill.
     def score(hill)
       n = hill.size
       k = 2 * hill.tapecount
@@ -143,10 +153,22 @@ module Scoring
       Hash[hill.each_with_index.map { |p, i| [p, 100 * s[i,0]] }]
     end
 
+    # Theoretical maximum score for a Hill (constant).
     def max(_); '100'; end
   end
 
-  # all known scoring methods
+  # A hash of all known scoring methods.
+  #
+  # The keys of the hash are scoring method names:
+  # [points]     Scoring::Points
+  # [markov]     Scoring::Markov
+  # [trad]       Scoring::Trad (regular mode)
+  # [tradtwist]  Scoring::Trad (tweaked mode)
+  # [iter]       Scoring::Iter (regular mode)
+  # [itertwist]  Scoring::Iter (tweaked mode)
+  #
+  # Each method object accepts the messages +max+ (maximum theoretical
+  # score) and +score+ (scores for the programs in a Hill object).
 
   Methods = {
     'points' => Points.new,
