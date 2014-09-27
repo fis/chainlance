@@ -326,8 +326,7 @@ class Hill
   def replace!(replaced, newprog, results)
     # replace the program in the hill data structures
 
-    replaced = @progs[replaced]
-    newid = replaced
+    newid = @progs[replaced]
 
     @progs = @progs.dup
     @progs.delete(replaced)
