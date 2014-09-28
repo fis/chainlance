@@ -21,7 +21,7 @@ needMath: true
 	For a particular tape length/polarity configuration $i$,
 	\[ r_{a,b}^{(i)} = \left\{ \begin{array}{ll} +1 &amp; \text{if $a$ wins,} \\ 0 & \text{if the match is a tie,} \\ -1 &amp; \text{if $a$ loses.} \end{array} \right. \]
 	As a shorthand, define the <em>win margin</em> $r_{a,b} = \sum_{i=1}^T r_{a,b}^{(i)}$, where $r_{a,b} \in [-T,T]$.
-	Some identities (due to e.g. symmetry of BF Joust):
+	Some identities (due to the symmetry of BF Joust):
 	\[ \begin{aligned}
 	r_{a,b}^{(i)} &amp;= -r_{b,a}^{(i)} &amp; r_{a,a}^{(i)} &amp;= 0 \\
 	r_{a,b} &amp;= -r_{b,a} &amp; r_{a,a} &amp;= 0
