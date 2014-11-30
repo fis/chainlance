@@ -173,8 +173,8 @@ class Server
     rescue GearException => err
       callback.call(:error, err.message)
     end
-    private :work_joust
   end
+  private :work_joust
 end
 
 # Unix domain socket server for a BF Joust hill.

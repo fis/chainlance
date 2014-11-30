@@ -43,7 +43,7 @@ module Bot
 
       if cfg['help']
         on :message, cfg['help'] do |m|
-          m.reply('I do !bfjoust; see http://zem.fi/bfjoust/ for more information.', true)
+          m.reply("I do #{command}; see http://zem.fi/bfjoust/ for more information.", true)
         end
       end
 

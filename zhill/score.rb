@@ -49,7 +49,8 @@ module Scoring
         t[idB,idA] = lossBA.to_f / (n * k)
       end
 
-      t += NMatrix.diagonal(-t.sum(1) + 1) # make rows sum to 1
+      tsum = t.sum(1)
+      t += NMatrix.diagonal(NMatrix.ones_like(tsum) - tsum) # make rows sum to 1
 
       # speed up converging by squaring t a couple of times
       (1..5).each { t = t.dot(t) }
