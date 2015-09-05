@@ -1,10 +1,11 @@
 update results.txt
 
-  ./crank_hill.sh hill/* | tee results.txt
+  ./crank_hill.sh hill/*.bfjoust | tee results.txt
 
 fetch a hill:
 
-  wget -r -l 1 -A bfjoust -nd -np http://codu.org/eso/bfjoust/in_egobot/
+  #wget -r -l 1 -A bfjoust -nd -np http://codu.org/eso/bfjoust/in_egobot/
+  (cd hill; git pull)
 
 test for parse errors:
 
@@ -15,5 +16,6 @@ update visible egostats pages:
   rm stats/plot_*.png stats/tn_plot_*.png stats/index.html
   ./parse_results.py
   ./update_stats.py
-  rsync -av --chmod a+r,Da+x stats/ momus:/space/www/zem/egostats
+  #rsync -av --chmod a+r,Da+x stats/ momus:/space/www/zem/egostats
+  #rsync -Lav --chmod a+r,Da+x stats/ eos:www/egostats
   rsync -av --chmod a+r,Da+x stats/ selene:www/egostats
