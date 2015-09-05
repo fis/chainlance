@@ -1,4 +1,4 @@
-GEARLANCES = cranklance gearlance
+GEARLANCES = cranklance gearlance gearlanced
 PROGS = chainlance $(GEARLANCES) gearlanced genelance torquelance torquelance-compile wrenchlance-left wrenchlance-right
 PARSER = parser.c parser.h common.c common.h
 GCC = gcc -std=gnu99 -O2 -fwhole-program -march=native -Wall -Wextra
@@ -11,9 +11,6 @@ chainlance: chainlance.c
 	gcc -o chainlance -std=gnu99 -g -Wall chainlance.c
 
 $(GEARLANCES): %: %.c gearlance.c $(PARSER)
-	$(GCC) -o $@ $<
-
-gearlanced: gearlanced.c gearlance.c $(PARSER)
 	$(GCC) -o $@ $<
 
 genelance: genelance.c gearlance.c $(PARSER)
