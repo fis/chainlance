@@ -1,0 +1,62 @@
+// Protobuf messages for the protocol spoken by 'gearlanced'.
+
+syntax = "proto2";
+
+// Results of a single full joust.
+message Joust {
+  // Normal and reversed-polarity score array.
+  // The value 1 indicates a win, 0 a tie, -1 a loss for the tested program.
+  repeated sint32 sieve_points = 1  [packed=true];
+  repeated sint32 kettle_points = 2 [packed=true];
+}
+
+// Program execution statistics for visualization.
+message Statistics {
+  // Number of executed cycles.
+  optional uint32 cycles = 1;
+
+  // In the following tape-related statistics, the first half of the array
+  // corresponds to the left program, while the second half corresponds to
+  // the right program.  The tape is represented as seen from the perspective
+  // of the left program.
+
+  // Absolute value of tape at the end of the joust.
+  optional bytes tape_abs = 2;
+  // Largest value left on tape when a program moved away from a cell.
+  optional bytes tape_max = 3;
+
+  // Heatmap of how long the tape pointer spent on the cell.
+  repeated uint32 heat_position = 4 [packed=true];
+  // Heatmap of how many times the program modified this cell.
+  repeated uint32 heat_modify = 5   [packed=true];
+}
+
+// Command specifier. See gearlanced.c comments for more details.
+enum Action {
+  // Not valid; gearlanced will exit if sent.
+  UNKNOWN = 0;
+  // Test a program against the hill.
+  TEST = 1;
+  // Set a program on the hill.
+  SET = 2;
+  // Clear a program on the hill.
+  UNSET = 3;
+}
+
+// Command message to gearlanced.
+message Command {
+  // Which command to perform.
+  optional Action action = 1;
+  // Hill program index, if relevant for the command.
+  optional uint32 index = 2;
+}
+
+// Reply from gearlanced.
+message Reply {
+  // Success indicator, always set.
+  optional bool ok = 1;
+  // Error message, set if not ok.
+  optional string error = 2;
+  // Set when running as cranklanced and generating statistics.
+  optional bool with_statistics = 3;
+}

@@ -48,12 +48,12 @@ static int nextc(int fd)
 {
 	(void)fd; /* unused */
 	int c = getchar();
-	return c == '\n' ? -1 : c;
+	return c == '\0' ? -1 : c;
 }
 
 static void unc(int c)
 {
-	ungetc(c == -1 ? '\n' : c, stdin);
+	ungetc(c == -1 ? '\0' : c, stdin);
 }
 
 #else /* PARSE_STDIN */

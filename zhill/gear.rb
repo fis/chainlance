@@ -1,3 +1,8 @@
+require 'protobuf/message/decoder'
+require 'protobuf/message/field'
+
+require_relative 'geartalk.pb'
+
 # Minimal Ruby wrapper class around the gearlanced tool.
 
 class Gear
@@ -25,26 +30,20 @@ class Gear
   # won, tied or lost (respectively) against the corresponding program
   # on the hill.
   def test(code)
-    @gear_in.write("test\n")
-    @gear_in.write(code.tr("\n", ' ') + "\n")
+    put(Action::TEST)
+    @gear_in.write(code.tr("\0", ' ') + "\0")
     @gear_in.flush
 
-    result = @gear_out.readline.chomp
-    raise GearException, result if result != 'ok'
+    reply = get(Reply.new)
+    raise GearException, reply.error unless reply.ok
 
     Array.new(@size) do |i|
-      points = @gear_out.readline.chomp.split
-      if points.length != 2 || points[0].length != points[1].length
-        raise GearException, "gearlanced produced gibberish: #{points.inspect}"
+      joust = get(Joust.new)
+      if joust.sieve_points.length == 0 || joust.kettle_points.length != joust.sieve_points.length
+        raise GearException, "gearlanced produced gibberish: #{joust.inspect}"
       end
 
-      points = points[0] + points[1]
-      if points.tr('<>X', '').length > 0
-        raise GearException, 'gearlanced produced gibberish points: #{points}'
-      end
-
-      pointmap = { '<' => -1, 'X' => 0, '>' => 1 }
-      points.chars.map { |p| pointmap[p] }
+      joust.sieve_points + joust.kettle_points
     end
   end
 
@@ -52,12 +51,12 @@ class Gear
   #
   # The indices run from 0 to #size-1.
   def set(i, code)
-    @gear_in.write("set #{i}\n")
-    @gear_in.write(code.tr("\n", ' ') + "\n")
+    put(Action::SET, i)
+    @gear_in.write(code.tr("\0", ' ') + "\0")
     @gear_in.flush
 
-    result = @gear_out.readline.chomp
-    raise GearException, result if result != 'ok'
+    reply = get(Reply.new)
+    raise GearException, reply.error unless reply.ok
   end
 
   # Unsets the +i+'th program.
@@ -66,12 +65,32 @@ class Gear
   # the corresponding program slot to contain the initial "loses to
   # everything" dummy program.
   def unset(i)
-    @gear_in.write("unset #{i}\n")
+    put(Action::UNSET, i)
     @gear_in.flush
 
-    result = @gear_out.readline.chomp
-    raise GearException, result if result != 'ok'
+    reply = get(Reply.new)
+    raise GearException, reply.error unless reply.ok
   end
+
+  # Sends a protobuf command message to the gearlanced process.
+  def put(action, index=nil)
+    cmd = Command.new
+    cmd.action = action
+    cmd.index = index unless index.nil?
+    bytes = cmd.serialize_to_string
+    len = ::Protobuf::Field::VarintField.encode(bytes.length)
+    @gear_in.write(len)
+    @gear_in.write(bytes)
+  end
+  private :put
+
+  # Receives a protobuf message from the gearlanced process.
+  def get(message)
+    len = ::Protobuf::Decoder::read_varint(@gear_out)
+    bytes = @gear_out.read(len)
+    message.parse_from_string(bytes)
+  end
+  private :get
 end
 
 # Exception class for BF Joust syntax errors.
