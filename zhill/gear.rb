@@ -29,6 +29,11 @@ class Gear
   # 2*21 = 42), and each element is +1, 0 or -1 if the tested program
   # won, tied or lost (respectively) against the corresponding program
   # on the hill.
+  #
+  # If the running binary is cranklanced, returns #size hashes
+  # instead. Each hash contains the raw Joust message (key :joust),
+  # and the possibly empty list of Statistics messages (key :stats)
+  # returned by cranklanced.
   def test(code)
     put(Action::TEST)
     @gear_in.write(code.tr("\0", ' ') + "\0")
@@ -38,12 +43,20 @@ class Gear
     raise GearException, reply.error unless reply.ok
 
     Array.new(@size) do |i|
+      stats = nil
+      if reply.with_statistics
+        stats_count = ::Protobuf::Decoder::read_varint(@gear_out)
+        stats = Array.new(stats_count) { get(Statistics.new) }
+      end
+
       joust = get(Joust.new)
       if joust.sieve_points.length == 0 || joust.kettle_points.length != joust.sieve_points.length
         raise GearException, "gearlanced produced gibberish: #{joust.inspect}"
       end
 
-      joust.sieve_points + joust.kettle_points
+      reply.with_statistics ?
+        { :joust => joust, :stats => stats } :
+        joust.sieve_points + joust.kettle_points
     end
   end
 

@@ -21,16 +21,20 @@
  * Action.TEST:
  * Input: Command, bfjoust program P.
  * Output: Reply,
- *         N* (42* Statistics [if Reply.with_statistics],
- *             Joust) [if Reply.ok].
+ *         [if Reply.ok:
+ *          N* ([if Reply.with_statistics:
+ *               varint C, C* Statistics],
+ *              Joust)]
  * Test program P against those currently on the hill.  If there are
  * no errors, the results for all tape length/polarity matches are
  * sent in the following Joust messages.  If compiled as cranklanced,
- * the Joust message will be preceded by 42 individual Statistics
- * messages, giving detailed statistics about each individual match.
- * The Reply.with_statistics field will be set to indicate this.
- * There will be a total of N groups of Joust-and-maybe-Statistics
- * messages.
+ * the Joust message will be preceded by a varint C and C individual
+ * Statistics messages, giving detailed statistics about each
+ * individual match.  The Reply.with_statistics field will be set to
+ * indicate this.  C is one of two values: either 0 (if the opponent
+ * slot on the hill is empty), or (normally) 42 (all tape lengths and
+ * polarities).  There will be a total of N groups of Joust (and maybe
+ * Statistics) messages.
  *
  * Action.SET:
  * Input: Command [.index = I], bfjoust program P.
@@ -47,38 +51,13 @@
  * An EOF condition in place of a command will terminate the program.
  */
 
-/*
- * OLD LINE-ORIENTED PROTOCOL:
- *
- * "test\nP\n":
- * Test program P against those currently on the hill.  Will return
- * either "error: ...\n" or "ok\n" followed by N lines of output.
- * Each line has the form
- *   "CCCCCCCCCCCCCCCCCCCCC CCCCCCCCCCCCCCCCCCCCC\n",
- * where each C corresponds to a particular tape length/polarity
- * combination, and is either '<' (the program on the hill wins),
- * '>' (program P wins) or 'X' (tie).
- *
- * "set I\nP\n":
- * Set the I'th program (where 0 <= I < N) to P.  Returns either
- * "ok\n" or "error: ...\n".
- *
- * "unset I\n":
- * Remove the I'th program (where 0 <= I < N), by setting it to the
- * always-lose one.  This is used to "blank" the program being
- * replaced on the hill, for efficiency reasons.  Returns "ok\n" or
- * "error: ...\n" (only if I is not a number or out of bounds).
- */
-
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define NO_MAIN 1
-#define PARSE_STDIN 1
-#include "gearlance.c"
+/* protobuf helpers used also by gearlance.c code for cranklanced */
 
 #include "geartalk.pb.h"
 #include "geartalk.pb.c"
@@ -123,6 +102,37 @@ static void pb_put(const pb_field_t fields[], const void *src)
 	if (!pb_encode_delimited(&stdout_stream, fields, src))
 		abort();
 }
+
+/* statistics output code for cranklanced */
+
+#ifdef CRANK_IT
+#define EXECUTE_STATS(pol) do { \
+		Statistics s = Statistics_init_default; \
+		s.has_cycles = true; \
+		s.cycles = MAXCYCLES - cycles; \
+		s.has_tape_abs = true; s.tape_abs.size = tapesize; \
+		for (int p = 0; p < tapesize; p++) s.tape_abs.bytes[p] = tape[p] >= 128 ? tape[p]-256 : tape[p]; \
+		s.has_tape_max = true; s.tape_max.size = 2 * tapesize; \
+		for (int p = 0; p < tapesize; p++) { \
+			s.tape_max.bytes[p] = xstats.tape_max[0][p]; \
+			s.tape_max.bytes[tapesize+p] = xstats.tape_max[1][p]; \
+		} \
+		s.heat_position_count = 2 * tapesize; \
+		for (int p = 0; p < tapesize; p++) { \
+			s.heat_position[p] = xstats.heat_position[0][p]; \
+			s.heat_position[tapesize+p] = xstats.heat_position[1][p]; \
+		} \
+		pb_put(Statistics_fields, &s); \
+	} while (0)
+#endif
+
+/* include gearlance/cranklance core */
+
+#define NO_MAIN 1
+#define PARSE_STDIN 1
+#include "gearlance.c"
+
+/* main application for gearlanced/cranklanced */
 
 static struct opcodes *readprog(enum core_action act, Reply *reply)
 {
@@ -181,7 +191,11 @@ int main(int argc, char *argv[])
 		reply.has_ok = true;
 		reply.ok = false;
 		reply.has_with_statistics = true;
+#ifdef CRANK_IT
+		reply.with_statistics = true;
+#else
 		reply.with_statistics = false;
+#endif
 
 		if (cmd.action == Action_TEST)
 		{
@@ -194,6 +208,11 @@ int main(int argc, char *argv[])
 
 			for (unsigned i = 0; i < hillsize; i++)
 			{
+#ifdef CRANK_IT
+				if (!pb_encode_varint(&stdout_stream, hill[i] ? 2 * NTAPES : 0))
+					abort(); /* too bad */
+#endif
+
 				if (!hill[i])
 				{
 					for (unsigned pol = 0; pol < 2; pol++)
@@ -204,8 +223,8 @@ int main(int argc, char *argv[])
 					core(core_run, 0, hill[i], code);
 
 				Joust joust;
-				joust.sieve_points_count = MAXTAPE - MINTAPE + 1;
-				joust.kettle_points_count = MAXTAPE - MINTAPE + 1;
+				joust.sieve_points_count = NTAPES;
+				joust.kettle_points_count = NTAPES;
 
 				/*
 				 * Executing a program will, as a side effect, flip the polarity by rewriting
@@ -214,10 +233,10 @@ int main(int argc, char *argv[])
 				 */
 
 				int sieve = i % 2, kettle = !sieve;
-				for (unsigned tidx = 0, tlen = MINTAPE; tlen <= MAXTAPE; tidx++, tlen++)
+				for (unsigned tlen = MINTAPE; tlen <= MAXTAPE; tlen++)
 				{
-					joust.sieve_points[tidx] = -scores[sieve][tlen];
-					joust.kettle_points[tidx] = -scores[kettle][tlen];
+					joust.sieve_points[tlen - MINTAPE] = -scores[sieve][tlen];
+					joust.kettle_points[tlen - MINTAPE] = -scores[kettle][tlen];
 				}
 
 				pb_put(Joust_fields, &joust);

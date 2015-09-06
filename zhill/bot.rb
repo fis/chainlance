@@ -1,7 +1,5 @@
 require 'cinch'
 
-require_relative 'gear'
-
 # IRC bot to run a public gearlanced hill.
 #
 # Based on the Cinch[https://github.com/cinchrb/cinch] framework.

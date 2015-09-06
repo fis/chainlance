@@ -3,7 +3,7 @@
 Joust.sieve_points        max_count:21
 Joust.kettle_points       max_count:21
 
-Statistics.tape_abs       max_size:60
+Statistics.tape_abs       max_size:30
 Statistics.tape_max       max_size:60
 Statistics.heat_position  max_count:60
 Statistics.heat_modify    max_count:60

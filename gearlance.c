@@ -31,6 +31,7 @@
 
 #define MINTAPE 10
 #define MAXTAPE 30
+#define NTAPES (MAXTAPE - MINTAPE + 1)
 
 /* #define TRACE 1 */
 
@@ -44,10 +45,13 @@ static int scores[2][MAXTAPE+1];
 
 #ifdef CRANK_IT
 static struct {
-	long long cycles;
-} stats = {
-	.cycles = 0
-};
+	unsigned long long cycles;
+} stats = { 0 };
+
+static struct {
+	unsigned char tape_max[2][MAXTAPE];
+	unsigned heat_position[2][MAXTAPE];
+} xstats = { {{0}}, {{0}} };
 #endif
 
 /* actual interpretation */
@@ -250,11 +254,6 @@ static struct opcodes *core(enum core_action act, struct oplist *ops, struct opc
 
 	static int repStackA[MAXNEST], repStackB[MAXNEST];
 
-#ifdef CRANK_IT
-	static unsigned tapestats[2][MAXTAPE];
-	static unsigned char tapemax[2][MAXTAPE];
-#endif
-
 	union opcode *ipA = 0, *ipB = 0;
 	unsigned char *ptrA = 0, *ptrB = 0, bcache = 0;
 	int repA = 0, repB = 0, *repSA = 0, *repSB = 0;
@@ -265,7 +264,11 @@ static struct opcodes *core(enum core_action act, struct oplist *ops, struct opc
 	/* execute with all tape lengths and both relative polarities */
 
 #ifdef CRANK_IT
-#define EXECUTE_STATS(pol)	  \
+	stats.cycles = 0;
+
+#ifndef EXECUTE_STATS
+	/* use old text-based statistics output for plain 'cranklance' */
+#define EXECUTE_STATS(pol) \
 	stats.cycles += (MAXCYCLES - cycles); \
 	printf("CYCLES[%d,%d] = %d\n", pol, tapesize, MAXCYCLES - cycles); \
 	  \
@@ -273,14 +276,15 @@ static struct opcodes *core(enum core_action act, struct oplist *ops, struct opc
 	for (int p = 0; p < tapesize; p++) printf(" %d", tape[p] >= 128 ? tape[p]-256 : tape[p]); \
 	printf("\n"); \
 	printf("TAPEMAX[%d,%d] =", pol, tapesize); \
-	for (int p = 0; p < tapesize; p++) printf(" %u/%u", tapemax[0][p], tapemax[1][p]); \
+	for (int p = 0; p < tapesize; p++) printf(" %u/%u", xstats.tape_max[0][p], xstats.tape_max[1][p]); \
 	printf("\n"); \
 	printf("TAPEHEAT[%d,%d] =", pol, tapesize); \
-	for (int p = 0; p < tapesize; p++) printf(" %u/%u", tapestats[0][p], tapestats[1][p]); \
+	for (int p = 0; p < tapesize; p++) printf(" %u/%u", xstats.heat_position[0][p], xstats.heat_position[1][p]); \
 	printf("\n")
 #endif
+#endif
 
-#define EXECUTE_ALL(sym, pol)	  \
+#define EXECUTE_ALL(sym, pol) \
 	ret = &&sym; \
 	for (tapesize = MINTAPE; tapesize <= MAXTAPE; tapesize++) \
 	{ \
@@ -294,8 +298,8 @@ static struct opcodes *core(enum core_action act, struct oplist *ops, struct opc
 		deathsA = 0, deathsB = 0; \
 	  \
 		cycles = MAXCYCLES; \
-		CRANK(memset(tapestats, 0, sizeof tapestats)); \
-		CRANK(memset(tapemax, 0, sizeof tapemax)); \
+		CRANK(memset(xstats.tape_max, 0, sizeof xstats.tape_max)); \
+		CRANK(memset(xstats.heat_position, 0, sizeof xstats.heat_position)); \
 	  \
 		score = 0; \
 		goto *ipA->xt; \
@@ -358,8 +362,8 @@ nextcycle:
 	}
 
 #ifdef CRANK_IT
-	tapestats[0][ptrA-tape]++;
-	tapestats[1][ptrB-tape]++;
+	xstats.heat_position[0][ptrA-tape]++;
+	xstats.heat_position[1][ptrB-tape]++;
 #endif
 
 	if (!cycles)
@@ -393,9 +397,9 @@ op_decB:
 	NEXTB;
 
 #ifdef CRANK_IT
-#define MAXSTAT(ptr,i)	  \
-	if (*ptr >= 128) { if (256-*ptr > tapemax[i][ptr-tape]) tapemax[i][ptr-tape] = 256-*ptr; } \
-	else { if (*ptr > tapemax[i][ptr-tape]) tapemax[i][ptr-tape] = *ptr; }
+#define MAXSTAT(ptr,i) { \
+		unsigned char max = *ptr >= 128 ? 256 - *ptr : *ptr; \
+		if (max > xstats.tape_max[i][ptr-tape]) xstats.tape_max[i][ptr-tape] = max; }
 #endif
 
 op_leftA:

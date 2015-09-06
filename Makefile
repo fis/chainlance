@@ -1,5 +1,6 @@
-GEARLANCES = cranklance gearlance
-PROGS = chainlance $(GEARLANCES) gearlanced genelance torquelance torquelance-compile wrenchlance-left wrenchlance-right
+GEARLANCES = gearlance cranklance
+GEARLANCEDS = gearlanced cranklanced
+PROGS = $(GEARLANCES) $(GEARLANCEDS) genelance chainlance torquelance torquelance-compile wrenchlance-left wrenchlance-right
 PARSER = parser.c parser.h common.c common.h
 GCC = gcc -std=gnu99 -O2 -fwhole-program -march=native -Wall -Wextra
 
@@ -12,7 +13,7 @@ all: $(PROGS) zhill/geartalk.pb.rb
 $(GEARLANCES): %: %.c gearlance.c $(PARSER)
 	$(GCC) -o $@ $<
 
-gearlanced: gearlanced.c gearlance.c geartalk.pb.c geartalk.pb.h $(PARSER)
+$(GEARLANCEDS): %: %.c gearlanced.c gearlance.c geartalk.pb.c geartalk.pb.h $(PARSER)
 	$(GCC) -Inanopb -DPB_FIELD_16BIT=1 -o $@ $<
 
 genelance: genelance.c gearlance.c $(PARSER)
