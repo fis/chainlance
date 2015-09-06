@@ -1,6 +1,6 @@
 #! /bin/bash
 
-prog="${1:-../gearlanced}"
+prog="${1:-./gearlanced-wrapper.rb ../gearlanced}"
 n=$(wc -l warriors.idx | cut -d ' ' -f 1)
 
 coproc $prog $n
@@ -10,7 +10,7 @@ while read idx left; do
     tr -d '\n' < $left >&4
     echo >&4
     read ok <&3
-    if [[ "$ok" != "ok" ]]; then echo "BROKE setting $left" >&2; exit 1; fi
+    if [[ "$ok" != "ok" ]]; then echo "BROKE setting $left: $ok" >&2; exit 1; fi
 done < <(nl -v 0 warriors.idx) 3<&${COPROC[0]} 4>&${COPROC[1]}
 
 while read right; do
@@ -18,7 +18,7 @@ while read right; do
     tr -d '\n' < $right >&5
     echo >&5
     read ok <&4
-    if [[ "$ok" != "ok" ]]; then echo "BROKE testing $right" >&2; exit 1; fi
+    if [[ "$ok" != "ok" ]]; then echo "BROKE testing $right: $ok" >&2; exit 1; fi
     while read idx left; do
         read ref <&3
         read rawhyp <&4
