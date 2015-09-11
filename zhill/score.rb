@@ -31,6 +31,7 @@ module Scoring
   #
   # - an entirely losing program will have a score of 0: good
   # - an entirely winning program may have a small score: bad
+  #   *** in retrospect: not true; it will have a score of 1 ***
   #
   # simple fix: normalize to [0, 100] by scaling with max score
   # better fix: just multiply by 1000

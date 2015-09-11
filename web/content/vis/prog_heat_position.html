@@ -1,0 +1,20 @@
+---
+title: Per-program tape position heatmap - Plots
+scripts: https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js /vis/data/meta.js /vis/js/prog_heat_position.js
+---
+<h3>
+	<a href="/vis/"><span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span></a>
+	Per-program tape position heatmap
+</h3>
+<p>
+	This plot shows the number of cycles a particular program spent on different tape cells during the tournament.
+	The default view shows all tape lengths, with the values being averages over all the opponents, and both sieve and kettle polarities.
+	You can select a single opponent to focus on from the "Opponent" dropdown, or show the polarities separately by checking the appropriate box.
+</p>
+<p>
+	Clicking a row switches to an alternative view, which shows that particular tape length, both averaged and against each opponent, simultaneously on one screen.
+	In this view, you can also toggle polarity (between averaged, sieve or kettle) by clicking at the underlined words in the plot title.
+	Clicking on a row returns to the original view, showing the opponent on that row.
+</p>
+<div id="plot-controls"></div>
+<div id="plot-canvas"></div>

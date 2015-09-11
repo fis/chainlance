@@ -38,7 +38,7 @@ route '*' do
   if ext == 'css' || ext == 'scss'
     # Write item with identifier /foo/ to /foo.css
     item.identifier.chop + '.css'
-  elsif ext == 'js'
+  elsif ext == 'js' and not item.identifier.end_with?('.js/')
     # Write item with identifier /foo/ to /foo.js
     item.identifier.chop + '.js'
   elsif item.binary?

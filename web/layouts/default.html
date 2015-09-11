@@ -34,10 +34,14 @@
                               ['/matrix/', 'Matrix'],
                               ['/breakdown/', 'Breakdown'],
                               ['/game/', 'Games'],
+							  ['/vis/', 'Plots'],
                               ['/internals/', 'Internals']].each do |item|
                                  id, label = item
+                                 active = (id == '/' ?
+                                   @item.identifier == '/' :
+                                   @item.identifier.start_with?(id))
                                  %>
-                                 <li<%= ' class="active"' if id == @item.identifier %>>
+                                 <li<%= ' class="active"' if active %>>
                                      <a href="<%= id %>"><%= label %></a>
                                  </li>
                                  <%

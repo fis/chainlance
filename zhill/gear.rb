@@ -42,11 +42,19 @@ class Gear
     reply = get(Reply.new)
     raise GearException, reply.error unless reply.ok
 
-    Array.new(@size) do |i|
+    Array.new(@size) do
       stats = nil
       if reply.with_statistics
         stats_count = ::Protobuf::Decoder::read_varint(@gear_out)
-        stats = Array.new(stats_count) { get(Statistics.new) }
+        stats = Array.new(stats_count) do
+          s = get(Statistics.new)
+          {
+            :cycles => s.cycles,
+            :tape_abs => s.tape_abs,
+            :tape_max => s.tape_max,
+            :heat_position => s.heat_position.to_a,
+          }
+        end
       end
 
       joust = get(Joust.new)
@@ -55,8 +63,11 @@ class Gear
       end
 
       reply.with_statistics ?
-        { :joust => joust, :stats => stats } :
-        joust.sieve_points + joust.kettle_points
+        {
+          :points => joust.sieve_points + joust.kettle_points,
+          :cycles => joust.cycles,
+          :stats => stats,
+        } : joust.sieve_points + joust.kettle_points
     end
   end
 
