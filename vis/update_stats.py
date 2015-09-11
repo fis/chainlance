@@ -167,15 +167,17 @@ def plot_lenscore():
     plt.ylabel('Tournament score')
 
 def plot_cycles():
-    dc = dcycles[np.ix_(ordr[::-1], ordr)]
+    csum = dcycles.sum(0) + dcycles.sum(1)
+    cordr = sorted(xrange(nprogs), key=lambda i: csum[i], reverse=True)
+    dc = dcycles[np.ix_(cordr[::-1], cordr)]
 
     plt.gcf().set_size_inches(11.5, 10)
     plt.subplots_adjust(.3, .3, 1, 1)
     plt.pcolor(np.log10(dc), cmap=cmap)
     plt.colorbar()
 
-    plt.xticks(np.arange(len(proglist))+0.5, proglist[ordr], size='small', rotation=-90)
-    plt.yticks(np.arange(len(proglist))+0.5, proglist[ordr[::-1]], size='small')
+    plt.xticks(np.arange(len(proglist))+0.5, proglist[cordr], size='small', rotation=-90)
+    plt.yticks(np.arange(len(proglist))+0.5, proglist[cordr[::-1]], size='small')
 
     plt.gca().set_xticks(np.arange(1, len(proglist)), minor=True)
     plt.gca().set_yticks(np.arange(1, len(proglist)), minor=True)
