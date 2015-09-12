@@ -18,4 +18,4 @@ update visible egostats pages:
   ./update_stats.py
   #rsync -av --chmod a+r,Da+x stats/ momus:/space/www/zem/egostats
   #rsync -Lav --chmod a+r,Da+x stats/ eos:www/egostats
-  rsync -av --chmod a+r,Da+x stats/ selene:www/egostats
+  rsync -Lav --chmod a+r,Da+x stats/ selene:www/egostats
