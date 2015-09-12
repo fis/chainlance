@@ -111,7 +111,7 @@ static void pb_put(const pb_field_t fields[], const void *src)
 		s.has_cycles = true; \
 		s.cycles = MAXCYCLES - cycles; \
 		s.has_tape_abs = true; s.tape_abs.size = tapesize; \
-		for (int p = 0; p < tapesize; p++) s.tape_abs.bytes[p] = tape[p] >= 128 ? tape[p]-256 : tape[p]; \
+		for (int p = 0; p < tapesize; p++) s.tape_abs.bytes[p] = tape[p]; \
 		s.has_tape_max = true; s.tape_max.size = 2 * tapesize; \
 		for (int p = 0; p < tapesize; p++) { \
 			s.tape_max.bytes[p] = xstats.tape_max[0][p]; \
