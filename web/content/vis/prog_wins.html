@@ -1,0 +1,11 @@
+---
+title: Per-program win/loss matrix - Plots
+styles: /styles/vis.css
+plot: prog
+scripts: /vis/js/prog_wins.js
+---
+<%=
+	render 'plot',
+		:title => 'Per-program win/loss matrix',
+		:desc => 'This plot shows all tournament results for the selected left program. Rows correspond to opponents (the right program), with one row showing the averaged result, while columns correspond to tape length and polarity configurations. Sieve polarities are shown on the right side, from minimum to maximum tape length, while kettle polarity is shown inverted on the left. A red cell denotes a win, a blue one denotes a loss, and ties are the vaguely yellowish color. The average row may show in-between colors. Labels on the right side denote total points obtained against that opponent (sum over a row), and the opponent name.'
+%>

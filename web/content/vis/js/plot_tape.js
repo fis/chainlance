@@ -1,102 +1,3 @@
-var Plot = {};
-
-Plot.setup = function (opts) {
-    var svg = d3.select('#plot-canvas')
-        .append('svg')
-        .attr('width', opts.width + opts.left + opts.right)
-        .attr('height', opts.height + opts.top + opts.bottom);
-
-    Plot.svgDefs = svg.append('defs');
-
-    var transform = 'translate(' + opts.left + ',' + opts.top + ')';
-
-    Plot.svg = svg.append('g').attr('transform', transform);
-    if (opts.topLayer)
-        Plot.topLayer = svg.append('g').attr('transform', transform);
-
-    Vis.nameMap = {};
-    for (var n = 0; n < Vis.N; n++)
-        Vis.nameMap[Vis.names[n]] = n;
-};
-
-Plot.arg = function (idx) {
-    var args = window.location.hash.substring(1).split(',');
-    return args[idx];
-};
-
-(function (){
-    function equalDomain(n) {
-        return function (min, max, log) {
-            var domain = Array(n);
-            if (log)
-                min = Math.log10(min), max = Math.log10(max);
-            for (var i = 0; i < n; i++)
-                domain[i] = log ? Math.pow(10, min + i/(n-1)*(max-min)) : min + i/(n-1)*(max-min);
-            return domain;
-        }
-    }
-
-    Plot.colors = {
-        heat: {
-            range: ['rgb(215,48,39)','rgb(252,141,89)','rgb(254,224,144)','rgb(255,255,191)','rgb(224,243,248)','rgb(145,191,219)','rgb(69,117,180)'].reverse(),
-            domain: equalDomain(7)
-        }
-    };
-})();
-
-var ProgPlot = {
-    prog: 0
-};
-
-ProgPlot.setup = function (opts) {
-    Plot.setup(opts);
-    ProgPlot.progData = opts.progData;
-    ProgPlot.onProg = opts.onProg;
-
-    var hashProg = Plot.arg(0);
-    if (hashProg in Vis.nameMap)
-        ProgPlot.prog = Vis.nameMap[hashProg];
-
-    ProgPlot.form = d3.select('#plot-controls').append('form')
-        .attr('role', 'form');
-
-    var progGroup = ProgPlot.form.append('div').attr('class', 'form-group');
-    progGroup.append('label').attr('for', 'prog').text('Program:');
-
-    ProgPlot.progSelect = progGroup.append('select')
-        .attr('id', 'prog')
-        .attr('class', 'form-control');
-    ProgPlot.progSelect.selectAll('option').data(Vis.names)
-        .enter().append('option')
-        .attr('value', function (d,i) { return i; })
-        .text(function (d) { return d; });
-
-    ProgPlot.progSelect.node().value = ProgPlot.prog;
-    ProgPlot.progSelect.on('change', ProgPlot.onProgChange);
-    ProgPlot.onProgChange();
-};
-
-ProgPlot.onProgChange = function () {
-    var sel = ProgPlot.progSelect.node();
-    var prog = +sel.value;
-    sel.disabled = true;
-
-    d3.json('../data/' + ProgPlot.progData + '.p' + prog + '.json',
-        function (error, json) { if (json) ProgPlot.onProgLoad(prog, json); });
-};
-
-ProgPlot.onProgLoad = function (prog, json) {
-    var sel = ProgPlot.progSelect.node();
-    sel.value = prog;
-    sel.disabled = false;
-
-    ProgPlot.prog = prog;
-    ProgPlot.onProg(prog, json);
-
-    if (!window.location.hash.startsWith('#' + Vis.names[prog]))
-        window.location.hash = Vis.names[prog];
-};
-
 var TapePlot = {
     opponent: 0,
     splitPol: false,
@@ -115,7 +16,8 @@ var TapePlot = {
             left: 30, right: 120, top: 30, bottom: 80,
             topLayer: true,
             progData: opts.progData,
-            onProg: TapePlot.onProg
+            onProg: TapePlot.onProg,
+            handlePopState: false,
         });
 
         d3.select(window).on('popstate', parseHash);
@@ -398,7 +300,8 @@ var TapePlot = {
         if (TapePlot.fixScale)
             min = TapePlot.fixScale[0], max = TapePlot.fixScale[1];
         else {
-            if (min < 0.1) min = 0.1;
+            if (TapePlot.logScale && min < 0.1)
+                min = 0.1;
             if (max <= min + 1) max = min + 1;
         }
 
@@ -406,7 +309,7 @@ var TapePlot = {
         var range = Plot.colors.heat.range;
 
         var scale = TapePlot.logScale ? d3.scale.log() : d3.scale.linear();
-        scale.domain(domain).range(range);
+        scale.clamp(true).domain(domain).range(range);
         TapePlot.scale = scale;
 
         // TODO: maybe make scale fixed-width

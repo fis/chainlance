@@ -61,21 +61,20 @@
 			<%= yield %>
 		</div>
 
-		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-		<script src="/js/bootstrap.js"></script>
 		<%
-			 if @item[:needData]
-				 %>
-				 <script src="/report.js"></script>
-				 <script src="/js/zhill.js"></script>
-				 <%
-			 end
-			 (@item[:scripts] || '').split.each do |s|
-				 %> <script src="<%= s %>"></script> <%
-			 end
-			 if @item[:needMath]
+			scripts = ['//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js',
+			           '/js/bootstrap.js']
+			scripts.push('/report.js', '/js/zhill.js') if @item[:needData]
+			scripts.push('//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML') if @item[:needMath]
+			scripts.push('https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js', '/vis/data/meta.js') if @item[:plot]
+			scripts.push('/vis/js/plot_prog.js') if @item[:plot] == 'prog' || @item[:plot] == 'tape'
+			scripts.push('/vis/js/plot_tape.js') if @item[:plot] == 'tape'
+			scripts += @item[:scripts].split if @item[:scripts]
+			scripts.each do |s|
+				%> <script src="<%= s %>"></script> <%
+			end
+			if @item[:needMath]
 				%>
-				<script src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
 				<script type="text/javascript">
 					MathJax.Hub.Config({
 						TeX: { Macros: { mat: ["{\\bf #1}", 1] } },
@@ -83,7 +82,7 @@
 					});
 				</script>
 				<%
-			 end
+			end
 		%>
 	</body>
 </html>
