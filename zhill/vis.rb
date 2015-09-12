@@ -73,28 +73,39 @@ end
 # =============================================
 
 module Vis
-  # prog_heat_position:
-  # Per-program tape heatmaps, separate for all tape lengths and
-  # polarities. Averaged across opponents, or showing a single
-  # opponent.
-  class ProgHeatPosition
+  # Superclass for tape value/heatmap plots.
+  class TapePlot
     def type; Vis::PER_PROGRAM; end
     def generate(stats, left)
-      all = Array.new(stats.N) do |right|
-        stats.heat_position(left, right).map { |t| t[0 ... t.length/2] }
-      end
-
+      all = Array.new(stats.N) { |right| data(stats, left, right) }
       avg = Vis.a_sum(all)
-      #avg = all.inject do |acc, tapes|
-      #  [acc, tapes].transpose.map do |pairs|
-      #    pairs.transpose.map { |p| p[0] + p[1] }
-      #  end
-      #end
-
       { :all => all, :avg => avg }
+    end
+    def data(stats, left, right)
+      raise RuntimeError, 'TapePlot.data'
+    end
+  end
+
+  # prog_heat_position:
+  # Per-program tape plot. Heatmap for the tape pointer position.
+  class ProgHeatPosition < TapePlot
+    def data(stats, left, right)
+      stats.heat_position(left, right).map { |t| t[0 ... t.length/2] }
     end
   end
   Outputs[:prog_heat_position] = ProgHeatPosition.new
+
+  # prog_tape_abs:
+  # Per-program tape plot. Absolute values on tape at the end of
+  # match.
+  class ProgTapeAbs < TapePlot
+    def data(stats, left, right)
+      stats.tape_abs(left, right).map do |tape|
+        tape.bytes.map { |v| v > 128 ? 256 - v : v }
+      end
+    end
+  end
+  Outputs[:prog_tape_abs] = ProgTapeAbs.new
 end
 
 # General-purpose utility code:

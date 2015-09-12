@@ -1,0 +1,12 @@
+---
+title: Per-program absolute tape value map - Plots
+styles: /styles/vis_tape.css
+scripts:
+  https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js
+  /vis/data/meta.js /vis/js/plot_tape.js /vis/js/prog_tape_abs.js
+---
+<%=
+	render 'plot_tape',
+		:title => 'Per-program absolute tape value map',
+		:desc => 'This plot shows the absolute value (distance from 0) left on the tape at the end of the match.'
+%>

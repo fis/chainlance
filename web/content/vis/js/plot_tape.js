@@ -106,7 +106,9 @@ var TapePlot = {
     var cw = 15, ch = 15, cgap = 1, lgap = 8;
 
     TapePlot.setup = function (opts) {
+        TapePlot.fixScale = opts.fixScale;
         TapePlot.logScale = opts.logScale;
+
         ProgPlot.setup({
             width: Vis.maxtape * (cw + cgap) + cgap,
             height: Math.max(2*Vis.T, Vis.N+1) * (ch + cgap) + cgap,
@@ -393,8 +395,12 @@ var TapePlot = {
     }
 
     function makeDataScale(min, max) {
-        if (min < 0.1) min = 0.1;
-        if (max <= min + 1) max = min + 1;
+        if (TapePlot.fixScale)
+            min = TapePlot.fixScale[0], max = TapePlot.fixScale[1];
+        else {
+            if (min < 0.1) min = 0.1;
+            if (max <= min + 1) max = min + 1;
+        }
 
         var domain = Plot.colors.heat.domain(min, max, TapePlot.logScale);
         var range = Plot.colors.heat.range;
