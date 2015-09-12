@@ -1,0 +1,23 @@
+@import 'vis';
+
+/* tape plot */
+
+line.grid_x, line.grid_y {
+    stroke: black;
+    stroke-width: 1px;
+}
+
+text.lab_x, text.lab_y, text.lab_s { font-size: 13px; }
+text.lab_y { dominant-baseline: middle; cursor: pointer; }
+
+text#title { font-size: 16px; }
+tspan.b { font-weight: bold; }
+tspan.gotoPol {
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+rect.row {
+    fill: none;
+    cursor: pointer;
+}

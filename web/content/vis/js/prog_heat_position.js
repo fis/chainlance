@@ -4,8 +4,7 @@ Plot.setup = function (opts) {
     var svg = d3.select('#plot-canvas')
         .append('svg')
         .attr('width', opts.width + opts.left + opts.right)
-        .attr('height', opts.height + opts.top + opts.bottom)
-        .style('overflow', 'visible');
+        .attr('height', opts.height + opts.top + opts.bottom);
 
     Plot.svgDefs = svg.append('defs');
 
@@ -39,7 +38,6 @@ Plot.arg = function (idx) {
 
     Plot.colors = {
         heat: {
-            //range: ['rgb(215,48,39)','rgb(252,141,89)','rgb(254,224,139)','rgb(255,255,191)','rgb(217,239,139)','rgb(145,207,96)','rgb(26,152,80)'].reverse(),
             range: ['rgb(215,48,39)','rgb(252,141,89)','rgb(254,224,144)','rgb(255,255,191)','rgb(224,243,248)','rgb(145,191,219)','rgb(69,117,180)'].reverse(),
             domain: equalDomain(7)
         }
@@ -431,23 +429,23 @@ var TapePlot = {
         if (!TapePlot.oneTape)
             textTitle = 'All tape lengths, ' +
                 (TapePlot.opponent == 0 ?
-                 '<tspan style="font-weight: bold;">averaged' :
-                 'vs. <tspan style="font-weight: bold;">' + Vis.names[TapePlot.opponent - 1]) +
+                 '<tspan class="b">averaged' :
+                 'vs. <tspan class="b">' + Vis.names[TapePlot.opponent - 1]) +
                 '</tspan>';
         else {
-            textTitle = 'Tape <tspan style="font-weight: bold;">' +
+            textTitle = 'Tape <tspan class="b">' +
                 (TapePlot.oneTape.idx + Vis.mintape) +
-                '</tspan>, polarity <tspan style="font-weight: bold;">' +
+                '</tspan>, polarity <tspan class="b">' +
                 (TapePlot.oneTape.pol === undefined ? 'averaged' :
                  TapePlot.oneTape.pol ? 'kettle' : 'sieve') +
                 '</tspan> (show ';
             var links = [];
             if (TapePlot.oneTape.pol !== undefined)
-                links.push('<tspan class="gotoPol" style="text-decoration: underline; cursor: pointer;">averaged</tspan>');
+                links.push('<tspan class="gotoPol">averaged</tspan>');
             if (TapePlot.oneTape.pol !== false)
-                links.push('<tspan class="gotoPol" style="text-decoration: underline; cursor: pointer;">sieve</tspan>');
+                links.push('<tspan class="gotoPol">sieve</tspan>');
             if (TapePlot.oneTape.pol !== true)
-                links.push('<tspan class="gotoPol" style="text-decoration: underline; cursor: pointer;">kettle</tspan>');
+                links.push('<tspan class="gotoPol">kettle</tspan>');
             textTitle += links.join(', ') + ')';
         }
 
@@ -472,14 +470,11 @@ var TapePlot = {
         var title = Plot.svg.append('text').attr('id', 'title');
         title
             .attr('x', 0).attr('y', -ch)
-            .style('font-size', 16)
             .html(textTitle);
         Plot.svg.selectAll('.gotoPol').on('click', onTitlePolClick);
 
         var gridlines_x = Plot.svg.selectAll('.grid_x').data(TapePlot.grid_x);
         gridlines_x.enter().append('line').attr('class', 'grid_x')
-            .style('stroke-width', '1')
-            .style('stroke', 'black')
             .attr('x1', function (d,i) { return cgap/2 + i * (cw + cgap); })
             .attr('x2', function (d,i) { return cgap/2 + i * (cw + cgap); });
         gridlines_x
@@ -489,8 +484,6 @@ var TapePlot = {
 
         var gridlines_y = Plot.svg.selectAll('.grid_y').data(TapePlot.grid_y);
         gridlines_y.enter().append('line').attr('class', 'grid_y')
-            .style('stroke-width', '1')
-            .style('stroke', 'black')
             .attr('y1', function (d,i) { return cgap/2 + i * (ch + cgap); })
             .attr('y2', function (d,i) { return cgap/2 + i * (ch + cgap); })
             .attr('x1', '0');
@@ -501,9 +494,6 @@ var TapePlot = {
         var lab_y = Plot.svg.selectAll('.lab_y').data(TapePlot.labels_y);
         lab_y.enter().append('text').attr('class', 'lab_y')
             .attr('id', function (d,i) { return 'lab'+i; })
-            .style('dominant-baseline', 'middle')
-            .style('font-size', ch - 2)
-            .style('cursor', 'pointer')
             .on('click', onRowClick);
         lab_y
             .attr('text-anchor', TapePlot.oneTape ? 'start' : 'end')
@@ -514,8 +504,7 @@ var TapePlot = {
 
         var lab_x = Plot.svg.selectAll('.lab_x').data(TapePlot.labels_x);
         lab_x.enter().append('text').attr('class', 'lab_x')
-            .attr('text-anchor', 'middle')
-            .style('font-size', ch-2);
+            .attr('text-anchor', 'middle');
         lab_x
             .text(function (d) { return d.l; })
             .attr('x', function (d) { return (d.x-1) * (cw + cgap) + cgap + cw/2; })
@@ -542,8 +531,7 @@ var TapePlot = {
 
         var lab_s = Plot.svg.selectAll('.lab_s').data(TapePlot.labels_scale);
         lab_s.enter().append('text').attr('class', 'lab_s')
-            .attr('text-anchor', 'middle')
-            .style('font-size', ch-2);
+            .attr('text-anchor', 'middle');
         lab_s
             .text(function (d) { return d; })
             .attr('x', function (d,i) { return 0.5 + i/(nlabels-1) * (width - 1); })
@@ -557,8 +545,6 @@ var TapePlot = {
             .attr('y', function (d,i) { return i * (ch + cgap); })
             .attr('height', ch + cgap)
             .attr('pointer-events', 'visible')
-            .style('fill', 'none')
-            .style('cursor', 'pointer')
             .on('click', onRowClick);
         rows
             .attr('width', function (d) { return d.len * (cw + cgap) + cgap; });
