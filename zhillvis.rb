@@ -6,7 +6,7 @@ require_relative 'zhill/vis'
 # required to generate the zhill web site visualizations. The input is
 # a cranked hill statistics file from zhillcrank.rb.
 
-if ARGV.length != 2
+if ARGV.length < 2
   puts "usage: #{$0} stats.bin output-directory [vis1 vis2 ...]"
   exit
 end

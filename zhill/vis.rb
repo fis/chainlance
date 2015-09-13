@@ -81,10 +81,29 @@ module Vis
       avg = Vis.a_sum(all)
       { :all => all, :avg => avg }
     end
-    def data(stats, left, right)
-      raise RuntimeError, 'TapePlot.data'
+    def data(stats, left, right); raise RuntimeError, 'TapePlot.data'; end
+  end
+
+  # cycles:
+  # Global plot. Duel lengths in cycles for all pairs, optionally
+  # sliced by tape/polarity configuration.
+  class Cycles
+    def type; Vis::GLOBAL; end
+    def generate(stats)
+      left, right = 0, 0
+      data = Array.new(stats.N * (stats.N + 1) / 2) do
+        cycles = stats.cycles(left, right)
+        right += 1
+        if right == stats.N; left += 1; right = left; end
+        [cycles.inject(:+)] + cycles
+      end
+      {
+        :data => data,
+        :min => data.transpose.map { |d| d.min },
+      }
     end
   end
+  Outputs[:cycles] = Cycles.new
 
   # prog_heat_position:
   # Per-program tape plot. Heatmap for the tape pointer position.
@@ -106,6 +125,21 @@ module Vis
     end
   end
   Outputs[:prog_tape_abs] = ProgTapeAbs.new
+
+  # prog_wins:
+  # Per-program plot. Win/loss matrix for opponents/tapes.
+  class ProgWins
+    def type; Vis::PER_PROGRAM; end
+    def generate(stats, left)
+      others = (0 ... stats.N).reject { |right| right == left }
+      scores = others.map { |right| stats.points(left, right) }
+      {
+        :opps => [-1] + others,
+        :data => [Vis.a_sum(scores).map { |p| (p.to_f / (stats.N - 1)).round(3) }] + scores,
+      }
+    end
+  end
+  Outputs[:prog_wins] = ProgWins.new
 end
 
 # General-purpose utility code:

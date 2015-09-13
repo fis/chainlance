@@ -2,7 +2,6 @@ var ProgWins = {};
 
 (function (){
     var cw = 15, ch = 15, cgap = 1;
-    var json = undefined;
 
     function setup() {
         ProgPlot.setup({
@@ -123,7 +122,6 @@ var ProgWins = {};
         rows.enter()
             .append('g').attr('class', 'row')
             .attr('transform', rowCoord);
-        rows.attr('XXX', function (d) { return 'opp' + d.opp; });
         rows.exit().remove();
 
         var cells = rows.selectAll('rect').data(function (d) { return d.data; });

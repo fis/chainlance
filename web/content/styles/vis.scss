@@ -1,3 +1,9 @@
 /* plot */
 
 #plot-canvas > svg { overflow: visible; }
+
+line.grid {
+    stroke: black;
+    stroke-width: 1px;
+}
+text.lb { font-weight: bold; }
