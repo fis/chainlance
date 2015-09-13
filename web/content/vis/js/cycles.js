@@ -131,6 +131,40 @@ var Cycles = {
             .style('font-size', 13)
             .style('visibility', 'hidden')
             .text('{placeholder}');
+
+        var form = d3.select('#plot-controls').append('form')
+            .attr('role', 'form').attr('name', 'ctrl');
+
+        var cfgGroup = form.append('div').attr('class', 'form-group');
+        cfgGroup.append('label').attr('for', 'cfg').text('Tape/polarity configuration:');
+
+        Cycles.cfgSelect = cfgGroup.append('select').attr('id', 'cfg').attr('class', 'form-control');
+        Cycles.cfgSelect.selectAll('option').data(new Array(2 * Vis.T + 1))
+            .enter().append('option')
+            .attr('value', function (d,i) { return i; })
+            .text(function (d,i) {
+                return i == 0
+                    ? 'Total cycles'
+                    : i <= Vis.T
+                    ? 'Sieve, length ' + (Vis.mintape + i - 1)
+                    : 'Kettle, length ' + (Vis.mintape + i - Vis.T - 1);
+            });
+        Cycles.cfgSelect.on('change', onCfgChange);
+
+        var orderGroup = form.append('div').attr('class', 'form-group');
+        orderGroup.append('label').text('Sort by:');
+        orderGroup.append('br');
+
+        var orders = ['total cycles', 'current cycles', 'alpha'];
+        for (var o = 0; o < orders.length; o++) {
+            var orderLabel = orderGroup.append('label').attr('class', 'radio-inline');
+            orderLabel.append('input').attr('type', 'radio')
+                .attr('name', 'ord').attr('id', 'ord'+o)
+                .attr('value', o)
+                .on('change', onOrdChange);
+            orderLabel.node().appendChild(document.createTextNode(' ' + orders[o]));
+        }
+        document.forms.ctrl.ord.value = 0;
     }
 
     function onData(json) {
@@ -141,9 +175,12 @@ var Cycles = {
         Cycles.min = json.min;
 
         var data = new Array(Vis.N * Vis.N);
-        var totals = new Array(Vis.N);
-        for (var n = 0; n < Vis.N; n++)
-            totals[n] = 0;
+        var totals = new Array(2 * Vis.T + 1);
+        for (var t = 0; t < 2 * Vis.T + 1; t++) {
+            totals[t] = new Array(Vis.N);
+            for (var n = 0; n < Vis.N; n++)
+                totals[t][n] = 0;
+        }
 
         var at = 0;
         for (var left = 0; left < Vis.N; left++) {
@@ -154,24 +191,64 @@ var Cycles = {
                 if (left != right)
                     data[right * Vis.N + left] = { left: right, right: left, cycles: cycles };
 
-                totals[left] += cycles[0];
-                if (left != right)
-                    totals[right] += cycles[0];
+                for (var t = 0; t < 2 * Vis.T + 1; t++) {
+                    totals[t][left] += cycles[t];
+                    if (left != right)
+                        totals[t][right] += cycles[t];
+                }
             }
         }
 
         Cycles.data = data;
+        Cycles.totals = totals;
+
+        recomputeOrder();
+        refresh();
+    }
+
+    function recomputeOrder() {
+        // TODO: refactor utilities into Plot
+
+        var func, ord = +document.forms.ctrl.ord.value;
+        if (ord == 0)
+            func = function (a, b) {
+                var ta = Cycles.totals[0][a], tb = Cycles.totals[0][b];
+                if (ta > tb) return -1; else if (ta < tb) return 1;
+                return Vis.names[a] < Vis.names[b] ? -1 : 1;
+            };
+        else if (ord == 1)
+            func = function (a, b) {
+                var ta = Cycles.totals[Cycles.cfg][a], tb = Cycles.totals[Cycles.cfg][b];
+                if (ta > tb) return -1; else if (ta < tb) return 1;
+                return Vis.names[a] < Vis.names[b] ? -1 : 1;
+            };
 
         var iorder = new Array(Vis.N);
         for (var n = 0; n < Vis.N; n++)
             iorder[n] = n;
-        iorder.sort(function (a, b) {
-            return totals[a] > totals[b] ? -1 : 1;
-        });
-        Cycles.order = new Array(Vis.N);
-        for (var n = 0; n < Vis.N; n++)
-            Cycles.order[iorder[n]] = n;
+        if (func) {
+            iorder.sort(func);
+            Cycles.order = new Array(Vis.N);
+            for (var n = 0; n < Vis.N; n++)
+                Cycles.order[iorder[n]] = n;
+        } else
+            Cycles.order = iorder;
+    }
 
+    function onCfgChange() {
+        if (Cycles.chosen) { onCellClick(); clearHover(); } // clear freeze
+
+        Cycles.cfg = +Cycles.cfgSelect.property('value');
+
+        if (+document.forms.ctrl.ord.value == 1)
+            recomputeOrder();
+        refresh();
+    }
+
+    function onOrdChange() {
+        if (Cycles.chosen) { onCellClick(); clearHover(); } // clear freeze
+
+        recomputeOrder();
         refresh();
     }
 
@@ -181,7 +258,7 @@ var Cycles = {
             Cycles.chosen.marker.remove();
             Cycles.cellGroup.attr('filter', null);
             delete Cycles.chosen;
-            onCellHover(true /* enter */);
+            onCellHover(true /* enter */); // refresh hover
             return;
         }
 
@@ -198,14 +275,23 @@ var Cycles = {
         };
     }
 
+    function clearHover() {
+        Plot.svg.select('text.rl').classed('lb', false);
+        Cycles.bottomLabel.style('visibility', 'hidden');
+        Cycles.valueLabel.style('visibility', 'hidden');
+        refreshSubgraph(null);
+    }
+
     function onCellHover(enter) {
         if (Cycles.chosen)
             return; // hover behavior frozen
         var d = d3.event.target.__data__;
-        if (!(d && 'left' in d && 'right' in d))
-            return;
 
-        d3.select('text#rl' + d.right).classed('lb', enter);
+        if (!d || !('cycles' in d))
+            return; // not the right sort of click
+
+        Plot.svg.select('text#rl' + d.right).classed('lb', enter);
+
         if (!enter) {
             Cycles.bottomLabel.style('visibility', 'hidden');
             Cycles.valueLabel.style('visibility', 'hidden');
