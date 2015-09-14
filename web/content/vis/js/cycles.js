@@ -4,6 +4,8 @@ var Cycles = {
 
 (function (){
     var cw = 15, ch = 15, cgap = 1;
+    var subh = 130, substub = 10;
+    var subc = ['#af8dc3', '#7f7f7f', '#7fbf7b'];
 
     function setup() {
         Plot.setup({
@@ -70,16 +72,15 @@ var Cycles = {
             .style('visibility', 'hidden')
             .text('{placeholder}');
 
-        var subh = 120;
-
         var subgBox = Plot.svg.append('g')
-            .attr('transform', 'translate(1,' + (Vis.N * (ch + cgap) + 30 + subh) + ')');
+            .attr('transform', 'translate(1,' + (Vis.N * (ch + cgap) + 30 + subh + substub) + ')');
+        Cycles.subgBox = subgBox;
         Cycles.subg = subgBox.append('g')
             .attr('transform', 'scale(1 -1)');
 
         Cycles.subg.append('line').attr('class', 'grid')
             .attr('x1', -0.5).attr('y1', -1)
-            .attr('x2', -0.5).attr('y2', subh);
+            .attr('x2', -0.5).attr('y2', subh + substub);
         Cycles.subg.append('line').attr('class', 'grid')
             .attr('x1', -1).attr('y1', -0.5)
             .attr('x2', Vis.T * (cw + cgap) - 1).attr('y2', -0.5);
@@ -88,7 +89,7 @@ var Cycles = {
             .attr('x2', (2*Vis.T + 1) * (cw + cgap)).attr('y2', -0.5);
         Cycles.subg.append('line').attr('class', 'grid')
             .attr('x1', (2*Vis.T + 1) * (cw + cgap) - 0.5).attr('y1', -1)
-            .attr('x2', (2*Vis.T + 1) * (cw + cgap) - 0.5).attr('y1', subh);
+            .attr('x2', (2*Vis.T + 1) * (cw + cgap) - 0.5).attr('y1', subh + substub);
 
         Cycles.subscale = d3.scale.log()
             .domain([1, 100000]) // placeholder
@@ -102,8 +103,8 @@ var Cycles = {
             })
             .attr('y', 0)
             .attr('width', cw - 2)
-            .attr('height', 0)
-            .style('fill', '#8c6bb1');
+            .attr('height', substub)
+            .style('fill', subc[1]);
 
         var tlabels = [];
         for (var t = Vis.mintape; t <= Vis.maxtape; t += 10)
@@ -119,18 +120,27 @@ var Cycles = {
 
         Cycles.subtmin = subgBox.append('text').attr('class', 'lb')
             .attr('x', (2 * Vis.T + 1.5) * (cw + cgap))
-            .attr('y', -2)
+            .attr('y', -2-substub)
             .style('dominant-baseline', 'middle')
             .style('font-size', 13)
             .style('visibility', 'hidden')
             .text('{placeholder}');
         Cycles.subtmax = subgBox.append('text').attr('class', 'lb')
             .attr('x', (2 * Vis.T + 1.5) * (cw + cgap))
-            .attr('y', -subh)
+            .attr('y', -subh-substub)
             .style('dominant-baseline', 'middle')
             .style('font-size', 13)
             .style('visibility', 'hidden')
             .text('{placeholder}');
+        subgBox.selectAll('text.winl').data(['{placeholder}','tie','{placeholder}'])
+            .enter().append('text').attr('class', 'winl lb')
+            .attr('x', (2 * Vis.T + 1.5) * (cw + cgap))
+            .attr('y', function (d,i) { return -subh/2-substub + (i-1)*16; })
+            .style('dominant-baseline', 'middle')
+            .style('font-size', 13)
+            .style('visibility', 'hidden')
+            .style('fill', function (d,i) { return subc[i]; })
+            .text(function (d) { return d; });
 
         var form = d3.select('#plot-controls').append('form')
             .attr('role', 'form').attr('name', 'ctrl');
@@ -175,6 +185,7 @@ var Cycles = {
         Cycles.min = json.min;
 
         var data = new Array(Vis.N * Vis.N);
+
         var totals = new Array(2 * Vis.T + 1);
         for (var t = 0; t < 2 * Vis.T + 1; t++) {
             totals[t] = new Array(Vis.N);
@@ -185,11 +196,13 @@ var Cycles = {
         var at = 0;
         for (var left = 0; left < Vis.N; left++) {
             for (var right = left; right < Vis.N; right++) {
-                var cycles = json.data[at++];
+                var cycles = json.data[at];
+                var pwins = json.wins[at];
+                at++;
 
-                data[left * Vis.N + right] = { left: left, right: right, cycles: cycles };
+                data[left * Vis.N + right] = { left: left, right: right, cycles: cycles, wins: pwins, winFlip: 1 };
                 if (left != right)
-                    data[right * Vis.N + left] = { left: right, right: left, cycles: cycles };
+                    data[right * Vis.N + left] = { left: right, right: left, cycles: cycles, wins: pwins, winFlip: -1 };
 
                 for (var t = 0; t < 2 * Vis.T + 1; t++) {
                     totals[t][left] += cycles[t];
@@ -307,7 +320,7 @@ var Cycles = {
                 .text(c)
                 .transition().duration(250)
                 .attr('y', Cycles.vscale(c));
-            refreshSubgraph(d.cycles.slice(1));
+            refreshSubgraph(d.cycles.slice(1), d.wins, d.winFlip, Vis.names[d.left], Vis.names[d.right]);
         }
     }
 
@@ -356,7 +369,7 @@ var Cycles = {
         return cells;
     }
 
-    function refreshSubgraph(data) {
+    function refreshSubgraph(data, wins, flip, left, right) {
         if (data) {
             var min = data[0], max = data[0];
             for (var i = 1; i < data.length; i++) {
@@ -368,19 +381,26 @@ var Cycles = {
             Cycles.subscale.domain(max == min ? [max-1, max+1] : [min, max]);
             Cycles.subtmin.style('visibility', 'visible').text(min);
             Cycles.subtmax.style('visibility', 'visible').text(max);
+            Cycles.subgBox.selectAll('text.winl').data([left, 'tie', right])
+                .style('visibility', 'visible')
+                .text(function (d) { return d; });
         }
         else {
             data = new Array(2 * Vis.T);
+            wins = new Array(2 * Vis.T);
             Cycles.subtmin.style('visibility', 'hidden');
             Cycles.subtmax.style('visibility', 'hidden');
+            Cycles.subgBox.selectAll('text.winl').style('visibility', 'hidden');
         }
 
         Cycles.subg.selectAll('rect.bar').data(data)
             .transition().duration(250)
             .attr('height', function (d) {
-                return d ? Cycles.subscale(d) : 0;
+                return d ? substub + Cycles.subscale(d) : substub;
+            })
+            .style('fill', function (d,i) {
+                return subc[d ? 1 + flip*wins[i] : 1];
             });
-
     }
 
     setup();

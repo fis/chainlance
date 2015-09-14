@@ -88,18 +88,27 @@ module Vis
   # Global plot. Duel lengths in cycles for all pairs, optionally
   # sliced by tape/polarity configuration.
   class Cycles
+    def Cycles.triangle(n, &block)
+      left, right = 0, 0
+      Array.new(n * (n + 1) / 2) do
+        v = block.call(left, right)
+        right += 1
+        if right == n; left += 1; right = left; end
+        v
+      end
+    end
+
     def type; Vis::GLOBAL; end
     def generate(stats)
-      left, right = 0, 0
-      data = Array.new(stats.N * (stats.N + 1) / 2) do
+      data = Cycles.triangle(stats.N) do |left, right|
         cycles = stats.cycles(left, right)
-        right += 1
-        if right == stats.N; left += 1; right = left; end
         [cycles.inject(:+)] + cycles
       end
+      wins = Cycles.triangle(stats.N) { |l,r| stats.points(l,r) }
       {
         :data => data,
         :min => data.transpose.map { |d| d.min },
+        :wins => wins,
       }
     end
   end
