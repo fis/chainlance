@@ -51,64 +51,78 @@ int main(int argc, char *argv[])
 {
 	/* check args */
 
-	if (argc != 2)
+	if (argc < 2)
 	{
-		fprintf(stderr, "usage: %s left.bin\n", argv[0]);
+		fprintf(stderr, "usage: %s left.bin [left2.bin] [left3.bin] ...\n", argv[0]);
 		return 1;
 	}
 
-	/* load left warrior */
-
-	int fd;
-	unsigned size;
+	/* prepare some variables for the rest of the program */
 
 	struct stat buf;
-	fd = sopen(argv[1]);
-	if (fstat(fd, &buf) != 0)
-		die("fstat failed: %s", argv[1]);
-	size = buf.st_size;
 
-	char *base = mmap(0, size, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
-	if (base == MAP_FAILED)
-		die("mmap failed");
+	size_t mmapSize = 1024;
+	char *base = NULL;
 
-	unsigned at = 0;
-	ssize_t got;
-
-	while (at < size && (got = read(fd, base + at, size - at)) > 0)
-		at += got;
-	if (at != size)
-		die("read failed: %s", argv[1]);
-
-	/* run all battles */
-
-	for (int pol = 0; pol < 2; pol++)
+	for(int i=1; i<argc; i++)
 	{
-		for (int tapesize = MINTAPE; tapesize <= MAXTAPE; tapesize++)
-		{
-			memset(tape+1, 0, tapesize-2);
-			tape[0] = 128;
-			tape[tapesize-1] = 128;
+		/* check left warrior size */
 
-			scores[pol][tapesize] = header(tapesize, tape, base, pol ? progK : progS, repSA, repSB);
+		int fd = sopen(argv[i]);
+		if (fstat(fd, &buf) != 0)
+			die("fstat failed: %s", argv[i]);
+		int size = buf.st_size;
+
+		/* expand mmap if necessary */
+
+		if(size > mmapSize || base == NULL) {
+			int oldSize = mmapSize;
+			while(mmapSize < size) mmapSize *= 2;
+			if(base != NULL) if(munmap(base, oldSize)) die("munmap failed");
+			base = mmap(0, mmapSize, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+			if (base == MAP_FAILED) die("mmap failed");
 		}
-	}
 
-	/* summarize results */
+		unsigned at = 0;
+		ssize_t got;
 
-	int score = 0;
+		while (at < size && (got = read(fd, base + at, size - at)) > 0)
+			at += got;
+		if (at != size)
+			die("read failed: %s", argv[i]);
 
-	for (int pol = 0; pol < 2; pol++)
-	{
-		for (int tlen = MINTAPE; tlen <= MAXTAPE; tlen++)
+		close(fd);
+
+		/* run all battles */
+
+		for (int pol = 0; pol < 2; pol++)
 		{
-			putchar(scores[pol][tlen] ? (scores[pol][tlen] > 0 ? '<' : '>') : 'X');
-			score += scores[pol][tlen];
-		}
-		putchar(' ');
-	}
+			for (int tapesize = MINTAPE; tapesize <= MAXTAPE; tapesize++)
+			{
+				memset(tape+1, 0, tapesize-2);
+				tape[0] = 128;
+				tape[tapesize-1] = 128;
 
-	printf("%d\n", score);
+				scores[pol][tapesize] = header(tapesize, tape, base, pol ? progK : progS, repSA, repSB);
+			}
+		}
+
+		/* summarize results */
+
+		int score = 0;
+
+		for (int pol = 0; pol < 2; pol++)
+		{
+			for (int tlen = MINTAPE; tlen <= MAXTAPE; tlen++)
+			{
+				putchar(scores[pol][tlen] ? (scores[pol][tlen] > 0 ? '<' : '>') : 'X');
+				score += scores[pol][tlen];
+			}
+			putchar(' ');
+		}
+
+		printf("%d\n", score);
+	}
 
 	return 0;
 }
