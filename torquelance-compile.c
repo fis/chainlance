@@ -28,8 +28,6 @@
 #include <unistd.h>
 
 #include "common.h"
-
-#define PARSER_EXTRAFIELDS unsigned code;
 #include "parser.h"
 
 /* compilation */
@@ -86,7 +84,7 @@ int main(int argc, char *argv[])
 		[OP_WAIT] = '.', [OP_LOOP1] = '[', [OP_LOOP2] = ']',
 		[OP_REP1] = '(', [OP_REP2] = ')',
 		[OP_IREP1] = '(', [OP_INNER1] = '{', [OP_INNER2] = '}', [OP_IREP2] = ')',
-	};
+  };
 	for (int at = 0; at < ops->len; at++)
 	{
 		struct op *op = &ops->ops[at];
@@ -203,6 +201,3 @@ static char *compile(struct oplist *ops, unsigned *outsize, unsigned mode_B)
 
 	return base;
 }
-
-#include "parser.c"
-#include "common.c"

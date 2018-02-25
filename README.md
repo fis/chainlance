@@ -167,12 +167,6 @@ Other notes
 
 There's a rather rudimentary `Makefile`.  That should work.
 
-On the versions of GCC I've used, `-fwhole-program` still seems to
-work better than proper link-time optimization, so even though the
-code is split into `common.c` utilities and the `parser.c` parser
-code, the programs using those bits #include the corresponding `.c`
-files.
-
 ### Regression tests
 
 The `test/` directory contains a set of programs, a copy of the

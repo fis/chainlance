@@ -34,9 +34,9 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#define NO_MAIN 1
-#define PARSE_NEWLINE_AS_EOF 1
-#include "gearlance.c"
+#include <stdio.h>
+
+#include "gearlance.h"
 
 int main(int argc, char *argv[])
 {

@@ -28,8 +28,6 @@
 #include <unistd.h>
 
 #include "common.h"
-
-#define PARSER_EXTRAFIELDS unsigned code;
 #include "parser.h"
 
 /* compilation */
@@ -188,6 +186,3 @@ static char *compile(struct oplist *ops, unsigned *outsize)
 
 	return base;
 }
-
-#include "parser.c"
-#include "common.c"

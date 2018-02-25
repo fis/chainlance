@@ -26,12 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "common.h"
-#include "parser.h"
-
-#define MINTAPE 10
-#define MAXTAPE 30
-#define NTAPES (MAXTAPE - MINTAPE + 1)
+#include "gearlance.h"
 
 /* #define TRACE 1 */
 
@@ -41,7 +36,7 @@
 #define CRANK(x) /* no action */
 #endif
 
-static int scores[2][MAXTAPE+1];
+int scores[2][MAXTAPE+1];
 
 #ifdef CRANK_IT
 static struct {
@@ -53,30 +48,6 @@ static struct {
 	unsigned heat_position[2][MAXTAPE];
 } xstats = { {{0}}, {{0}} };
 #endif
-
-/* actual interpretation */
-
-enum core_action
-{
-	core_compile_a,
-	core_compile_b,
-	core_run, /* note: this action flips polarity of program B */
-};
-
-union opcode
-{
-	void *xt;
-	union opcode *match;
-	int count;
-};
-
-struct opcodes
-{
-	unsigned len;
-	union opcode ops[];
-};
-
-static struct opcodes *core(enum core_action act, struct oplist *ops, struct opcodes *codeA, struct opcodes *codeB);
 
 /* main application */
 
@@ -168,7 +139,7 @@ int main(int argc, char *argv[])
 
 static unsigned char tape[MAXTAPE];
 
-static struct opcodes *core(enum core_action act, struct oplist *ops, struct opcodes *codeA, struct opcodes *codeB)
+struct opcodes *core(enum core_action act, struct oplist *ops, struct opcodes *codeA, struct opcodes *codeB)
 {
 	static void * const xtableA[OP_MAX] = {
 		[OP_INC] = &&op_incA, [OP_DEC] = &&op_decA,
@@ -490,6 +461,3 @@ op_irep2B:
 op_doneA:
 	goto *ipB->xt;
 }
-
-#include "parser.c"
-#include "common.c"

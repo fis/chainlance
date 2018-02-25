@@ -5,7 +5,7 @@ TESTS = test-gearlance test-torquelance test-wrenchlance test-gearlanced
 all: reference.out $(TESTS)
 
 test-gearlance: reference.out
-	time ./test.sh ../gearlance
+	time ./test.sh ../build/gearlance
 
 test-torquelance: reference.out
 	mkdir -p compiled
@@ -20,7 +20,7 @@ test-wrenchlance: reference.out
 	$(RM) -r compiled
 
 test-gearlanced: reference.out
-	time ./test-gearlanced.sh "./gearlanced-wrapper.rb ../gearlanced"
+	time ./test-gearlanced.sh "./gearlanced-wrapper.rb ../build/gearlanced"
 
 reference.out: warriors.sh warriors.idx egojsout.js
 	./warriors.sh | while read left right; do \

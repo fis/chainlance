@@ -57,17 +57,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "gearlance.h"
+
 /* protobuf helpers used also by gearlance.c code for cranklanced */
 
 #include "geartalk.pb.h"
-#include "geartalk.pb.c"
 
 #include <pb_decode.h>
 #include <pb_encode.h>
-
-#include <pb_decode.c>
-#include <pb_encode.c>
-#include <pb_common.c>
 
 static bool stdio_istream_callback(pb_istream_t *stream, uint8_t *buf, size_t count)
 {
@@ -125,12 +122,6 @@ static void pb_put(const pb_field_t fields[], const void *src)
 		pb_put(Statistics_fields, &s); \
 	} while (0)
 #endif
-
-/* include gearlance/cranklance core */
-
-#define NO_MAIN 1
-#define PARSE_STDIN 1
-#include "gearlance.c"
 
 /* main application for gearlanced/cranklanced */
 

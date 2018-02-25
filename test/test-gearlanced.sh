@@ -1,6 +1,6 @@
 #! /bin/bash
 
-prog="${1:-./gearlanced-wrapper.rb ../gearlanced}"
+prog="${1:-./gearlanced-wrapper.rb ../build/gearlanced}"
 n=$(wc -l warriors.idx | cut -d ' ' -f 1)
 
 coproc $prog $n
