@@ -1,3 +1,9 @@
+'use strict';
+
+if (Math.log10 === undefined) {
+    Math.log10 = function (x) { return Math.log(x) / Math.log(10); };
+}
+
 var Plot = {};
 
 Plot.setup = function (opts) {

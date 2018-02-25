@@ -1,3 +1,5 @@
+'use strict';
+
 var TapePlot = {
     opponent: 0,
     splitPol: false,
