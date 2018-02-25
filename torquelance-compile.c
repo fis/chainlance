@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 
 	/* flip polarity if required */
 
-	if (strcmp(argv[3], "B2"))
+	if (strcmp(argv[3], "B2") == 0)
 	{
 		struct op *opl = ops->ops;
 

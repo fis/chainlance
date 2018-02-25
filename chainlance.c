@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
 		die("open failed: %s", argv[1]);
 
 	static unsigned char buf[4096];
-	size_t got;
+	ssize_t got;
 
 	while ((got = fread(buf, 1, sizeof buf, hdr)) > 0)
 		fwrite(buf, 1, got, stdout);
