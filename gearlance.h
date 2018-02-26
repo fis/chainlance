@@ -46,13 +46,7 @@ union opcode
 	int count;
 };
 
-struct opcodes
-{
-	unsigned len;
-	union opcode ops[];
-};
-
-struct opcodes *core(enum core_action act, struct oplist *ops, struct opcodes *codeA, struct opcodes *codeB);
+union opcode *core(enum core_action act, struct oplist *ops, union opcode *codeA, union opcode *codeB);
 
 extern int scores[2][MAXTAPE+1];
 

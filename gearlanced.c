@@ -125,7 +125,7 @@ static void pb_put(const pb_field_t fields[], const void *src)
 
 /* main application for gearlanced/cranklanced */
 
-static struct opcodes *readprog(enum core_action act, Reply *reply)
+static union opcode *readprog(enum core_action act, Reply *reply)
 {
 	if (setjmp(fail_buf))
 	{
@@ -137,7 +137,7 @@ static struct opcodes *readprog(enum core_action act, Reply *reply)
 	}
 
 	struct oplist *ops = parse(0);
-	struct opcodes *code = core(act, ops, 0, 0);
+	union opcode *code = core(act, ops, 0, 0);
 	opl_free(ops);
 
 	return code;
@@ -165,7 +165,7 @@ int main(int argc, char *argv[])
 
 	/* construct initial hill */
 
-	struct opcodes **hill = smalloc(hillsize * sizeof *hill);
+	union opcode **hill = smalloc(hillsize * sizeof *hill);
 	for (unsigned i = 0; i < hillsize; i++)
 		hill[i] = 0;
 
@@ -190,7 +190,7 @@ int main(int argc, char *argv[])
 
 		if (cmd.action == Action_TEST)
 		{
-			struct opcodes *code = readprog(core_compile_b, &reply);
+			union opcode *code = readprog(core_compile_b, &reply);
 			if (!code)
 				continue; /* error reply already sent */
 
@@ -248,7 +248,7 @@ int main(int argc, char *argv[])
 				continue;
 			}
 
-			struct opcodes *code = readprog(core_compile_a, &reply);
+			union opcode *code = readprog(core_compile_a, &reply);
 			if (!code)
 				continue; /* error reply already sent */
 

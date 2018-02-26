@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	struct opcodes **hill = smalloc(nprogs * sizeof *hill);
+	union opcode **hill = smalloc(nprogs * sizeof *hill);
 	int *dscores = smalloc(nprogs * sizeof *dscores);
 
 	for (unsigned i = 0; i < nprogs; i++)
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 		struct oplist *ops = parse(0);
 		if (ops->len == 0 || ops->ops[0].type == OP_DONE)
 			break;
-		struct opcodes *code = core(core_compile_b, ops, 0, 0);
+		union opcode *code = core(core_compile_b, ops, 0, 0);
 		opl_free(ops);
 
 		/* run against all competitions and collect scores */
