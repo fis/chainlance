@@ -73,50 +73,62 @@ int main(int argc, char *argv[])
 /* compilation, impl */
 
 extern const char
-	op_inc, size_op_inc, op_dec, size_op_dec,
-	op_left, size_op_left, op_right, size_op_right,
-	op_wait, size_op_wait,
-	op_loop1, op_loop1_rel, size_op_loop1,
-	op_loop2, op_loop2_rel, size_op_loop2,
-	op_rep1, op_rep1_count, size_op_rep1,
-	op_rep1N, op_rep1N_count, size_op_rep1N,
-	op_rep2, op_rep2_rel, size_op_rep2,
-	op_rep2N, op_rep2N_rel, size_op_rep2N,
-	op_inner2, size_op_inner2,
-	op_inner2N, size_op_inner2N,
-	op_irep2, op_irep2_rel, op_irep2_count, size_op_irep2,
-	op_irep2N, op_irep2N_rel, op_irep2N_count, size_op_irep2N,
-	op_done, size_op_done;
+	op_inc, op_dec, op_left, op_right,
+	op_wait,
+	op_loop1, op_loop2,
+	op_rep1, op_rep1N,
+	op_rep2, op_rep2N,
+	op_inner2, op_inner2N,
+	op_irep2, op_irep2N,
+	op_done;
 
-#define AV(s) ((unsigned)(unsigned long)(s))
+extern const unsigned
+	size_op_inc, size_op_dec, size_op_left, size_op_right,
+	size_op_wait,
+	size_op_loop1, size_op_loop2,
+	size_op_rep1, size_op_rep1N,
+	size_op_rep2, size_op_rep2N,
+	size_op_inner2, size_op_inner2N,
+	size_op_irep2, size_op_irep2N,
+	size_op_done;
+
+extern const unsigned
+	rel_op_loop1, rel_op_loop2,
+	rel_op_rep2, rel_op_rep2N,
+	rel_op_irep2, rel_op_irep2N;
+
+extern const unsigned
+	count_op_rep1, count_op_rep1N,
+	count_op_irep2, count_op_irep2N;
 
 struct jitnfo
 {
-	const char *code, *size, *rel, *count;
+	const char *code;
+	const unsigned *size, *rel, *count;
 	struct jitnfo *nest;
 };
 
 static struct jitnfo optable[OP_MAX] = {
-	[OP_INC]    = { &op_inc, &size_op_inc, 0, 0, 0, },
-	[OP_DEC]    = { &op_dec, &size_op_dec, 0, 0, 0, },
-	[OP_LEFT]   = { &op_left, &size_op_left, 0, 0, 0, },
-	[OP_RIGHT]  = { &op_right, &size_op_right, 0, 0, 0, },
-	[OP_WAIT]   = { &op_wait, &size_op_wait, 0, 0, 0, },
-	[OP_LOOP1]  = { &op_loop1, &size_op_loop1, &op_loop1_rel, 0, 0, },
-	[OP_LOOP2]  = { &op_loop2, &size_op_loop2, &op_loop2_rel, 0, 0, },
-	[OP_REP1]   = { &op_rep1, &size_op_rep1, 0, &op_rep1_count,
-	                &(struct jitnfo){ &op_rep1N, &size_op_rep1N, 0, &op_rep1N_count, 0 } },
-	[OP_REP2]   = { &op_rep2, &size_op_rep2, &op_rep2_rel, 0,
-	                &(struct jitnfo){ &op_rep2N, &size_op_rep2N, &op_rep2N_rel, 0, 0 } },
-	[OP_IREP1]  = { &op_rep1, &size_op_rep1, 0, &op_rep1_count,
-	                &(struct jitnfo){ &op_rep1N, &size_op_rep1N, 0, &op_rep1N_count, 0 } },
-	[OP_INNER1] = { &op_rep2, &size_op_rep2, &op_rep2_rel, 0,
-	                &(struct jitnfo){ &op_rep2N, &size_op_rep2N, &op_rep2N_rel, 0, 0 } },
-	[OP_INNER2] = { &op_inner2, &size_op_inner2, 0, 0,
-	                &(struct jitnfo){ &op_inner2N, &size_op_inner2N, 0, 0, 0 } },
-	[OP_IREP2]  = { &op_irep2, &size_op_irep2, &op_irep2_rel, &op_irep2_count,
-	                &(struct jitnfo){ &op_irep2N, &size_op_irep2N, &op_irep2N_rel, &op_irep2N_count, 0 } },
-	[OP_DONE]   = { &op_done, &size_op_done, 0, 0, 0 },
+	[OP_INC]    = { .code = &op_inc, .size = &size_op_inc },
+	[OP_DEC]    = { .code = &op_dec, .size = &size_op_dec },
+	[OP_LEFT]   = { .code = &op_left, .size = &size_op_left },
+	[OP_RIGHT]  = { .code = &op_right, .size = &size_op_right },
+	[OP_WAIT]   = { .code = &op_wait, .size = &size_op_wait },
+	[OP_LOOP1]  = { .code = &op_loop1, .size = &size_op_loop1, .rel = &rel_op_loop1 },
+	[OP_LOOP2]  = { .code = &op_loop2, .size = &size_op_loop2, .rel = &rel_op_loop2 },
+	[OP_REP1]   = { .code = &op_rep1, .size = &size_op_rep1, .count = &count_op_rep1,
+	                .nest = &(struct jitnfo){ .code = &op_rep1N, .size = &size_op_rep1N, .count = &count_op_rep1N } },
+	[OP_REP2]   = { .code = &op_rep2, .size = &size_op_rep2, .rel = &rel_op_rep2,
+	                .nest = &(struct jitnfo){ .code = &op_rep2N, .size = &size_op_rep2N, .rel = &rel_op_rep2N } },
+	[OP_IREP1]  = { .code = &op_rep1, .size = &size_op_rep1, .count = &count_op_rep1,
+	                .nest = &(struct jitnfo){ .code = &op_rep1N, .size = &size_op_rep1N, .count = &count_op_rep1N } },
+	[OP_INNER1] = { .code = &op_rep2, .size = &size_op_rep2, .rel = &rel_op_rep2,
+	                .nest = &(struct jitnfo){ .code = &op_rep2N, .size = &size_op_rep2N, .rel = &rel_op_rep2N } },
+	[OP_INNER2] = { .code = &op_inner2, .size = &size_op_inner2,
+	                .nest = &(struct jitnfo){ .code = &op_inner2N, .size = &size_op_inner2N } },
+	[OP_IREP2]  = { .code = &op_irep2, .size = &size_op_irep2, .rel = &rel_op_irep2, .count = &count_op_irep2,
+	                .nest = &(struct jitnfo){ .code = &op_irep2N, .size = &size_op_irep2N, .rel = &rel_op_irep2N, .count = &count_op_irep2N } },
+	[OP_DONE]   = { .code = &op_done, .size = &size_op_done },
 };
 
 int opnest[OP_MAX] = {
@@ -147,7 +159,7 @@ static char *compile(struct oplist *ops, unsigned *outsize)
 			depth++;
 
 		op->code = size;
-		size += AV(nfo->size);
+		size += *nfo->size;
 	}
 
 	*outsize = size;
@@ -171,17 +183,17 @@ static char *compile(struct oplist *ops, unsigned *outsize)
 		if (opnest[op->type] > 0)
 			depth++;
 
-		memcpy(base + op->code, nfo->code, AV(nfo->size));
+		memcpy(base + op->code, nfo->code, *nfo->size);
 
-		if (AV(nfo->rel))
+		if (nfo->rel)
 		{
 			char *target = base + opl[op->match+1].code;
-			int disp = target - (base + op->code + AV(nfo->rel) + 4);
-			*(int *)(base + op->code + AV(nfo->rel)) = disp;
+			int disp = target - (base + op->code + *nfo->rel + 4);
+			*(int *)(base + op->code + *nfo->rel) = disp;
 		}
 
-		if (AV(nfo->count))
-			*(unsigned *)(base + op->code + AV(nfo->count)) = op->count;
+		if (nfo->count)
+			*(unsigned *)(base + op->code + *nfo->count) = op->count;
 	}
 
 	return base;
