@@ -1,4 +1,4 @@
+/bazel-*
 /build
 /rdoc
-/test/reference.out
 /zhill/geartalk.pb.rb
