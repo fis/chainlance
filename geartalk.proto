@@ -2,6 +2,8 @@
 
 syntax = "proto2";
 
+package geartalk;
+
 // Results of a single full joust.
 message Joust {
   // Normal and reversed-polarity score array.

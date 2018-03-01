@@ -35,11 +35,11 @@ class Gear
   # and the possibly empty list of Statistics messages (key :stats)
   # returned by cranklanced.
   def test(code)
-    put(Action::TEST)
+    put(Geartalk::Action::TEST)
     @gear_in.write(code.tr("\0", ' ') + "\0")
     @gear_in.flush
 
-    reply = get(Reply.new)
+    reply = get(Geartalk::Reply.new)
     raise GearException, reply.error unless reply.ok
 
     Array.new(@size) do
@@ -47,7 +47,7 @@ class Gear
       if reply.with_statistics
         stats_count = ::Protobuf::Decoder::read_varint(@gear_out)
         stats = Array.new(stats_count) do
-          s = get(Statistics.new)
+          s = get(Geartalk::Statistics.new)
           {
             :cycles => s.cycles,
             :tape_abs => s.tape_abs,
@@ -57,7 +57,7 @@ class Gear
         end
       end
 
-      joust = get(Joust.new)
+      joust = get(Geartalk::Joust.new)
       if joust.sieve_points.length == 0 || joust.kettle_points.length != joust.sieve_points.length
         raise GearException, "gearlanced produced gibberish: #{joust.inspect}"
       end
@@ -75,11 +75,11 @@ class Gear
   #
   # The indices run from 0 to #size-1.
   def set(i, code)
-    put(Action::SET, i)
+    put(Geartalk::Action::SET, i)
     @gear_in.write(code.tr("\0", ' ') + "\0")
     @gear_in.flush
 
-    reply = get(Reply.new)
+    reply = get(Geartalk::Reply.new)
     raise GearException, reply.error unless reply.ok
   end
 
@@ -89,16 +89,16 @@ class Gear
   # the corresponding program slot to contain the initial "loses to
   # everything" dummy program.
   def unset(i)
-    put(Action::UNSET, i)
+    put(Geartalk::Action::UNSET, i)
     @gear_in.flush
 
-    reply = get(Reply.new)
+    reply = get(Geartalk::Reply.new)
     raise GearException, reply.error unless reply.ok
   end
 
   # Sends a protobuf command message to the gearlanced process.
   def put(action, index=nil)
-    cmd = Command.new
+    cmd = Geartalk::Command.new
     cmd.action = action
     cmd.index = index unless index.nil?
     bytes = cmd.serialize_to_string

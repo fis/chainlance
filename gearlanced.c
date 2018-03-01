@@ -104,7 +104,7 @@ static void pb_put(const pb_field_t fields[], const void *src)
 
 #ifdef CRANK_IT
 #define EXECUTE_STATS(pol) do { \
-		Statistics s = Statistics_init_default; \
+		geartalk_Statistics s = Statistics_init_default; \
 		s.has_cycles = true; \
 		s.cycles = MAXCYCLES - cycles; \
 		s.has_tape_abs = true; s.tape_abs.size = tapesize; \
@@ -125,13 +125,13 @@ static void pb_put(const pb_field_t fields[], const void *src)
 
 /* main application for gearlanced/cranklanced */
 
-static union opcode *readprog(enum core_action act, Reply *reply)
+static union opcode *readprog(enum core_action act, geartalk_Reply *reply)
 {
 	if (setjmp(fail_buf))
 	{
 		reply->has_error = true;
 		snprintf(reply->error, sizeof reply->error, "parse error: %s\n", fail_msg);
-		pb_put(Reply_fields, reply);
+		pb_put(geartalk_Reply_fields, reply);
 		fflush(stdout);
 		return 0;
 	}
@@ -171,14 +171,14 @@ int main(int argc, char *argv[])
 
 	/* main loop */
 
-	Command cmd;
+	geartalk_Command cmd;
 
-	while (pb_decode_delimited(&stdin_stream, Command_fields, &cmd))
+	while (pb_decode_delimited(&stdin_stream, geartalk_Command_fields, &cmd))
 	{
-		if (!cmd.has_action || cmd.action == Action_UNKNOWN)
+		if (!cmd.has_action || cmd.action == geartalk_Action_UNKNOWN)
 			break;
 
-		Reply reply = Reply_init_default;
+		geartalk_Reply reply = geartalk_Reply_init_default;
 		reply.has_ok = true;
 		reply.ok = false;
 		reply.has_with_statistics = true;
@@ -188,14 +188,14 @@ int main(int argc, char *argv[])
 		reply.with_statistics = false;
 #endif
 
-		if (cmd.action == Action_TEST)
+		if (cmd.action == geartalk_Action_TEST)
 		{
 			union opcode *code = readprog(core_compile_b, &reply);
 			if (!code)
 				continue; /* error reply already sent */
 
 			reply.ok = true;
-			pb_put(Reply_fields, &reply);
+			pb_put(geartalk_Reply_fields, &reply);
 
 			for (unsigned i = 0; i < hillsize; i++)
 			{
@@ -213,7 +213,7 @@ int main(int argc, char *argv[])
 				else
 					core(core_run, 0, hill[i], code);
 
-				Joust joust;
+				geartalk_Joust joust;
 				joust.sieve_points_count = NTAPES;
 				joust.kettle_points_count = NTAPES;
 
@@ -230,12 +230,12 @@ int main(int argc, char *argv[])
 					joust.kettle_points[tlen - MINTAPE] = -scores[kettle][tlen];
 				}
 
-				pb_put(Joust_fields, &joust);
+				pb_put(geartalk_Joust_fields, &joust);
 			}
 
 			fflush(stdout);
 		}
-		else if (cmd.action == Action_SET)
+		else if (cmd.action == geartalk_Action_SET)
 		{
 			if (!cmd.has_index || cmd.index >= hillsize)
 			{
@@ -243,7 +243,7 @@ int main(int argc, char *argv[])
 				snprintf(reply.error, sizeof reply.error,
 				         cmd.has_index ? "no index for set" : "invalid index for set: %u",
 				         cmd.index);
-				pb_put(Reply_fields, &reply);
+				pb_put(geartalk_Reply_fields, &reply);
 				fflush(stdout);
 				continue;
 			}
@@ -256,10 +256,10 @@ int main(int argc, char *argv[])
 			hill[cmd.index] = code;
 
 			reply.ok = true;
-			pb_put(Reply_fields, &reply);
+			pb_put(geartalk_Reply_fields, &reply);
 			fflush(stdout);
 		}
-		else if (cmd.action == Action_UNSET)
+		else if (cmd.action == geartalk_Action_UNSET)
 		{
 			if (!cmd.has_index || cmd.index >= hillsize)
 			{
@@ -267,7 +267,7 @@ int main(int argc, char *argv[])
 				snprintf(reply.error, sizeof reply.error,
 				         cmd.has_index ? "no index for unset" : "invalid index for unset: %u",
 				         cmd.index);
-				pb_put(Reply_fields, &reply);
+				pb_put(geartalk_Reply_fields, &reply);
 				fflush(stdout);
 				continue;
 			}
@@ -276,14 +276,14 @@ int main(int argc, char *argv[])
 			hill[cmd.index] = 0;
 
 			reply.ok = true;
-			pb_put(Reply_fields, &reply);
+			pb_put(geartalk_Reply_fields, &reply);
 			fflush(stdout);
 		}
 		else
 		{
 			reply.has_error = true;
 			snprintf(reply.error, sizeof reply.error, "unknown command");
-			pb_put(Reply_fields, &reply);
+			pb_put(geartalk_Reply_fields, &reply);
 			fflush(stdout);
 		}
 	}
