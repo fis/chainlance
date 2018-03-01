@@ -1,8 +1,5 @@
+import struct
 import subprocess
-
-import geartalk_pb2
-from google.protobuf.internal import decoder
-from google.protobuf.internal import encoder
 
 _POINT_CHARS = {
     -1: '<',
@@ -27,62 +24,46 @@ class Client(object):
             raise RuntimeError('geartalk program failed with return code {}'.format(self._process.returncode))
 
     def Set(self, index, code):
-        self._Write(geartalk_pb2.Command(action=geartalk_pb2.SET, index=index))
-        self._process.stdin.write(code.replace('\0', ' ') + '\0')
+        cmd = struct.pack('<II', 0x02 | (index << 8), len(code))
+        self._process.stdin.write(cmd)
+        self._process.stdin.write(code)
         self._process.stdin.flush()
-        reply = self._Read(geartalk_pb2.Reply())
-        if not reply.ok:
-            raise RuntimeError(reply.error or 'geartalk error on set')
+        ok, reply = self._Read()
+        if not ok:
+            raise RuntimeError(reply or 'geartalk error on set')
 
     def Test(self, code):
-        self._Write(geartalk_pb2.Command(action=geartalk_pb2.TEST))
-        self._process.stdin.write(code.replace('\0', ' ') + '\0')
+        cmd = struct.pack('<II', 0x01, len(code))
+        self._process.stdin.write(cmd)
+        self._process.stdin.write(code)
         self._process.stdin.flush()
-        reply = self._Read(geartalk_pb2.Reply())
-        if not reply.ok:
-            raise RuntimeError(reply.error or 'geartalk error on test')
+        ok, reply = self._Read()
+        if not ok:
+            raise RuntimeError(reply or 'geartalk error on test')
+
+        min_tape, max_tape = ord(reply[1]), ord(reply[2])
+        tapes = max_tape - min_tape + 1
 
         results = []
 
         for _ in xrange(self._hill_size):
-            # TODO: if reply.with_statistics
-            joust = self._Read(geartalk_pb2.Joust())
+            # TODO: statistics flag
+            joust = self._process.stdout.read(2*tapes)
+            if len(joust) != 2*tapes:
+                raise RuntimeError('short read for scores')
+            joust = struct.unpack('{}b'.format(2*tapes), joust)
             results.append('{} {} {}'.format(
-                ''.join(_POINT_CHARS[p] for p in joust.sieve_points),
-                ''.join(_POINT_CHARS[p] for p in joust.kettle_points),
-                -(sum(joust.sieve_points) + sum(joust.kettle_points))))
-            pass
+                ''.join(_POINT_CHARS[p] for p in joust[:tapes]),
+                ''.join(_POINT_CHARS[p] for p in joust[tapes:]),
+                -sum(joust)))
 
         return results
 
-    def _Write(self, message):
-        data = message.SerializeToString()
-        self._WriteVarint(len(data))
-        self._process.stdin.write(data)
-
-    def _Read(self, message):
-        data_len = self._ReadVarint()
-        data = self._process.stdout.read(data_len)
-        message.MergeFromString(data)
-        return message
-
-    def _WriteVarint(self, value):
-        data = bytearray()
-        while True:
-            byte = value & 127
-            value >>= 7
-            if value > 0: byte |= 0x80
-            data.append(byte)
-            if value == 0: break
-        self._process.stdin.write(data)
-
-    def _ReadVarint(self):
-        value, bit = 0, 0
-        while True:
-            byte = self._process.stdout.read(1)
-            if not byte: raise RuntimeError('truncated varint from geartalk program')
-            byte = ord(byte)
-            value |= (byte & 127) << bit
-            if not byte & 128: break
-            bit += 7
-        return value
+    def _Read(self):
+        header = self._process.stdout.read(4)
+        if len(header) < 4:
+            return False, 'short read'
+        if (ord(header[0]) & 0x01) == 0:
+            error = self._process.stdout.read(struct.unpack('<I', header) >> 8)
+            return False, error
+        return True, header

@@ -7,97 +7,135 @@
  * hill size.  The hill will be initialized with N copies of a
  * hypothetical program that will always lose.  After initialization,
  * the program will read commands from stdin, and reply results to
- * stdout.  This "GearTalk" protocol uses the messages defined in
- * geartalk.proto, in the following way.  All protobuf messages are
- * sent in the length-delimited format, i.e., prefixed by a varint
- * encoding the length of the following message.
+ * stdout.  This "GearTalk" protocol works as follows.
  *
- * The caller must send a delimited "Command" message, potentially
- * (for some commands) followed by a bfjoust program terminated by a
- * '\0' character.  The program replies with a "Reply" message,
- * potentially followed by other messages.  The command and reply
- * formats are:
+ * The caller must send an 8-byte command header, potentially (for
+ * some commands) followed by bfjoust program code.  The program
+ * replies with a four-byte reply header, followed by reply data.
  *
- * Action.TEST:
- * Input: Command, bfjoust program P.
- * Output: Reply,
- *         [if Reply.ok:
- *          N* ([if Reply.with_statistics:
- *               varint C, C* Statistics],
- *              Joust)]
- * Test program P against those currently on the hill.  If there are
- * no errors, the results for all tape length/polarity matches are
- * sent in the following Joust messages.  If compiled as cranklanced,
- * the Joust message will be preceded by a varint C and C individual
- * Statistics messages, giving detailed statistics about each
- * individual match.  The Reply.with_statistics field will be set to
- * indicate this.  C is one of two values: either 0 (if the opponent
- * slot on the hill is empty), or (normally) 42 (all tape lengths and
- * polarities).  There will be a total of N groups of Joust (and maybe
- * Statistics) messages.
+ * The first byte of the command header specifies the action to
+ * perform: test (0x01), set (0x02) or unset (0x03).  For set and
+ * unset, the following three bytes are a hill position index as an
+ * unsigned little-endian 24-bit integer; the test command does not
+ * use these bytes and they should be set to 0.  For test and set, the
+ * last 4 bytes are the length of the following program code, as an
+ * unsigned little-endian 32-bit integer; the unset command does not
+ * take a program, so these bytes should be set to 0.
  *
- * Action.SET:
- * Input: Command [.index = I], bfjoust program P.
- * Output: Reply.
- * Set the I'th program (where 0 <= I < N) to P.
+ * The first byte of the reply header contains flags.  Bit 0 (least
+ * significant) is the success flag: if unset, an error occurred.  In
+ * this case, the other three bytes are the length of the error
+ * message, again in unsigned 24-bit little-endian format.  The error
+ * message text follows the reply header.
  *
- * Action.UNSET:
- * Input: Command [.index = I].
- * Output: Reply.
- * Remove the I'th program (where 0 <= I < N), by setting it to the
- * program that always loses.  This is used to "blank" a program that
- * is being replaced on the hill, for efficiency reasons.
+ * If the command succeeded, the bit is set.  Other flag bits and
+ * reply data depend on the command.
+ *
+ * The test command (0x01) runs the program (as the "right" program)
+ * against all the programs currently on the hill (as "left"
+ * programs).  The other three reply header bytes indicate the
+ * parameters of the hill: the minimum (10) and maximum (30) tape
+ * lengths and (the low 8 bits of) the hill size, respectively.  Let C
+ * be the number of tape configurations (max - min + 1, normally 21)
+ * and N be the hill size.
+ *
+ * The reply header is followed by N chunks of results.  For
+ * gearlanced, the reply chunk has 2*C (normally 42) bytes, each
+ * containing the signed 8-bit value -1 (for a loss of the tested
+ * "right" program), 0 (for a tie) or +1 (for a win).  The first half
+ * are for the sieve (normal) polarity runs in order of increasing
+ * tape length.  The second half are for kettle (inverted) polarity.
+ *
+ * If the binary is compiled as cranklanced, bit 1 of the reply flags
+ * will be set to indicate this.  In this case, before the normal
+ * points there will also be 2*C statistics chunks, in the same order
+ * as the points.  Letting T be the tape length of each configuration,
+ * the statistics chunks are 4+19*T bytes, with the following fields:
+ *
+ * - 4 bytes, 32le: number of executed cycles
+ * - T bytes: absolute value (0..128) of tape at the end of joust
+ * - 2*T bytes: largest value on tape when moving away from cell
+ * - 2*4*T bytes: heatmap of how long the program stayed in cell
+ * - 2*4*T bytes: heatmap of how often the program modified the cell
+ *
+ * For all the tape maps that have 2*T elements, the first half are
+ * the statistics for the "left" program, and the second half for the
+ * "right". In both cases the tape is unflipped, i.e., as seen from
+ * the perspective of the left program.
+ *
+ * The total reply data without statistics is 2*C*N (42*N) bytes, and with statistics ...*N (...*N) bytes.
+ *
+ * The set (0x01) and unset (0x02) either set or blank the indicated
+ * program.  A blanked program loses immediately: this is used for
+ * efficiency reasons on the program that's being replaced on the
+ * hill.  The reply header contains only the success flag (or an
+ * error).
  *
  * An EOF condition in place of a command will terminate the program.
  */
 
 #include <errno.h>
 #include <limits.h>
+#include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "gearlance.h"
 
-/* protobuf helpers used also by gearlance.c code for cranklanced */
+/* geartalk utilities */
 
-#include "geartalk.pb.h"
+#define ACTION_TEST(x) (((x) & 0xff) == 0x01)
+#define ACTION_SET(x) (((x) & 0xff) == 0x02)
+#define ACTION_UNSET(x) (((x) & 0xff) == 0x03)
 
-#include <pb_decode.h>
-#include <pb_encode.h>
+static inline uint32_t get_u32le(unsigned char *p) {
+	return (uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16) | ((uint32_t)p[3]) << 24;
+}
 
-static bool stdio_istream_callback(pb_istream_t *stream, uint8_t *buf, size_t count)
-{
-	FILE *file = (FILE *)stream->state;
-	bool status;
+static inline void put_u32le(unsigned char *p, uint32_t u) {
+	p[0] = u; p[1] = u >> 8; p[2] = u >> 16; p[3] = u >> 24;
+}
 
-	if (!buf)
-	{
-		while (count-- && fgetc(file) != EOF)
-			;
-		return count == 0;
+int read_n(unsigned char *buf, size_t count) {
+	size_t left = count;
+	while (left) {
+		ssize_t ret = read(0, buf, left);
+		if (ret < 0) {
+			perror("read");
+			abort();
+		} else if (ret == 0 && left < count) {
+			fputs("short read\n", stderr);
+			abort();
+		} else if (ret == 0) {
+			return 0;
+		}
+		left -= ret;
 	}
-
-	status = (fread(buf, 1, count, file) == count);
-	if (feof(file))
-		stream->bytes_left = 0;
-
-	return status;
+	return 1;
 }
 
-static bool stdio_ostream_callback(pb_ostream_t *stream, const uint8_t *buf, size_t count)
-{
-	FILE *file = (FILE *)stream->state;
-	return fwrite(buf, 1, count, file) == count;
+void write_n(const unsigned char *buf, size_t count) {
+	while (count) {
+		ssize_t wrote = write(1, buf, count);
+		if (wrote <= 0) abort();
+		count -= wrote;
+		buf += wrote;
+	}
 }
 
-static pb_istream_t stdin_stream;
-static pb_ostream_t stdout_stream;
+void write_error(char *fmt, ...) {
+	unsigned char reply[4 + 256];
 
-static void pb_put(const pb_field_t fields[], const void *src)
-{
-	if (!pb_encode_delimited(&stdout_stream, fields, src))
-		abort();
+	va_list ap;
+	va_start(ap, fmt);
+	int len = vsnprintf((char*)reply + 4, sizeof reply - 4, fmt, ap);
+	va_end(ap);
+
+	put_u32le(reply, (uint32_t)len << 8);
+	write_n(reply, 4 + len);
 }
 
 /* statistics output code for cranklanced */
@@ -125,19 +163,18 @@ static void pb_put(const pb_field_t fields[], const void *src)
 
 /* main application for gearlanced/cranklanced */
 
-static union opcode *readprog(enum core_action act, geartalk_Reply *reply)
+static union opcode *readprog(enum core_action act, uint32_t len)
 {
 	if (setjmp(fail_buf))
 	{
-		reply->has_error = true;
-		snprintf(reply->error, sizeof reply->error, "parse error: %s\n", fail_msg);
-		pb_put(geartalk_Reply_fields, reply);
-		fflush(stdout);
+		write_error("parse error: %s\n", fail_msg);
 		return 0;
 	}
 
-	struct oplist *ops = parse(0);
-	union opcode *code = core(act, ops, 0, 0);
+	union opcode *code = 0;
+	struct oplist *ops = parse(&len);
+	if (len == 0) code = core(act, ops, 0, 0);
+	else write_error("parse did not consume entire program");
 	opl_free(ops);
 
 	return code;
@@ -145,9 +182,6 @@ static union opcode *readprog(enum core_action act, geartalk_Reply *reply)
 
 int main(int argc, char *argv[])
 {
-	stdin_stream = (pb_istream_t){ &stdio_istream_callback, stdin, SIZE_MAX, 0 };
-	stdout_stream = (pb_ostream_t){ &stdio_ostream_callback, stdout, SIZE_MAX, 0, 0 };
-
 	/* grok arguments */
 
 	if (argc != 2)
@@ -171,41 +205,32 @@ int main(int argc, char *argv[])
 
 	/* main loop */
 
-	geartalk_Command cmd;
+	unsigned char cmd[8];
 
-	while (pb_decode_delimited(&stdin_stream, geartalk_Command_fields, &cmd))
+	while (read_n(cmd, 8))
 	{
-		if (!cmd.has_action || cmd.action == geartalk_Action_UNKNOWN)
-			break;
+		uint32_t action = get_u32le(cmd);
+		unsigned char reply[4] = {0x01, 0x00, 0x00, 0x00};
 
-		geartalk_Reply reply = geartalk_Reply_init_default;
-		reply.has_ok = true;
-		reply.ok = false;
-		reply.has_with_statistics = true;
-#ifdef CRANK_IT
-		reply.with_statistics = true;
-#else
-		reply.with_statistics = false;
-#endif
-
-		if (cmd.action == geartalk_Action_TEST)
+		if (ACTION_TEST(action))
 		{
-			union opcode *code = readprog(core_compile_b, &reply);
+			union opcode *code = readprog(core_compile_b, get_u32le(cmd + 4));
 			if (!code)
 				continue; /* error reply already sent */
 
-			reply.ok = true;
-			pb_put(geartalk_Reply_fields, &reply);
+#ifdef CRANK_IT
+			reply[0] |= 0x02;
+#endif
+			reply[1] = MINTAPE;
+			reply[2] = MAXTAPE;
+			reply[3] = hillsize;
+			write_n(reply, sizeof reply);
 
 			for (unsigned i = 0; i < hillsize; i++)
 			{
-#ifdef CRANK_IT
-				if (!pb_encode_varint(&stdout_stream, hill[i] ? 2 * NTAPES : 0))
-					abort(); /* too bad */
-#endif
-
 				if (!hill[i])
 				{
+					// TODO: fake statistics for cranklance
 					for (unsigned pol = 0; pol < 2; pol++)
 						for (unsigned tlen = MINTAPE; tlen <= MAXTAPE; tlen++)
 							scores[pol][tlen] = -1;
@@ -213,9 +238,7 @@ int main(int argc, char *argv[])
 				else
 					core(core_run, 0, hill[i], code);
 
-				geartalk_Joust joust;
-				joust.sieve_points_count = NTAPES;
-				joust.kettle_points_count = NTAPES;
+				int8_t reply_points[2][NTAPES];
 
 				/*
 				 * Executing a program will, as a side effect, flip the polarity by rewriting
@@ -226,65 +249,48 @@ int main(int argc, char *argv[])
 				int sieve = i % 2, kettle = !sieve;
 				for (unsigned tlen = MINTAPE; tlen <= MAXTAPE; tlen++)
 				{
-					joust.sieve_points[tlen - MINTAPE] = -scores[sieve][tlen];
-					joust.kettle_points[tlen - MINTAPE] = -scores[kettle][tlen];
+					reply_points[0][tlen - MINTAPE] = -scores[sieve][tlen];
+					reply_points[1][tlen - MINTAPE] = -scores[kettle][tlen];
 				}
 
-				pb_put(geartalk_Joust_fields, &joust);
+				write_n((unsigned char*)&reply_points[0][0], sizeof reply_points);
 			}
-
-			fflush(stdout);
 		}
-		else if (cmd.action == geartalk_Action_SET)
+		else if (ACTION_SET(action))
 		{
-			if (!cmd.has_index || cmd.index >= hillsize)
+			uint32_t index = action >> 8;
+			if (index >= hillsize)
 			{
-				reply.has_error = true;
-				snprintf(reply.error, sizeof reply.error,
-				         cmd.has_index ? "no index for set" : "invalid index for set: %u",
-				         cmd.index);
-				pb_put(geartalk_Reply_fields, &reply);
-				fflush(stdout);
+				write_error("invalid index for set: %u", (unsigned)index);
 				continue;
 			}
 
-			union opcode *code = readprog(core_compile_a, &reply);
+			union opcode *code = readprog(core_compile_a, get_u32le(cmd + 4));
 			if (!code)
 				continue; /* error reply already sent */
 
-			free(hill[cmd.index]);
-			hill[cmd.index] = code;
+			free(hill[index]);
+			hill[index] = code;
 
-			reply.ok = true;
-			pb_put(geartalk_Reply_fields, &reply);
-			fflush(stdout);
+			write_n(reply, sizeof reply);
 		}
-		else if (cmd.action == geartalk_Action_UNSET)
+		else if (ACTION_UNSET(action))
 		{
-			if (!cmd.has_index || cmd.index >= hillsize)
+			uint32_t index = action >> 8;
+			if (index >= hillsize)
 			{
-				reply.has_error = true;
-				snprintf(reply.error, sizeof reply.error,
-				         cmd.has_index ? "no index for unset" : "invalid index for unset: %u",
-				         cmd.index);
-				pb_put(geartalk_Reply_fields, &reply);
-				fflush(stdout);
+				write_error("invalid index for unset: %u", (unsigned)index);
 				continue;
 			}
 
-			free(hill[cmd.index]);
-			hill[cmd.index] = 0;
+			free(hill[index]);
+			hill[index] = 0;
 
-			reply.ok = true;
-			pb_put(geartalk_Reply_fields, &reply);
-			fflush(stdout);
+			write_n(reply, sizeof reply);
 		}
 		else
 		{
-			reply.has_error = true;
-			snprintf(reply.error, sizeof reply.error, "unknown command");
-			pb_put(geartalk_Reply_fields, &reply);
-			fflush(stdout);
+			write_error("unknown action: 0x%04x", (unsigned)action);
 		}
 	}
 

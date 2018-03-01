@@ -42,35 +42,32 @@ jmp_buf fail_buf;
 
 /* helper functions for buffered reading with ungetch */
 
-#ifdef PARSE_STDIN
-
-static int nextc(int fd)
-{
-	(void)fd; /* unused */
-	int c = getchar();
-	return c == '\0' ? -1 : c;
-}
-
-static void unc(int c)
-{
-	ungetc(c == -1 ? '\0' : c, stdin);
-}
-
-#else /* PARSE_STDIN */
-
 #define BUF_SIZE (65536+4096)
 #define READ_SIZE 65536
 
 static unsigned char buf[BUF_SIZE];
 static unsigned buf_at = 0, buf_size = 0;
 
-static int nextc(int fd)
+
+static int nextc(stream_id input)
 {
 	if (buf_at >= buf_size)
 	{
-		ssize_t t = read(fd, buf, READ_SIZE);
+#ifdef PARSE_STDIN
+		int fd = 0;
+		size_t read_size = *input < READ_SIZE ? *input : READ_SIZE;
+		if (read_size == 0) return -1;
+#else /* PARSE_STDIN */
+		int fd = input;
+		size_t read_size = READ_SIZE;
+#endif
+
+		ssize_t t = read(fd, buf, read_size);
 		if (t < 0) die("read error");
 		if (t == 0) return -1;
+#ifdef PARSE_STDIN
+		*input -= t;
+#endif
 
 		buf_at = 0;
 		buf_size = t;
@@ -96,15 +93,13 @@ static void unc(int c)
 	buf[--buf_at] = c;
 }
 
-#endif /* PARSE_STDIN */
-
 /* parsing and preprocessing, impl */
 
-static int nextcmd(int fd)
+static int nextcmd(stream_id input)
 {
 	while (1)
 	{
-		int c = nextc(fd);
+		int c = nextc(input);
 		switch (c)
 		{
 		case -1:
@@ -121,11 +116,11 @@ static int nextcmd(int fd)
 	}
 }
 
-static int readrepc(int fd)
+static int readrepc(stream_id input)
 {
 	int c = 0, neg = 0, ch;
 
-	ch = nextcmd(fd);
+	ch = nextcmd(input);
 	if (ch != '*' && ch != '%')
 	{
 		/* treat garbage as ()*0 in case it's inside a comment */
@@ -133,11 +128,11 @@ static int readrepc(int fd)
 		return 0;
 	}
 
-	ch = nextcmd(fd);
+	ch = nextcmd(input);
 	if (ch == '-')
 	{
 		neg = 1;
-		ch = nextc(fd);
+		ch = nextc(input);
 	}
 
 	while (1)
@@ -153,7 +148,7 @@ static int readrepc(int fd)
 			break;
 		}
 
-		ch = nextc(fd);
+		ch = nextc(input);
 	}
 
 	unc(ch);
@@ -161,14 +156,14 @@ static int readrepc(int fd)
 	return neg ? -c : c;
 }
 
-struct oplist *readops(int fd)
+struct oplist *readops(stream_id input)
 {
 	/* main code to read the list of ops */
 
 	struct oplist *ops = opl_new();
 	int ch;
 
-	while ((ch = nextcmd(fd)) >= 0)
+	while ((ch = nextcmd(input)) >= 0)
 	{
 		int c;
 
@@ -184,7 +179,7 @@ struct oplist *readops(int fd)
 		case '(': ops = opl_append(ops, OP_REP1);   break;
 		case ')':
 			/* need to extract the count */
-			c = readrepc(fd);
+			c = readrepc(input);
 			if (c < 0) c = MAXCYCLES;
 			ops = opl_append(ops, OP_REP2);
 			ops->ops[ops->len-1].count = c;
@@ -424,9 +419,9 @@ void matchloop(struct oplist *ops)
 		fail("starting [ without a matching ]");
 }
 
-struct oplist *parse(int fd)
+struct oplist *parse(stream_id input)
 {
-	struct oplist *ops = readops(fd);
+	struct oplist *ops = readops(input);
 
 	/* handle (...) constructions first */
 

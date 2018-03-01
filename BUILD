@@ -18,11 +18,7 @@ cc_binary(
     copts = ["-DCRANK_IT=1"],
 )
 
-GEARLANCED_SRCS = GEARLANCE_SRCS + [
-    "gearlanced.c",
-    "geartalk.pb.c",
-    "geartalk.pb.h",
-]
+GEARLANCED_SRCS = GEARLANCE_SRCS + ["gearlanced.c"]
 GEARLANCED_OPTS = [
     "-DNO_MAIN=1",
     "-DPARSE_STDIN=1",
@@ -32,52 +28,12 @@ cc_binary(
     name = "gearlanced",
     srcs = GEARLANCED_SRCS,
     copts = GEARLANCED_OPTS,
-    deps = ["@com_github_nanopb_nanopb//:nanopb"],
 )
 
 cc_binary(
     name = "cranklanced",
     srcs = GEARLANCED_SRCS,
     copts = GEARLANCED_OPTS + ["-DCRANK_IT=1"],
-    deps = ["@com_github_nanopb_nanopb//:nanopb"],
-)
-
-# nanopb and Python (for tests) code generation for geartalk.proto
-
-genrule(
-    name = "geartalk_nanopb_codegen",
-    srcs = ["geartalk.proto", "geartalk.options"],
-    outs = ["geartalk.pb.c", "geartalk.pb.h"],
-    tools = [
-        "@com_github_nanopb_nanopb//:protoc-gen-nanopb",
-        "@com_google_protobuf//:protoc",
-    ],
-    cmd = """
-        ./$(location @com_google_protobuf//:protoc) \
-          --plugin=protoc-gen-nanopb=$(location @com_github_nanopb_nanopb//:protoc-gen-nanopb) \
-          --nanopb_out=$$(dirname $(location geartalk.pb.c)) \
-          -Igeartalk.proto=$(location geartalk.proto) geartalk.proto; \
-        sed -i -e 's|#include <pb.h>|#include \"pb.h\"|' $(location geartalk.pb.h)
-    """,
-)
-
-# TODO(fis): use Bazel native py_proto_library once it exists
-genrule(
-    name = "geartalk_py_proto_codegen",
-    srcs = ["geartalk.proto"],
-    outs = ["geartalk_pb2.py"],
-    tools = ["@com_google_protobuf//:protoc"],
-    cmd = """
-        ./$(location @com_google_protobuf//:protoc) \
-          --python_out=$$(dirname $(location geartalk_pb2.py)) \
-          -Igeartalk.proto=$(location geartalk.proto) geartalk.proto
-    """,
-)
-
-py_library(
-    name = "geartalk_py_proto",
-    srcs = ["geartalk_pb2.py"],
-    deps = ["@com_google_protobuf//:protobuf_python"],
 )
 
 # obsolete binaries

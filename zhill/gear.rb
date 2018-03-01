@@ -1,8 +1,6 @@
 require 'protobuf/message/decoder'
 require 'protobuf/message/field'
 
-require_relative 'geartalk.pb'
-
 # Minimal Ruby wrapper class around the gearlanced tool.
 
 class Gear
@@ -35,39 +33,43 @@ class Gear
   # and the possibly empty list of Statistics messages (key :stats)
   # returned by cranklanced.
   def test(code)
-    put(Geartalk::Action::TEST)
-    @gear_in.write(code.tr("\0", ' ') + "\0")
+    @gear_in.write([0x01, code.length].pack('I<2'))
+    @gear_in.write(code)
     @gear_in.flush
 
-    reply = get(Geartalk::Reply.new)
-    raise GearException, reply.error unless reply.ok
+    ok, reply = get()
+    raise GearException, reply or 'geartalk error' unless ok
+
+    min_tape, max_tape = reply[1].ord, reply[2].ord
+    tapes = max_tape - min_tape + 1
 
     Array.new(@size) do
-      stats = nil
-      if reply.with_statistics
-        stats_count = ::Protobuf::Decoder::read_varint(@gear_out)
-        stats = Array.new(stats_count) do
-          s = get(Geartalk::Statistics.new)
-          {
-            :cycles => s.cycles,
-            :tape_abs => s.tape_abs,
-            :tape_max => s.tape_max,
-            :heat_position => s.heat_position.to_a,
-          }
-        end
-      end
+      # TODO: fix statistics
+      #stats = nil
+      #if reply.with_statistics
+      #  stats_count = ::Protobuf::Decoder::read_varint(@gear_out)
+      #  stats = Array.new(stats_count) do
+      #    s = get(Geartalk::Statistics.new)
+      #    {
+      #      :cycles => s.cycles,
+      #      :tape_abs => s.tape_abs,
+      #      :tape_max => s.tape_max,
+      #      :heat_position => s.heat_position.to_a,
+      #    }
+      #  end
+      #end
 
-      joust = get(Geartalk::Joust.new)
-      if joust.sieve_points.length == 0 || joust.kettle_points.length != joust.sieve_points.length
-        raise GearException, "gearlanced produced gibberish: #{joust.inspect}"
-      end
+      joust = @gear_out.read(2 * tapes)
+      raise GearException, 'short points data' unless joust.length == 2 * tapes
+      joust = joust.unpack('c*')
 
-      reply.with_statistics ?
-        {
-          :points => joust.sieve_points + joust.kettle_points,
-          :cycles => joust.cycles,
-          :stats => stats,
-        } : joust.sieve_points + joust.kettle_points
+      joust
+      #reply.with_statistics ?
+      #  {
+      #    :points => joust.sieve_points + joust.kettle_points,
+      #    :cycles => joust.cycles,
+      #    :stats => stats,
+      #  } : joust.sieve_points + joust.kettle_points
     end
   end
 
@@ -75,12 +77,12 @@ class Gear
   #
   # The indices run from 0 to #size-1.
   def set(i, code)
-    put(Geartalk::Action::SET, i)
-    @gear_in.write(code.tr("\0", ' ') + "\0")
+    @gear_in.write([0x02 | (i << 8), code.length].pack('I<2'))
+    @gear_in.write(code)
     @gear_in.flush
 
-    reply = get(Geartalk::Reply.new)
-    raise GearException, reply.error unless reply.ok
+    ok, reply = get()
+    raise GearException, reply or 'geartalk error' unless ok
   end
 
   # Unsets the +i+'th program.
@@ -89,30 +91,22 @@ class Gear
   # the corresponding program slot to contain the initial "loses to
   # everything" dummy program.
   def unset(i)
-    put(Geartalk::Action::UNSET, i)
+    @gear_in.write([0x03 | (i << 8), 0].pack('I<2'))
     @gear_in.flush
 
-    reply = get(Geartalk::Reply.new)
-    raise GearException, reply.error unless reply.ok
+    ok, reply = get()
+    raise GearException, reply or 'geartalk error' unless ok
   end
 
-  # Sends a protobuf command message to the gearlanced process.
-  def put(action, index=nil)
-    cmd = Geartalk::Command.new
-    cmd.action = action
-    cmd.index = index unless index.nil?
-    bytes = cmd.serialize_to_string
-    len = ::Protobuf::Field::VarintField.encode(bytes.length)
-    @gear_in.write(len)
-    @gear_in.write(bytes)
-  end
-  private :put
-
-  # Receives a protobuf message from the gearlanced process.
-  def get(message)
-    len = ::Protobuf::Decoder::read_varint(@gear_out)
-    bytes = @gear_out.read(len)
-    message.parse_from_string(bytes)
+  # Receives a reply message from the gearlanced process.
+  def get()
+    header = @gear_out.read(4)
+    raise GearException, 'short reply header' unless header.length == 4
+    if (header[0].ord & 0x01) == 0
+      error = @gear_out.read(header.unpack('I<') >> 8)
+      return false, error
+    end
+    return true, header
   end
   private :get
 end

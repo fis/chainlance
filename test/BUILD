@@ -20,10 +20,6 @@ py_library(
 py_library(
     name = "geartalk",
     srcs = ["geartalk.py"],
-    deps = [
-        "//:geartalk_py_proto",
-        "@com_google_protobuf//:protobuf_python",
-    ],
 )
 
 py_binary(
@@ -32,22 +28,3 @@ py_binary(
     deps = [":source"],
     data = ["egojsout.js"],
 )
-
-#sh_binary(
-#    name = "warriors",
-#    srcs = ["warriors.sh"],
-#    data = glob(["warriors-code/**/*.bfjoust"]) + ["warriors.idx"],
-#)
-
-#genrule(
-#    name = "reference",
-#    srcs = ["egojsout.js"],
-#    outs = ["reference.out"],
-#    tools = [":warriors"],
-#    cmd = """
-#        ./$(location :warriors) | while read left right; do \
-#          nodejs $(location egojsout.js) "$$left" "$$right"; \
-#        done > $(location reference.out)
-#    """,
-#)
-
