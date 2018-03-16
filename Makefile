@@ -1,5 +1,5 @@
 CC = gcc
-COPTS = -std=gnu11 -Wall -Wextra -O2 -march=native -flto
+COPTS = -std=gnu11 -Wall -Wextra -O2 -march=native -flto -g
 
 .PHONY : all clean test rdoc
 
