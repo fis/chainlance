@@ -157,6 +157,10 @@ To use:
           wrenchlance-stub.c wrenchlance-header.s -x assembler - \
           -o right
     ./right left.bin
+    # or: ./right left1.bin left2.bin ...
+
+If you pass in multiple left programs, you'll get the results of the
+match with the right program against all of them.
 
 Etymology: Something you apply torque with.
 
