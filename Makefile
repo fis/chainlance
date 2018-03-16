@@ -1,61 +1,58 @@
-GEARLANCES = gearlance cranklance
-GEARLANCEDS = gearlanced cranklanced
-PROGS = $(GEARLANCES) $(GEARLANCEDS) genelance chainlance torquelance torquelance-compile wrenchlance-left wrenchlance-right
-PARSER = parser.c parser.h common.c common.h
-GCC = gcc -std=gnu99 -O2 -fwhole-program -march=native -Wall -Wextra
+CC = gcc
+COPTS = -std=gnu11 -Wall -Wextra -O2 -march=native -flto
 
 .PHONY : all clean test rdoc
 
-all: $(PROGS) zhill/geartalk.pb.rb
+all: build/gearlance build/cranklance build/gearlanced build/cranklanced build/genelance build/chainlance build/torquelance build/torquelance-compile build/wrenchlance-left build/wrenchlance-right
+
+build/.dir:
+	mkdir -p build
+	touch $@
 
 # Currently active lances:
 
-$(GEARLANCES): %: %.c gearlance.c $(PARSER)
-	$(GCC) -o $@ $<
+GEARLANCE_SRCS = gearlance.c common.c parser.c
+GEARLANCE_DEPS = gearlance.h common.h parser.h
 
-$(GEARLANCEDS): %: %.c gearlanced.c gearlance.c geartalk.pb.c geartalk.pb.h $(PARSER)
-	$(GCC) -Inanopb -DPB_FIELD_16BIT=1 -o $@ $<
+GEARLANCED_SRCS = gearlanced.c $(GEARLANCE_SRCS)
+GEARLANCED_DEPS = $(GEARLANCE_DEPS)
 
-genelance: genelance.c gearlance.c $(PARSER)
-	$(GCC) -o $@ $<
+build/gearlance: $(GEARLANCE_SRCS) $(GEARLANCE_DEPS) build/.dir
+	$(CC) $(COPTS) -o $@ $(GEARLANCE_SRCS)
 
-# Protobuf generation for the GearTalk™ protocol:
+build/cranklance: $(GEARLANCE_SRCS) $(GEARLANCE_DEPS) build/.dir
+	$(CC) $(COPTS) -DCRANK_IT=1 -o $@ $(GEARLANCE_SRCS)
 
-%.pb.c %.pb.h: %.proto %.options
-	protoc --plugin=protoc-gen-nanopb=nanopb/generator/protoc-gen-nanopb --nanopb_out=. $<
+build/gearlanced: $(GEARLANCED_SRCS) $(GEARLANCED_DEPS)
+	$(CC) $(COPTS) -DNO_MAIN=1 -DPARSE_STDIN=1 -Ibuild -o $@ $(GEARLANCED_SRCS)
 
-zhill/geartalk.pb.rb: geartalk.proto
-	rprotoc --out zhill geartalk.proto
+build/cranklanced: $(GEARLANCED_SRCS) $(GEARLANCED_DEPS)
+	$(CC) $(COPTS) -DNO_MAIN=1 -DPARSE_STDIN=1 -Ibuild -DCRANK_IT=1 -o $@ $(GEARLANCED_SRCS)
+
+build/genelance: genelance.c $(GEARLANCE_SRCS) $(GEARLANCE_DEPS)
+	$(CC) $(COPTS) -DNO_MAIN=1 -DPARSE_NEWLINE_AS_EOF=1 genelance.c $(GEARLANCE_SRCS)
 
 # More or less outdated lances:
 
-chainlance: chainlance.c
-	gcc -o chainlance -std=gnu99 -g -Wall chainlance.c
+build/chainlance: chainlance.c build/.dir
+	$(CC) $(COPTS) -o $@ chainlance.c
 
-torquelance: torquelance.c torquelance-header.o common.c common.h parser.h
-	$(GCC) -o $@ $< torquelance-header.o
+build/torquelance: torquelance.c torquelance-header.s common.c common.h parser.h build/.dir
+	$(CC) $(COPTS) -o $@ torquelance.c torquelance-header.s common.c
 
-torquelance-compile: torquelance-compile.c torquelance-ops.o $(PARSER)
-	$(GCC) -o $@ $< torquelance-ops.o
+build/torquelance-compile: torquelance-compile.c torquelance-ops.s common.c common.h parser.c parser.h build/.dir
+	$(CC) $(COPTS) -DPARSER_EXTRAFIELDS='unsigned code;' -o $@ torquelance-compile.c torquelance-ops.s common.c parser.c
 
-wrenchlance-left: wrenchlance-left.c wrenchlance-ops.o $(PARSER)
-	$(GCC) -o $@ $< wrenchlance-ops.o
+build/wrenchlance-left: wrenchlance-left.c wrenchlance-ops.s common.c common.h parser.c parser.h build/.dir
+	$(CC) $(COPTS) -DPARSER_EXTRAFIELDS='unsigned code;' -o $@ wrenchlance-left.c wrenchlance-ops.s common.c parser.c
 
-wrenchlance-right: wrenchlance-right.c $(PARSER)
-	$(GCC) -o $@ $<
+build/wrenchlance-right: wrenchlance-right.c common.c common.h parser.c parser.h build/.dir
+	$(CC) $(COPTS) -o $@ wrenchlance-right.c common.c parser.c
 
 # Phony targets:
 
 clean:
-	$(RM) $(PROGS)
-	$(RM) torquelance-header.o torquelance-ops.o wrenchlance-ops.o
-	$(RM) geartalk.pb.c geartalk.pb.h zhill/geartalk.pb.rb
+	$(RM) -r build
 
 rdoc:
 	rdoc -o rdoc zhillbot.rb zhill
-
-# TODO: obsoleted test code, see test/ instead
-test: chainlance
-	./chainlance test.b test.b > test.asm
-	nasm -o test.o -f elf64 -g -Ox test.asm
-	gcc -g -o test test.o

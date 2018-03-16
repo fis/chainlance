@@ -1,3 +1,5 @@
+'use strict';
+
 var ProgPlot = {
     prog: 0
 };

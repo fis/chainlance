@@ -258,6 +258,3 @@ static void compile(struct oplist *ops, int kettle)
 		}
 	}
 }
-
-#include "parser.c"
-#include "common.c"

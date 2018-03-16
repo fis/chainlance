@@ -28,8 +28,6 @@
 #include <unistd.h>
 
 #include "common.h"
-
-#define PARSER_EXTRAFIELDS unsigned code;
 #include "parser.h"
 
 /* compilation */
@@ -64,7 +62,7 @@ int main(int argc, char *argv[])
 
 	/* flip polarity if required */
 
-	if (strcmp(argv[3], "B2"))
+	if (strcmp(argv[3], "B2") == 0)
 	{
 		struct op *opl = ops->ops;
 
@@ -86,7 +84,7 @@ int main(int argc, char *argv[])
 		[OP_WAIT] = '.', [OP_LOOP1] = '[', [OP_LOOP2] = ']',
 		[OP_REP1] = '(', [OP_REP2] = ')',
 		[OP_IREP1] = '(', [OP_INNER1] = '{', [OP_INNER2] = '}', [OP_IREP2] = ')',
-	};
+  };
 	for (int at = 0; at < ops->len; at++)
 	{
 		struct op *op = &ops->ops[at];
@@ -114,46 +112,51 @@ int main(int argc, char *argv[])
 /* compilation, impl */
 
 extern const char
-	op_incA, size_op_incA, op_incB, size_op_incB,
-	op_decA, size_op_decA, op_decB, size_op_decB,
-	op_leftA, size_op_leftA, op_leftB, size_op_leftB,
-	op_rightA, size_op_rightA, op_rightB, size_op_rightB,
-	op_waitA, size_op_waitA, op_waitB, size_op_waitB,
-	op_loop1A, op_loop1A_rel, size_op_loop1A,
-	op_loop1B, op_loop1B_rel, size_op_loop1B,
-	op_loop2A, op_loop2A_rel, size_op_loop2A,
-	op_loop2B, op_loop2B_rel, size_op_loop2B,
-	op_rep1A, op_rep1A_count, size_op_rep1A,
-	op_rep1B, op_rep1B_count, size_op_rep1B,
-	op_rep2A, op_rep2A_rel, size_op_rep2A,
-	op_rep2B, op_rep2B_rel, size_op_rep2B,
-	op_inner2A, size_op_inner2A, op_inner2B, size_op_inner2B,
-	op_irep2A, op_irep2A_rel, op_irep2A_count, size_op_irep2A,
-	op_irep2B, op_irep2B_rel, op_irep2B_count, size_op_irep2B,
-	op_doneA, size_op_doneA, op_doneB, size_op_doneB;
+	op_incA, op_incB, op_decA, op_decB,
+	op_leftA, op_leftB, op_rightA, op_rightB,
+	op_waitA, op_waitB,
+	op_loop1A, op_loop1B, op_loop2A, op_loop2B,
+	op_rep1A, op_rep1B, op_rep2A, op_rep2B,
+	op_inner2A, op_inner2B, op_irep2A, op_irep2B,
+	op_doneA, op_doneB;
 
-#define AV(s) ((unsigned)(unsigned long)(s))
+extern const unsigned
+	size_op_incA, size_op_incB, size_op_decA, size_op_decB,
+	size_op_leftA, size_op_leftB, size_op_rightA, size_op_rightB,
+	size_op_waitA, size_op_waitB,
+	size_op_loop1A, size_op_loop1B, size_op_loop2A, size_op_loop2B,
+	size_op_rep1A, size_op_rep1B, size_op_rep2A, size_op_rep2B,
+	size_op_inner2A, size_op_inner2B, size_op_irep2A, size_op_irep2B,
+	size_op_doneA, size_op_doneB;
+
+extern const unsigned
+	rel_op_loop1A, rel_op_loop1B, rel_op_loop2A, rel_op_loop2B,
+	rel_op_rep2A, rel_op_rep2B, rel_op_irep2A, rel_op_irep2B;
+
+extern const unsigned
+	count_op_rep1A, count_op_rep1B, count_op_irep2A, count_op_irep2B;
 
 struct jitnfo
 {
-	const char *code, *size, *rel, *count;
+	const char *code;
+	const unsigned *size, *rel, *count;
 };
 
 #define OPTABLE(p) {	  \
-		[OP_INC]    = { &op_inc##p, &size_op_inc##p, 0, 0 }, \
-		[OP_DEC]    = { &op_dec##p, &size_op_dec##p, 0, 0 }, \
-		[OP_LEFT]   = { &op_left##p, &size_op_left##p, 0, 0 }, \
-		[OP_RIGHT]  = { &op_right##p, &size_op_right##p, 0, 0 }, \
-		[OP_WAIT]   = { &op_wait##p, &size_op_wait##p, 0, 0 }, \
-		[OP_LOOP1]  = { &op_loop1##p, &size_op_loop1##p, &op_loop1##p##_rel, 0 }, \
-		[OP_LOOP2]  = { &op_loop2##p, &size_op_loop2##p, &op_loop2##p##_rel, 0 }, \
-		[OP_REP1]   = { &op_rep1##p, &size_op_rep1##p, 0, &op_rep1##p##_count }, \
-		[OP_REP2]   = { &op_rep2##p, &size_op_rep2##p, &op_rep2##p##_rel, 0 }, \
-		[OP_IREP1]  = { &op_rep1##p, &size_op_rep1##p, 0, &op_rep1##p##_count }, \
-		[OP_INNER1] = { &op_rep2##p, &size_op_rep2##p, &op_rep2##p##_rel, 0 }, \
-		[OP_INNER2] = { &op_inner2##p, &size_op_inner2##p, 0, 0 }, \
-		[OP_IREP2]  = { &op_irep2##p, &size_op_irep2##p, &op_irep2##p##_rel, &op_irep2##p##_count }, \
-		[OP_DONE]   = { &op_done##p, &size_op_done##p, 0, 0 }, \
+		[OP_INC]    = { .code = &op_inc##p, .size = &size_op_inc##p }, \
+		[OP_DEC]    = { .code = &op_dec##p, .size = &size_op_dec##p }, \
+		[OP_LEFT]   = { .code = &op_left##p, .size = &size_op_left##p }, \
+		[OP_RIGHT]  = { .code = &op_right##p, .size = &size_op_right##p }, \
+		[OP_WAIT]   = { .code = &op_wait##p, .size = &size_op_wait##p }, \
+		[OP_LOOP1]  = { .code = &op_loop1##p, .size = &size_op_loop1##p, .rel = &rel_op_loop1##p }, \
+		[OP_LOOP2]  = { .code = &op_loop2##p, .size = &size_op_loop2##p, .rel = &rel_op_loop2##p }, \
+		[OP_REP1]   = { .code = &op_rep1##p, .size = &size_op_rep1##p, .count = &count_op_rep1##p }, \
+		[OP_REP2]   = { .code = &op_rep2##p, .size = &size_op_rep2##p, .rel = &rel_op_rep2##p }, \
+		[OP_IREP1]  = { .code = &op_rep1##p, .size = &size_op_rep1##p, .count = &count_op_rep1##p }, \
+		[OP_INNER1] = { .code = &op_rep2##p, .size = &size_op_rep2##p, .rel = &rel_op_rep2##p }, \
+		[OP_INNER2] = { .code = &op_inner2##p, .size = &size_op_inner2##p }, \
+		[OP_IREP2]  = { .code = &op_irep2##p, .size = &size_op_irep2##p, .rel = &rel_op_irep2##p, .count = &count_op_irep2##p }, \
+		[OP_DONE]   = { .code = &op_done##p, .size = &size_op_done##p }, \
 	}
 
 static struct jitnfo optable[2][OP_MAX] = {
@@ -172,7 +175,7 @@ static char *compile(struct oplist *ops, unsigned *outsize, unsigned mode_B)
 	{
 		struct op *op = &opl[at];
 		op->code = size;
-		size += AV(optable[mode_B][op->type].size);
+		size += *optable[mode_B][op->type].size;
 	}
 
 	*outsize = size;
@@ -188,21 +191,18 @@ static char *compile(struct oplist *ops, unsigned *outsize, unsigned mode_B)
 		struct op *op = &opl[at];
 		struct jitnfo *nfo = &optable[mode_B][op->type];
 
-		memcpy(base + op->code, nfo->code, AV(nfo->size));
+		memcpy(base + op->code, nfo->code, *nfo->size);
 
-		if (AV(nfo->rel))
+		if (nfo->rel)
 		{
 			char *target = base + opl[op->match+1].code;
-			int disp = target - (base + op->code + AV(nfo->rel) + 4);
-			*(int *)(base + op->code + AV(nfo->rel)) = disp;
+			int disp = target - (base + op->code + *nfo->rel + 4);
+			*(int *)(base + op->code + *nfo->rel) = disp;
 		}
 
-		if (AV(nfo->count))
-			*(unsigned *)(base + op->code + AV(nfo->count)) = op->count;
+		if (nfo->count)
+			*(unsigned *)(base + op->code + *nfo->count) = op->count;
 	}
 
 	return base;
 }
-
-#include "parser.c"
-#include "common.c"

@@ -1,3 +1,5 @@
+'use strict';
+
 var Cycles = {
     cfg: 0,
 };

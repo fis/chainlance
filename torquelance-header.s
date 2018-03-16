@@ -15,10 +15,6 @@
 
         .set MAXCYCLES, 100000
 
-        .macro size sym
-        .set size_\sym, .-\sym
-        .endm
-
         /*
          * int header(unsigned long len {%rdi}, char *tape {%rsi},
          *            char *pA {rdx}, char *pB {rcx},
@@ -104,7 +100,7 @@ fini:
         addq $(6*8+16), %rsp
         retq
 
-        size header
+header_size: .int .-header
 
         .global header
-        .global size_header
+        .global header_size

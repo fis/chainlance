@@ -45,9 +45,8 @@ typedef int jitfunc(unsigned long len, unsigned char *tape,
                     char *progA, char *progB,
                     unsigned *repSA, unsigned *repSB);
 
-#define AV(s) ((unsigned)(unsigned long)&(s))
-
-extern const char header, size_header;
+extern const char header;
+extern const unsigned header_size;
 
 int main(int argc, char *argv[])
 {
@@ -75,7 +74,7 @@ int main(int argc, char *argv[])
 
 	/* allocate executable memory and prepare code */
 
-	unsigned total = AV(size_header) + size[0] + size[1] + size[2];
+	unsigned total = header_size + size[0] + size[1] + size[2];
 
 	char *base = mmap(0, total, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
 	if (base == MAP_FAILED)
@@ -83,12 +82,12 @@ int main(int argc, char *argv[])
 	jitfunc *code = (jitfunc *)base;
 
 	char *pbase[3] = {
-		base + AV(size_header),
-		base + AV(size_header) + size[0],
-		base + AV(size_header) + size[0] + size[1]
+		base + header_size,
+		base + header_size + size[0],
+		base + header_size + size[0] + size[1]
 	};
 
-	memcpy(base, &header, AV(size_header));
+	memcpy(base, &header, header_size);
 
 	for (int prog = 0; prog < 3; prog++)
 	{
@@ -133,5 +132,3 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
-
-#include "common.c"

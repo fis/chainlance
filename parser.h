@@ -25,6 +25,7 @@
 #define CRANKLANCE_PARSER_H 1
 
 #include <stddef.h>
+#include <stdint.h>
 #include <setjmp.h>
 
 #define MAXCYCLES 100000
@@ -76,6 +77,12 @@ void fail(const char *fmt, ...);
 extern char fail_msg[256];
 extern jmp_buf fail_buf;
 
-struct oplist *parse(int fd);
+#ifdef PARSE_STDIN
+typedef uint32_t *stream_id;
+#else
+typedef int stream_id;
+#endif
+
+struct oplist *parse(stream_id input);
 
 #endif /* !CRANKLANCE_PARSER_H */

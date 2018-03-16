@@ -1,0 +1,70 @@
+major_version: "local"
+minor_version: ""
+default_target_cpu: "native"
+
+default_toolchain {
+  cpu: "native"
+  toolchain_identifier: "local"
+}
+
+toolchain {
+  toolchain_identifier: "local"
+  abi_version: "local"
+  abi_libc_version: "local"
+  builtin_sysroot: ""
+  compiler: "gcc"
+  host_system_name: "local"
+  needsPic: false
+  supports_gold_linker: false
+  supports_incremental_linker: false
+  supports_fission: false
+  supports_interface_shared_objects: false
+  supports_normalizing_ar: false
+  supports_start_end_lib: false
+  target_libc: "local"
+  target_cpu: "native"
+  target_system_name: "local"
+  compiler_flag: "-U_FORTIFY_SOURCE"
+  compiler_flag: "-Wall"
+  compiler_flag: "-Wextra"
+  compiler_flag: "-B/usr/bin"
+  compiler_flag: "-g0"
+  compiler_flag: "-DNDEBUG"
+  compiler_flag: "-O2"
+  compiler_flag: "-march=native"
+  compiler_flag: "-ffunction-sections"
+  compiler_flag: "-fdata-sections"
+  compiler_flag: "-flto"
+  linker_flag: "-Wl,--gc-sections"
+  linker_flag: "-B/usr/bin"
+  linker_flag: "-pass-exit-codes"
+  linker_flag: "-flto"
+  linker_flag: "-fuse-linker-plugin"
+  linker_flag: "-O2"
+  linker_flag: "-march=native"
+  cxx_builtin_include_directory: "/usr/include/c++/7"
+  cxx_builtin_include_directory: "/usr/include/x86_64-linux-gnu/c++/7"
+  cxx_builtin_include_directory: "/usr/include/c++/7/backward"
+  cxx_builtin_include_directory: "/usr/lib/gcc/x86_64-linux-gnu/7/include"
+  cxx_builtin_include_directory: "/usr/local/include"
+  cxx_builtin_include_directory: "/usr/lib/gcc/x86_64-linux-gnu/7/include-fixed"
+  cxx_builtin_include_directory: "/usr/include/x86_64-linux-gnu"
+  cxx_builtin_include_directory: "/usr/include"
+  objcopy_embed_flag: "-I"
+  objcopy_embed_flag: "binary"
+  unfiltered_cxx_flag: "-fno-canonical-system-headers"
+  unfiltered_cxx_flag: "-Wno-builtin-macro-redefined"
+  unfiltered_cxx_flag: "-D__DATE__=\"redacted\""
+  unfiltered_cxx_flag: "-D__TIMESTAMP__=\"redacted\""
+  unfiltered_cxx_flag: "-D__TIME__=\"redacted\""
+  tool_path { name: "ld" path: "/usr/bin/ld" }
+  tool_path { name: "cpp" path: "/usr/bin/cpp" }
+  tool_path { name: "dwp" path: "/usr/bin/dwp" }
+  tool_path { name: "gcov" path: "/usr/bin/gcov" }
+  tool_path { name: "nm" path: "/usr/bin/nm" }
+  tool_path { name: "objcopy" path: "/usr/bin/objcopy" }
+  tool_path { name: "objdump" path: "/usr/bin/objdump" }
+  tool_path { name: "strip" path: "/usr/bin/strip" }
+  tool_path { name: "gcc" path: "/usr/bin/gcc" }
+  tool_path { name: "ar" path: "/usr/bin/ar" }
+}

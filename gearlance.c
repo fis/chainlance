@@ -26,12 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "common.h"
-#include "parser.h"
-
-#define MINTAPE 10
-#define MAXTAPE 30
-#define NTAPES (MAXTAPE - MINTAPE + 1)
+#include "gearlance.h"
 
 /* #define TRACE 1 */
 
@@ -41,7 +36,7 @@
 #define CRANK(x) /* no action */
 #endif
 
-static int scores[2][MAXTAPE+1];
+int scores[2][MAXTAPE+1];
 
 #ifdef CRANK_IT
 static struct {
@@ -53,30 +48,6 @@ static struct {
 	unsigned heat_position[2][MAXTAPE];
 } xstats = { {{0}}, {{0}} };
 #endif
-
-/* actual interpretation */
-
-enum core_action
-{
-	core_compile_a,
-	core_compile_b,
-	core_run, /* note: this action flips polarity of program B */
-};
-
-union opcode
-{
-	void *xt;
-	union opcode *match;
-	int count;
-};
-
-struct opcodes
-{
-	unsigned len;
-	union opcode ops[];
-};
-
-static struct opcodes *core(enum core_action act, struct oplist *ops, struct opcodes *codeA, struct opcodes *codeB);
 
 /* main application */
 
@@ -127,8 +98,8 @@ int main(int argc, char *argv[])
 
 	/* compile and run them */
 
-	struct opcodes *codeA = core(core_compile_a, opsA, 0, 0);
-	struct opcodes *codeB = core(core_compile_b, opsB, 0, 0);
+	union opcode *codeA = core(core_compile_a, opsA, 0, 0);
+	union opcode *codeB = core(core_compile_b, opsB, 0, 0);
 
 	core(core_run, 0, codeA, codeB);
 
@@ -168,7 +139,7 @@ int main(int argc, char *argv[])
 
 static unsigned char tape[MAXTAPE];
 
-static struct opcodes *core(enum core_action act, struct oplist *ops, struct opcodes *codeA, struct opcodes *codeB)
+union opcode *core(enum core_action act, struct oplist *ops, union opcode *codeA, union opcode *codeB)
 {
 	static void * const xtableA[OP_MAX] = {
 		[OP_INC] = &&op_incA, [OP_DEC] = &&op_decA,
@@ -216,10 +187,10 @@ static struct opcodes *core(enum core_action act, struct oplist *ops, struct opc
 			}
 		}
 
-		struct opcodes *code = smalloc(sizeof *code + len * sizeof *code->ops);
+		union opcode *code = smalloc(len * sizeof *code);
 
 		void * const *xtable = (act == core_compile_a ? xtableA : xtableB);
-		union opcode *opc = code->ops;
+		union opcode *opc = code;
 
 		for (unsigned at = 0; at < ops->len; at++)
 		{
@@ -231,7 +202,7 @@ static struct opcodes *core(enum core_action act, struct oplist *ops, struct opc
 			switch (op->type)
 			{
 			case OP_LOOP1: case OP_LOOP2: case OP_REP2: case OP_INNER1:
-				opc->match = &code->ops[offsets[op->match+1]];
+				opc->match = &code[offsets[op->match+1]];
 				opc++;
 				break;
 			case OP_REP1: case OP_IREP1:
@@ -240,7 +211,7 @@ static struct opcodes *core(enum core_action act, struct oplist *ops, struct opc
 				break;
 			case OP_IREP2:
 				opc->count = op->count; opc++;
-				opc->match = &code->ops[offsets[op->match+1]]; opc++;
+				opc->match = &code[offsets[op->match+1]]; opc++;
 				break;
 			default: /* no extra operands */
 				break;
@@ -288,7 +259,7 @@ static struct opcodes *core(enum core_action act, struct oplist *ops, struct opc
 	ret = &&sym; \
 	for (tapesize = MINTAPE; tapesize <= MAXTAPE; tapesize++) \
 	{ \
-		ipA = &codeA->ops[0], ipB = &codeB->ops[0]; \
+		ipA = &codeA[0], ipB = &codeB[0]; \
 	  \
 		memset(tape, 0, tapesize); \
 		ptrA = &tape[0], ptrB = &tape[tapesize-1]; \
@@ -314,7 +285,7 @@ static struct opcodes *core(enum core_action act, struct oplist *ops, struct opc
 	EXECUTE_ALL(done_normal, 0);
 
 	/* FIXME: try to make this loop not interpret all operands as xts */
-	for (union opcode *op = codeB->ops; op->xt != xtableB[OP_DONE]; op++)
+	for (union opcode *op = codeB; op->xt != xtableB[OP_DONE]; op++)
 	{
 		if (op->xt == xtableB[OP_INC]) op->xt = xtableB[OP_DEC];
 		else if (op->xt == xtableB[OP_DEC]) op->xt = xtableB[OP_INC];
@@ -345,7 +316,7 @@ nextcycle:
 		       ? ((ptrB - tape) == i ? 'X' : 'A')
 		       : ((ptrB - tape) == i ? 'B' : ' '),
 		       tape[i]);
-	printf("  dA %d  dB %d   ipA %td ipB %td   repA %d repB %d\n", deathsA, deathsB, ipA-codeA->ops, ipB-codeB->ops, repA, repB);
+	printf("  dA %d  dB %d   ipA %td ipB %td   repA %d repB %d\n", deathsA, deathsB, ipA-codeA, ipB-codeB, repA, repB);
 #endif
 
 	if (deathsA >= 2 && deathsB >= 2)
@@ -490,6 +461,3 @@ op_irep2B:
 op_doneA:
 	goto *ipB->xt;
 }
-
-#include "parser.c"
-#include "common.c"
