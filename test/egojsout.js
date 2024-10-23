@@ -158,7 +158,7 @@ var EgoJSout = new (function() {
                         count = parseInt(bfj.substring(i+1), 10);
 
                         // bug workaround
-                        if (i < 0) {
+                        if (count < 0) {
                             // if we don't do this, a stray - will be injected after ()%-1
                             // ... which can be reached, because of the semantics of such loops.
                             while (bfj[i++] !== '-');
