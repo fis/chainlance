@@ -34,6 +34,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <unistd.h>
 #include <stdio.h>
 
 #include "gearlance.h"
@@ -67,6 +68,7 @@ int main(int argc, char *argv[])
 		struct oplist *ops = parse(fd);
 		hill[i] = core(core_compile_a, ops, 0, 0);
 		opl_free(ops);
+		close(fd);
 	}
 
 	/* run the main loop */
