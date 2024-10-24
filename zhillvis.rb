@@ -7,7 +7,7 @@ require_relative 'zhill/vis'
 # a cranked hill statistics file from zhillcrank.rb.
 
 if ARGV.length < 2
-  puts "usage: #{$0} stats.bin output-directory [vis1 vis2 ...]"
+  $stdout.puts "usage: #{$0} stats.bin output-directory [vis1 vis2 ...]"
   exit
 end
 

@@ -233,7 +233,7 @@ int main(int argc, char *argv[])
 					// TODO: fake statistics for cranklance
 					for (unsigned pol = 0; pol < 2; pol++)
 						for (unsigned tlen = MINTAPE; tlen <= MAXTAPE; tlen++)
-							scores[pol][tlen] = -1;
+							scores[pol][tlen] = 1;  // always a win
 				}
 				else
 					core(core_run, 0, hill[i], code);
@@ -249,8 +249,8 @@ int main(int argc, char *argv[])
 				int sieve = i % 2, kettle = !sieve;
 				for (unsigned tlen = MINTAPE; tlen <= MAXTAPE; tlen++)
 				{
-					reply_points[0][tlen - MINTAPE] = -scores[sieve][tlen];
-					reply_points[1][tlen - MINTAPE] = -scores[kettle][tlen];
+					reply_points[0][tlen - MINTAPE] = scores[sieve][tlen];
+					reply_points[1][tlen - MINTAPE] = scores[kettle][tlen];
 				}
 
 				write_n((unsigned char*)&reply_points[0][0], sizeof reply_points);

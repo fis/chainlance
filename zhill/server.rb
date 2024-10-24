@@ -140,7 +140,7 @@ class Server
 
     if /^(?:https?|ftp):\/\// =~ code
       begin
-        open(code) do |f|
+        URI.open(code) do |f|
           code = f.read(HTTP_MAX + 1)
           raise "maximum size limit (#{HTTP_MAX} bytes) exceeded" if code.length > HTTP_MAX
         end

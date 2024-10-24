@@ -1,6 +1,3 @@
-require 'protobuf/message/decoder'
-require 'protobuf/message/field'
-
 # Minimal Ruby wrapper class around the gearlanced tool.
 
 class Gear
@@ -103,7 +100,7 @@ class Gear
     header = @gear_out.read(4)
     raise GearException, 'short reply header' unless header.length == 4
     if (header[0].ord & 0x01) == 0
-      error = @gear_out.read(header.unpack('I<') >> 8)
+      error = @gear_out.read(header.unpack('I<')[0] >> 8)
       return false, error
     end
     return true, header
