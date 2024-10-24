@@ -1,5 +1,5 @@
 CC = gcc
-COPTS = -std=gnu11 -Wall -Wextra -O2 -march=native -flto -g
+COPTS = -std=gnu11 -Wall -Wextra -O2 -march=native -flto -g -z noexecstack
 
 .PHONY : all clean test rdoc
 
@@ -30,7 +30,7 @@ build/cranklanced: $(GEARLANCED_SRCS) $(GEARLANCED_DEPS)
 	$(CC) $(COPTS) -DNO_MAIN=1 -DPARSE_STDIN=1 -Ibuild -DCRANK_IT=1 -o $@ $(GEARLANCED_SRCS)
 
 build/genelance: genelance.c $(GEARLANCE_SRCS) $(GEARLANCE_DEPS)
-	$(CC) $(COPTS) -DNO_MAIN=1 -DPARSE_NEWLINE_AS_EOF=1 genelance.c $(GEARLANCE_SRCS)
+	$(CC) $(COPTS) -DNO_MAIN=1 -DPARSE_NEWLINE_AS_EOF=1 genelance.c -o $@ $(GEARLANCE_SRCS)
 
 # More or less outdated lances:
 
