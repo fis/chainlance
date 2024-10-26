@@ -30,7 +30,7 @@ class Gear
   # and the possibly empty list of Statistics messages (key :stats)
   # returned by cranklanced.
   def test(code)
-    @gear_in.write([0x01, code.length].pack('I<2'))
+    @gear_in.write([0x01, code.bytesize].pack('I<2'))
     @gear_in.write(code)
     @gear_in.flush
 
@@ -74,7 +74,7 @@ class Gear
   #
   # The indices run from 0 to #size-1.
   def set(i, code)
-    @gear_in.write([0x02 | (i << 8), code.length].pack('I<2'))
+    @gear_in.write([0x02 | (i << 8), code.bytesize].pack('I<2'))
     @gear_in.write(code)
     @gear_in.flush
 
