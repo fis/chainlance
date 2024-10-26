@@ -1,0 +1,262 @@
+Initial decoys/tripwires
+>+>(+)*10> fourteen cycles
+Trail forwards: we need to slow down enemy rushes/pokes
+(+>)*6 plus twelve cycles = twenty six cycles
+That was rule of nine length; we're now on the first possible flag
+
+
+(
+  Something pasted many times later is the defence code
+  So it's explained once up here and then presented without explanation later
+  This code is entirely aimed at playing for a draw and can only win if the opponent
+  has a broken anti shudder code
+  (
+    Check cell one tripwire
+    <-[
+      It changed: we're either unlucky or facing a broken antishudder or full tape clear
+      Use a three cycle lock pattern that changes the cell every cycle; that gives the
+      best possible chance of a draw; three is better than two because an enemy program
+      has already broken a two cycle lock; but start with an anti two cycle pattern
+      because timer clears are popular nowadays
+      <(+-++)*256(+-+)*33333
+    ]++>
+    It's still zero: shudder for cell size minus six cycles
+    Change by the same net amount as if we had been shuddering all along
+    We need to use six rather than five cycles to get the parity correct for no change
+    So we take the opportunity to set the tripwire to 2 rather than 1 half the time
+    to reduce problems where it's confused with an enemy trail
+    (++-+)*29++++++
+
+    <--[<(+-++)*256(+-+)*33333]+>
+    (++-+)*29++++++
+  )*100000
+)*0
+
+[ plus one cycle = twenty seven cycles
+  Cell nine is nonzero
+  
+  Assume a short tape and do a fast rush
+  +++ plus three cycles = thirty cycles
+  (
+    [- plus two cycles repeated seven times = fourty four cycles
+      {
+      The cell isn't near zero: it might be the flag
+      Aim to turtle clear it
+      If it doesn't clear to zero then abandon the fast rush and defend
+      (-)*113(.-)*16(<)*7 plus one hundred fifty two cycles = one hundred ninety six cycles
+      (
+        <-[<(+-++)*256(+-+)*33333]++>(++-+)*29++++++
+        <--[<(+-++)*256(+-+)*33333]+>(++-+)*29++++++
+      )*389 plus ninety nine thousand five hundred eighty four cycles
+      = ninety nine thousand seven hundred eighty cycles
+      
+      There are two hundred twenty cycles left until the cycle limit
+      Set a decoy on the cell to the left to buy us enough time against the
+      fastest possible clear strategy /two cycle clear plus turtle/ that the
+      enemy can't win from here
+      <(+)*46 fourty seven cycles = one hundred seventy three cycles from limit
+      
+      Now clear cell ten or if it's blank eleven
+      (>)*9 ten cycles = one hundred sixty three from limit
+      We have enough time for an order seventeen turtle clear
+      [(+)*111(.+)*35]
+      >(+)*111(.+)*35
+      }
+    ]
+    >
+    The cell's near zero, so it isn't a flag
+    Do a stealthy fast rush; but when we encounter a large decoy we set a few
+    large decoys of our own to slow them down
+    ((
+        [
+          -[(+)*2[
+              +[(-)*4[
+                  -[(+)*6[
+                      +[+[+[
+                            (-)*5[-[-[(-)*3[-[-[
+                                        Unfortunately, we've lost track of our flag
+                                        So we can only safely set two decoys; one
+                                        might be a flag adjustment but at least we
+                                        won't fall off our own end
+                                        (<)*9(+)*60<(+)*60(>)*10
+                                        Our inner clear is a reverse offset clear;
+                                        but the offset is smaller than the very
+                                        large decoys some programs use so that we
+                                        can beat such decoys on one polarity
+                                        ((-)*80([-{[+.++]}][+]++>(-)*50)%900)*21
+                                      ]]]]]]]]]+>{}-
+                    ](-)*3>(-)*3](+)*3>(-)*2
+                ](+)*2>(+)*2](-)*2>(+)*1
+            ](-)*1>(-)*1](+)*1>(-)*0
+        ]
+        >
+      )%20)*20
+  )%7
+]
+
+
+If cell nine is zero: assume a long tape and defend
+
+Delete most of our decoys on the way back so that decoy skipping programs will die
+This strategy has trouble with decoy skipping programs otherwise
+(<-)*5<++< plus fourteen cycles equals fourty one cycles
+
+Defence code
+(<-[<(+-++)*256(+-+)*33333]++>(++-+)*29++++++<--[<(+-++)*256(+-+)*33333]+>(++-+)*29++++++)*18
+It's possible that the opponent is a defender who hasn't attacked yet
+If they are they'll probably beat us when they arrive
+So use /one/ of our checks to check the cell to the right of our current cell
+If it has the value plus three /where we left it/ then assume a defender and use
+counter defence measures
+<-[<(+-++)*256(+-+)*33333]++>(++-+)*29++++++>---[
+  We were attacked; we're OK to continue with our strategy
+  <(++-+)*29++++++
+  (<--[<(+-++)*256(+-+)*33333]+>(++-+)*29++++++<-[<(+-++)*256(+-+)*33333]++>(++-+)*29++++++)*370
+
+  Running this three hundred and eighty nine times total = we have spent a total of
+  ninety nine thousand six hundred twenty five cycles =
+  three hundred seventy five from the cycle limit
+  <--[<(+-++)*256(+-+)*33333]+>(++-+)*29++++++<-[<(+-++)*256(+-+)*33333]
+  plus one hundred thirty four cycles = two hundred fourty one from limit
+
+  Set a decoy to our left: this will hold up any opponent long enough to hit the
+  cycle limit if size fifty seven because the fastest way to clear it and the flag
+  is a two cycle clear then a turtle clear and that still takes too many cycles
+  (+)*57 fifty seven cycles = one hundred eighty four from limit
+
+  We still want enough time to clear one cell; this will be the third possible
+  flag cell as the first two are likely to have been cleared earlier and rule of
+  nining opponents wouldn't have hit our decoy anyway if they were any nearer
+  (>)*10 ten cycles = one hundred seventy four from limit
+
+  We have forty six cycles spare for a turtle clear so do an offset turtle of
+  order twenty three
+  (+)*105(.+)*46
+  and that's the cycle limit 
+]
+
+We're facing a defence program; a cell skipping program; a program that sets no
+decoys on tape length twelve; or a program with a size three trail
+
+First wait for a while to verify that the opponent isn't trying to zero this cell
+
+<
+(
+  [
+    {
+    It isn't; it's a true defence program
+    Start by laying decoys on all nonzero cells until we meet the opponent
+    >
+    (
+      [
+        Either we've reached the opponent's decoys or they cleared our tripwire
+        while we were setting a decoy; stop laying decoys now and start rushing
+        but cautiously
+        
+        We start with a small decoy "reservoir" of one hundred
+        Clear cells with an offset of five; spending one reservoir entry for
+        each clear; until we hit zero; offset is unconditional to beat vibration
+        programs /don't skip ahead on zero!/
+        
+        This lets us get through many small decoys while keeping control of our
+        control flow no matter what the opponent does
+        (+++++
+          (
+            [
+              -
+              {
+              The reservoir ran out; we're past any small decoys and can safely
+              assume large ones from here on out
+              
+              We use the golden ratio based clear algorithm from preparation;
+              except adjusted to use a three cycle clear
+
+              (                  
+                 ([.+{. ([.+{. ([.+{. ([.-{. ([.-{. ([.-{.
+                 ([.+{. ([.+{. ([.+{. ([.-{. ([.-{. ([.-{.
+                 ([.+{. ([.+{. ([.+{. ([.-{. ([.-{. ([.-{.
+                 ([.+{. ([.+{. ([.+{. ([.-{. ([.-{. ([.-{.
+                 ([.+{. ([.+{. ([.+{. ([.-{. ([.-{. ([.-{.
+                 ([.+{. ([.+{. ([.+{. ([.-{. ([.-{. ([.-{.
+                 ([.+{. ([.+{. ([.+{. ([.-{. ([.-{. ([.-{.
+                 ([.+{. ([.+{. ([.+{. ([.-{. ([.-{. ([.-{.
+                 ([.+{. ([.+{. ([.+{. ([.-{. ([.-{. ([.-{.
+                 ([.+{. ([.+{. ([.+{. ([.-{. ([.-{. ([.-{.
+                 ([.+{. ([.+{. ([.+{. ([.-{. ([.-{. ([.-{.
+                 ([.+{. ([.+{. ([.+{. ([.-{. ([.-{. ([.-{.
+                 ([.+{. ([.+{. ([.+{. ([.-{. ([.-{. ([.-{.
+                 ([.+{. ([.+{. ([.+{. ([.-{. ([.-{. ([.-{.
+                 ([.+{. ([.+{. ([.+{. ([.-{. ([.-{. ([.-{.
+                 ([.+{. ([.+{. ([.+{. ([.-{. ([.-{. ([.-{.
+                 ([.+{. ([.+{. ([.+{. ([.-{. ([.-{. ([.-{.
+                 ([.+{. ([.+{. ([.+{. ([.-{. ([.-{. ([.-{.
+                 ([.+{. ([.+{. ([.+{. ([.-{. ([.-{. ([.-{.
+                 ([.+{. ([.+{. ([.+{. ([.-{. ([.-{. ([.-{.
+                 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621
+                 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621
+                 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621
+                 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621
+                 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621
+                 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621
+                 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621
+                 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621
+                 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621
+                 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621
+                 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621
+                 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621
+                 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621
+                 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621
+                 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621
+                 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621
+                 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621
+                 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621
+                 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621
+                 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621 }][<+[-]]>)%621
+              )*10000
+              }
+            ]
+            [
+              Anti shudder / vibration: very important here!
+              ..+++++-------[..+++++-------]
+            ]
+            Now we can move on safely
+            >+++++
+          )%100
+        )*100
+      ]
+      >++<(+)*128>--
+    )*29
+    }
+  ]
+  Ugh; it is an attack program; we'd locked it but it isn't locked any more
+  
+  If we're fast enough we can set up a decoy on cell one to buy some time;
+  the opponent only just moved on and the cell is currently positive so we
+  can set up a decoy before the opponent can clear
+  <(+)*160
+  
+  Use our time to clear cell eleven and perhaps cell twelve if cell eleven
+  didn't take long
+  
+  (>)*10
+  (+)*10(
+    [
+      -
+      {
+      Go for a reverse offset clear
+      (-)*64[-]
+      If the game's still going juts defend
+      (<)*11(++-+)*25000
+      }
+    ]
+    Looks like it was zero or a small decoy; reverse offset clear cell twelve
+    if it's far from zero
+    >(+)*10
+    (
+      Clear logic as a duplicate of above
+      [-{(-)*64[-](<)*12(++-+)*25000}]
+      It's near zero too; go defend the flag
+      (<)*12(++-+)*25000
+    )%21
+  )%21
+)%500
