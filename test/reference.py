@@ -1,4 +1,3 @@
-import itertools
 import sys
 
 from test import source
@@ -22,7 +21,7 @@ def check(left, right, result):
 
         _results = dict(
             ((p[0].name, p[1].name), r)
-            for p, r in itertools.izip(pairs, data)
+            for p, r in zip(pairs, data)
         )
 
     ref = _results.get((left, right))

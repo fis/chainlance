@@ -41,12 +41,12 @@ class Client(object):
         if not ok:
             raise RuntimeError(reply or 'geartalk error on test')
 
-        min_tape, max_tape = ord(reply[1]), ord(reply[2])
+        min_tape, max_tape = reply[1], reply[2]
         tapes = max_tape - min_tape + 1
 
         results = []
 
-        for _ in xrange(self._hill_size):
+        for _ in range(self._hill_size):
             # TODO: statistics flag
             joust = self._process.stdout.read(2*tapes)
             if len(joust) != 2*tapes:
@@ -63,7 +63,7 @@ class Client(object):
         header = self._process.stdout.read(4)
         if len(header) < 4:
             return False, 'short read'
-        if (ord(header[0]) & 0x01) == 0:
+        if (header[0] & 0x01) == 0:
             error = self._process.stdout.read(struct.unpack('<I', header) >> 8)
             return False, error
         return True, header
