@@ -1,10 +1,10 @@
-import __builtin__
+import builtins
 import os
 import os.path
 import re
 import sys
 
-_WORKSPACE = 'fi_zem_chainlance'
+_WORKSPACE = '_main'
 
 _runfiles_dir = None
 
@@ -31,4 +31,4 @@ def path(path):
     return os.path.join(_runfiles(), _WORKSPACE, path)
 
 def open(file, *args, **kwargs):
-    return __builtin__.open(path(file), *args, **kwargs)
+    return builtins.open(path(file), *args, **kwargs)
