@@ -249,8 +249,8 @@ int main(int argc, char *argv[])
 				int sieve = i % 2, kettle = !sieve;
 				for (unsigned tlen = MINTAPE; tlen <= MAXTAPE; tlen++)
 				{
-					reply_points[0][tlen - MINTAPE] = scores[sieve][tlen];
-					reply_points[1][tlen - MINTAPE] = scores[kettle][tlen];
+					reply_points[0][tlen - MINTAPE] = -scores[sieve][tlen];
+					reply_points[1][tlen - MINTAPE] = -scores[kettle][tlen];
 				}
 
 				write_n((unsigned char*)&reply_points[0][0], sizeof reply_points);
