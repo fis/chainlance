@@ -82,6 +82,7 @@ class HillManager
     @files = {}
 
     progfiles.each_with_index do |file, id|
+      puts "initializing slot #{id} from #{file}"
       name = File.basename(file, '.bfjoust')
       code = File.open(file) { |f| f.read }
 
