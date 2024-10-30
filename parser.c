@@ -204,6 +204,7 @@ void matchrep(struct oplist *ops)
 	unsigned stack[MAXNEST], istack[MAXNEST], idstack[MAXNEST];
 	unsigned depth = 0, idepth = 0, isdepth = 0;
 
+
 	for (unsigned at = 0; at < ops->len; at++)
 	{
 		struct op *op = &ops->ops[at];
@@ -273,13 +274,14 @@ void matchrep(struct oplist *ops)
 		fail("starting ( without a matching )");
 }
 
-void cleanrep(struct oplist *ops)
+int cleanrep(struct oplist *ops)
 {
 	/* turn contentless loops into *0's.
 	   transform ({a}b)%N to ()*0a(b)*N.
 	   transform (a{b})%N to (a)*Nb()*0. */
 
 	int last_real = -1;
+	int any_changed = 0;
 
 	for (unsigned at = 0; at < ops->len; at++)
 	{
@@ -299,6 +301,7 @@ void cleanrep(struct oplist *ops)
 				/* empty () loop */
 				op->count = 0;
 				ops->ops[op->match].count = 0;
+				any_changed = 1;
 			}
 			break;
 		case OP_INNER1:
@@ -316,6 +319,7 @@ void cleanrep(struct oplist *ops)
 				ops->ops[inner2].inner = -1;
 				ops->ops[rep2].type = OP_REP2;
 				ops->ops[rep2].inner = -1;
+				any_changed = 1;
 			}
 			break;
 		case OP_IREP2:
@@ -333,6 +337,7 @@ void cleanrep(struct oplist *ops)
 				ops->ops[rep2].type = OP_REP2;
 				ops->ops[rep2].count = EMPTY_LOOP_COUNT;
 				ops->ops[rep2].inner = -1;
+				any_changed = 1;
 			}
 			break;
 		default:
@@ -353,6 +358,7 @@ void cleanrep(struct oplist *ops)
 			ops->len -= del_to - at + 1; /* fixup length */
 			at = del_to;                 /* skip the loop */
 			to--;                        /* don't copy anything */
+			any_changed = 1;
 		}
 		else if (to < at)
 		{
@@ -363,6 +369,8 @@ void cleanrep(struct oplist *ops)
 			ops->ops[to] = *op;
 		}
 	}
+
+	return any_changed;
 }
 
 void matchloop(struct oplist *ops)
@@ -426,7 +434,7 @@ struct oplist *parse(stream_id input)
 	/* handle (...) constructions first */
 
 	matchrep(ops);
-	cleanrep(ops);
+	while (cleanrep(ops));
 
 	/* handle [...] constructions now that rep/inner levels are known */
 
