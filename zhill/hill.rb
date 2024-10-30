@@ -549,7 +549,12 @@ class ResultMatrix
   # the results (as returned by Gear#test) of it battling all the
   # other programs in the matrix.
   def replace(idA, results)
-    new_matrix = dup
+    new_matrix = ResultMatrix.new(@size, @tapecount)
+    (0 .. @size-2).each do |a|
+      (a+1 .. @size-1).each do |b|
+        new_matrix[a, b] = @data[a][b-a - 1]
+      end
+    end
     new_matrix.replace!(idA, results)
     new_matrix
   end
