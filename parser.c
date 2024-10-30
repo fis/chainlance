@@ -204,7 +204,6 @@ void matchrep(struct oplist *ops)
 	unsigned stack[MAXNEST], istack[MAXNEST], idstack[MAXNEST];
 	unsigned depth = 0, idepth = 0, isdepth = 0;
 
-
 	for (unsigned at = 0; at < ops->len; at++)
 	{
 		struct op *op = &ops->ops[at];
