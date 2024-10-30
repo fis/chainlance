@@ -1,5 +1,7 @@
 require 'cinch'
 
+require_relative 'gear'
+
 # IRC bot to run a public gearlanced hill.
 #
 # Based on the Cinch[https://github.com/cinchrb/cinch] framework.
@@ -11,6 +13,9 @@ module Bot
   #
   # [nick]            Nickname for the bot.
   # [server]          IRC server to connect to.
+  # [port]            (opt) IRC server port, 6667 by default.
+  # [sasluser]        (opt) IRC server SASL auth username, if needed.
+  # [saslpass]        (opt) IRC server SASL auth password, if needed.
   # [port]            (opt) IRC server port, 6667 by default.
   # [channels]        Space-separated list of IRC channels to join.
   # [summarychannel]  (opt) Channel to broadcast all hill-changing
@@ -35,6 +40,10 @@ module Bot
         c.nick = cfg['nick']
         c.realname = cfg['nick']
         c.channels = cfg['channels'].split
+        if cfg['sasluser']
+          c.sasl.username = cfg['sasluser']
+          c.sasl.password = cfg['saslpass']
+        end
       end
 
       # help command

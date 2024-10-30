@@ -1,4 +1,4 @@
-require 'nmatrix'
+require 'numo/narray'
 
 # BF Joust scoring methods module.
 #
@@ -41,7 +41,7 @@ module Scoring
       n = hill.size
       k = 2 * hill.tapecount
 
-      t = NMatrix.zeros(n)
+      t = Numo::DFloat.zeros(n, n)
       hill.id_pairs do |idA, progA, idB, progB|
         results = hill.results(progA, progB)
         lossAB = results.count { |r| r < 0 }
@@ -50,17 +50,17 @@ module Scoring
         t[idB,idA] = lossBA.to_f / (n * k)
       end
 
-      tsum = t.sum(1)
-      t += NMatrix.diagonal(NMatrix.ones_like(tsum) - tsum) # make rows sum to 1
+      tsum = t.sum(axis: 1)
+      t[Numo::NArray.diag_indices(n, n)] += Numo::DFloat.ones(tsum.shape) - tsum # make rows sum to 1
 
       # speed up converging by squaring t a couple of times
       (1..5).each { t = t.dot(t) }
       # converge
-      d, pd = NMatrix.ones([1,n]) / n, nil
+      d, pd = Numo::DFloat.ones(1, n) / n, nil
       (1..100).each do |step|
         pd = d
         d = d.dot(t)
-        break if (d-pd).abs.mean(1).to_f < 0.000001
+        break if (d-pd).abs.mean(axis: 1).to_f < 0.000001
       end
 
       #d /= d.max(1).to_f
@@ -130,7 +130,7 @@ module Scoring
       k = 2 * hill.tapecount
 
       # pre-compute "positive scaled i-vs-j duel points" matrix D
-      dp = NMatrix.zeros(n)
+      dp = Numo::DFloat.zeros(n, n)
       hill.id_pairs do |idA, progA, idB, progB|
         t = hill.results(progA, progB).reduce(:+)
         if t > 0
@@ -141,7 +141,7 @@ module Scoring
       end
 
       # initialize base score from raw points
-      s = NMatrix.zeros([n, 1])
+      s = Numo::DFloat.zeros(n, 1)
       hill.each_with_index { |p, i| s[i,0] = (hill.points(p) + (n-1)) / (2 * (n-1)) }
 
       # iterate until convergence, or for maximum number of steps

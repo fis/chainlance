@@ -19,3 +19,7 @@ update visible egostats pages:
   #rsync -av --chmod a+r,Da+x stats/ momus:/space/www/zem/egostats
   #rsync -Lav --chmod a+r,Da+x stats/ eos:www/egostats
   rsync -Lav --chmod a+r,Da+x stats/ selene:www/egostats
+
+update the modern JS plots (in root dir):
+
+  ./zhillcrank.rb stats.bin bazel-bin/cranklanced hill/*.bfjoust

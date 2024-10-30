@@ -1,4 +1,3 @@
-import itertools
 import sys
 
 from test import geartalk
@@ -12,16 +11,16 @@ def main():
 
     with geartalk.Client(runfiles.path('gearlanced'), len(warriors)) as hill:
         for left in warriors:
-            with open(left.path) as f:
+            with open(left.path, 'rb') as f:
                 hill.Set(left.index, f.read())
 
         for right in warriors:
-            with open(right.path) as f:
+            with open(right.path, 'rb') as f:
                 results = hill.Test(f.read())
             if len(results) != len(warriors):
                 raise AssertionError('unexpected number of results: {}: expected {}'.format(
                     len(results), len(warriors)))
-            for left, result in itertools.izip(warriors, results):
+            for left, result in zip(warriors, results):
                 if not reference.check(left.name, right.name, result):
                     failed += 1
 

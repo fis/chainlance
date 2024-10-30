@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-require 'date'
 require 'json'
 require 'yaml'
 
@@ -81,19 +80,17 @@ class HillManager
     raise "too many programs: #{progfiles.size} > #{nprogs}" if progfiles.size > nprogs
 
     @files = {}
-    @dates = {}
 
     progfiles.each_with_index do |file, id|
+      puts "initializing slot #{id} from #{file}"
       name = File.basename(file, '.bfjoust')
       code = File.open(file) { |f| f.read }
-      date = DateTime.iso8601(git('log', '-n1', '--format=%cI', '--', file))
 
       results = @gear.test(code)
       @hill = @hill.replace(@hill[id], name, results)
       @gear.set(id, code)
 
       @files[name] = file
-      @dates[name] = date
     end
   end
 
@@ -160,7 +157,6 @@ class HillManager
       @files.delete(replaced)
     end
     @files[newprog] = newfile
-    @dates[newprog] = DateTime.now
 
     # store new code and register for commit
 
@@ -291,7 +287,6 @@ class HillManager
   # [results]        Results for each joust; see below.
   # [scores]         Scores according to all methods; see below.
   # [scoringMethod]  Name of the scoring method in use.
-  # [dates]          Last-modified commit date for each program.
   #
   # If there are _N_ programs on the hill, the *results* property is
   # an array of length _N_-1, and the element _i_ (from 0 .. _N_-2) is
@@ -320,8 +315,7 @@ class HillManager
       'prevrank' => progs.map { |p| @hill.oldrank(p) },
       'results' => (0..n-2).map do |a|
         (a+1..n-1).map { |b| @hill.results(progs[a], progs[b]) }
-      end,
-      'dates' => progs.map { |p| @dates[p].iso8601 },
+      end
     }
 
     scores = {}

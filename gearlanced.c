@@ -233,7 +233,7 @@ int main(int argc, char *argv[])
 					// TODO: fake statistics for cranklance
 					for (unsigned pol = 0; pol < 2; pol++)
 						for (unsigned tlen = MINTAPE; tlen <= MAXTAPE; tlen++)
-							scores[pol][tlen] = -1;
+							scores[pol][tlen] = 1;  // always a win
 				}
 				else
 					core(core_run, 0, hill[i], code);

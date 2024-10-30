@@ -45,6 +45,8 @@ class Server
     if socket
       @socket_server = SocketServer.new(self, socket)
     end
+
+    update_reports()
   end
 
   # Sets the herald callback, used to announce hill changes.
@@ -140,7 +142,7 @@ class Server
 
     if /^(?:https?|ftp):\/\// =~ code
       begin
-        open(code) do |f|
+        URI.open(code) do |f|
           code = f.read(HTTP_MAX + 1)
           raise "maximum size limit (#{HTTP_MAX} bytes) exceeded" if code.length > HTTP_MAX
         end
@@ -158,14 +160,7 @@ class Server
       # update web reports
 
       unless try_only
-        report = @cfg['report']
-        File.open(report, 'w') { |f| @hill_manager.write_report(f) } unless report.nil?
-
-        breakdown = @cfg['breakdown']
-        File.open(breakdown, 'w') { |f| @hill_manager.write_breakdown(prog, f) } unless breakdown.nil?
-
-        json = @cfg['json']
-        File.open(json, 'w') { |f| @hill_manager.write_json(f, @cfg['jsonvar']) } unless json.nil?
+        update_reports(prog)
       end
 
       callback.call(:ok, summary)
@@ -175,6 +170,22 @@ class Server
     end
   end
   private :work_joust
+
+  # Updates the report files. Generally called by the worker, but also once right at startup.
+  # This latter call does not update breakdown.txt, because there's no program to apply it to.
+  def update_reports(prog=nil)
+    report = @cfg['report']
+    File.open(report, 'w') { |f| @hill_manager.write_report(f) } unless report.nil?
+
+    unless prog.nil?
+      breakdown = @cfg['breakdown']
+      File.open(breakdown, 'w') { |f| @hill_manager.write_breakdown(prog, f) } unless breakdown.nil?
+    end
+
+    json = @cfg['json']
+    File.open(json, 'w') { |f| @hill_manager.write_json(f, @cfg['jsonvar']) } unless json.nil?
+  end
+  private :update_reports
 end
 
 # Unix domain socket server for a BF Joust hill.

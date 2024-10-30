@@ -1,0 +1,762 @@
+Set seven reverse tripwires; and main decoy /which also starts out as
+a reverse tripwire/; and two decoys beyond that to protect against
+poke/tripwire avoidance
+
+Yes this does automatically lose on tape length ten
+
+The seven reverse tripwires are originally one then checked for zero
+before increasing them to size two and again before increasing them to
+size three; to catch enemy clears that happen before we can bring them
+up to size
+
+(>+)*10<<-[
+ We found the opponent's decoy setup /a clear attempt is theoretically
+ possible but very unlikely/; switch to a very fast rush strategy
+ because with the decoy setups meshing like this; the main strategy
+ won't work
+ >->-
+ Stealth clear through the enemy decoys
+ ([+
+   [(-)*2[-
+     [(+)*4[+
+       [(-)*6[+++
+         [-
+          [(+)*2[+
+            [(-)*4[-
+              [(+)*6[+
+                [(-)*8[-
+                  [(+)*10[
+                    Use a reverse offset clear; this is probably a flag
+                    It's possible the opponent is a lock program that
+                    sets a lot of decoys; so we use a timer clear
+                    (+)*64([+{[.---]>}][.-[.-]]>)%1000
+                   ](-)*5>(-)*5](+)*5>(-)*4
+                 ](+)*4>(+)*4](-)*4>(+)*3
+               ](-)*3>(-)*3](+)*3>(-)*2
+             ](+)*2>(+)*2](-)*2>(+)*1
+           ](-)*1>(-)*1](+)*1>(-)*0
+         ]>---
+        ](+)*3>(+)*3](-)*3>(+)*2
+      ](-)*2>(-)*2](+)*2>(-)*1
+    ](+)*1>(+)*1](-)*1>(+)*0
+  ]>)*20
+]
+(+)*16
+<[+<[+<[+<[+<[+<[+<[+
+       +>[+>[+>[+>[+>[+>[+>.
+             (+)*65
+             
+             If these reverse tripwires are tripped already we're
+             probably on a short tape unless the opponent is doing
+             risky tripwire avoidance
+             
+             If their value is near zero then they are probably enemy
+             clear attempts /we check zero to two in case the enemy
+             cleared while we were setting the decoys/; repair our
+             flag; then assume that the opponent started at the tenth
+             cell due to the rule of nine and reverse offset clear
+             from there
+             
+             If their value is near three then they are probably enemy
+             small decoys and if it is far from zero or three then
+             they are probably enemy large decoys; set decoys on
+             undisturbed cells then try to race via the turtle
+             strategy; because counter turtle measures normally happen
+             at the end of the enemy decoy setup and they are probably
+             in the middle of it; estimate the tape length by assuming
+             the opponent did a rule of nine clear unless they haven't
+             moved on /in which case it might be a decoy instead/
+
+             <---[+[+[+[
+                 (<)*6
+                 ---[(<(+)*85)*1(>)*9 (>[(-)*8([+{(+)*78[+]}])%16])*21]>
+                 ---[(<(+)*75)*2(>)*10(>[(-)*8([+{(+)*78[+]}])%16])*21]>
+                 ---[(<(+)*65)*3(>)*11(>[(-)*8([+{(+)*78[+]}])%16])*21]>
+                 ---[(<(+)*55)*4(>)*12(>[(-)*8([+{(+)*78[+]}])%16])*21]>
+                 ---[(<(+)*45)*5(>)*13(>[(-)*8([+{(+)*78[+]}])%16])*21]>
+                 ---[(<(+)*35)*6(>)*14(>[(-)*8([+{(+)*78[+]}])%16])*21]
+                 (+)*85(<(+)*85)*5(>)*9(>[(-)*8([+{(+)*78[+]}])%16])*21
+                ](<)*7(+)*120(>)*15(>[(-)*8([+{(+)*78[+]}])%16])*14
+               ](<)*7(+)*120(>)*15(>[(-)*8([+{(+)*78[+]}])%16])*14
+              ](<)*7(+)*120(>)*15(>[(-)*8([+{(+)*78[+]}])%16])*14
+             ]+
+             <---[+[+[+[
+                 (<)*5
+                 ---[(<(+)*85)*1(>)*9 (>[(-)*8([+{(+)*78[+]}])%16])*21]>
+                 ---[(<(+)*75)*2(>)*10(>[(-)*8([+{(+)*78[+]}])%16])*21]>
+                 ---[(<(+)*65)*3(>)*11(>[(-)*8([+{(+)*78[+]}])%16])*21]>
+                 ---[(<(+)*55)*4(>)*12(>[(-)*8([+{(+)*78[+]}])%16])*21]>
+                 ---[(<(+)*45)*5(>)*13(>[(-)*8([+{(+)*78[+]}])%16])*21]
+                 (+)*85(<(+)*85)*4(>)*9(>[(-)*8([+{(+)*78[+]}])%16])*21
+                ](<)*6(+)*120(>)*14(>[(-)*8([+{(+)*78[+]}])%16])*15
+               ](<)*6(+)*120(>)*14(>[(-)*8([+{(+)*78[+]}])%16])*15
+              ](<)*6(+)*120(>)*14(>[(-)*8([+{(+)*78[+]}])%16])*15
+             ]+
+             <---[+[+[+[
+                 (<)*4
+                 ---[(<(+)*85)*1(>)*9 (>[(-)*8([+{(+)*78[+]}])%16])*21]>
+                 ---[(<(+)*75)*2(>)*10(>[(-)*8([+{(+)*78[+]}])%16])*21]>
+                 ---[(<(+)*65)*3(>)*11(>[(-)*8([+{(+)*78[+]}])%16])*21]>
+                 ---[(<(+)*55)*4(>)*12(>[(-)*8([+{(+)*78[+]}])%16])*21]
+                 (+)*85(<(+)*85)*3(>)*9(>[(-)*8([+{(+)*78[+]}])%16])*21
+                ](<)*5(+)*120(>)*13(>[(-)*8([+{(+)*78[+]}])%16])*16
+               ](<)*5(+)*120(>)*13(>[(-)*8([+{(+)*78[+]}])%16])*16
+              ](<)*5(+)*120(>)*13(>[(-)*8([+{(+)*78[+]}])%16])*16
+             ]+
+             <---[+[+[+[
+                 (<)*3
+                 ---[(<(+)*85)*1(>)*9 (>[(-)*8([+{(+)*78[+]}])%16])*21]>
+                 ---[(<(+)*75)*2(>)*10(>[(-)*8([+{(+)*78[+]}])%16])*21]>
+                 ---[(<(+)*65)*3(>)*11(>[(-)*8([+{(+)*78[+]}])%16])*21]
+                 (+)*85(<(+)*85)*2(>)*9(>[(-)*8([+{(+)*78[+]}])%16])*21
+                ](<)*4(+)*120(>)*12(>[(-)*8([+{(+)*78[+]}])%16])*17
+               ](<)*4(+)*120(>)*12(>[(-)*8([+{(+)*78[+]}])%16])*17
+              ](<)*4(+)*120(>)*12(>[(-)*8([+{(+)*78[+]}])%16])*17
+             ]+
+             <---[+[+[+[
+                 (<)*2
+                 ---[(<(+)*85)*1(>)*9 (>[(-)*8([+{(+)*78[+]}])%16])*21]>
+                 ---[(<(+)*75)*2(>)*10(>[(-)*8([+{(+)*78[+]}])%16])*21]
+                 (+)*85(<(+)*85)*1(>)*9(>[(-)*8([+{(+)*78[+]}])%16])*21
+                ](<)*3(+)*120(>)*11(>[(-)*8([+{(+)*78[+]}])%16])*18
+               ](<)*3(+)*120(>)*11(>[(-)*8([+{(+)*78[+]}])%16])*18
+              ](<)*3(+)*120(>)*11(>[(-)*8([+{(+)*78[+]}])%16])*18
+             ]+
+             <---[+[+[+[
+                 (<)*1
+                 ---[(<(+)*85)*1(>)*9(>[(-)*8([+{(+)*78[+]}])%16])*21]
+                 (+)*85(<(+)*85)*0(>)*9(>[(-)*8([+{(+)*78[+]}])%16])*21
+                ](<)*2(+)*120(>)*10(>[(-)*8([+{(+)*78[+]}])%16])*19
+               ](<)*2(+)*120(>)*10(>[(-)*8([+{(+)*78[+]}])%16])*19
+              ](<)*2(+)*120(>)*10(>[(-)*8([+{(+)*78[+]}])%16])*19
+             ]+
+             <---[+[+[+[
+                 (>)*9(>[(-)*8([+{(+)*78[+]}])%16])*21
+                ](<)*1(+)*120(>)*9 (>[(-)*8([+{(+)*78[+]}])%16])*20
+               ](<)*1(+)*120(>)*9 (>[(-)*8([+{(+)*78[+]}])%16])*20
+              ](<)*1(+)*120(>)*9 (>[(-)*8([+{(+)*78[+]}])%16])*20
+             ]+
+             (>)*7
+             
+             The opponent hasn't detectably got past our decoy yet
+             
+             Start our lock; rechecking the tripwires in case the
+             opponent was slow to trip them
+             
+             (.)*25(-)*9(+)*56
+             
+             It takes four cycles to check a tripwire: move dec check
+             moveback; and two to move past a tripwire: move moveback
+             
+             We have sixteen cycles per iteration of the lock
+             
+             There are seven tripwires; we can check the furthest
+             then the next two then the next three; the nearest is
+             left as a reverse tripwire because if it's broken it's
+             probably due to an opponent's timer clear expiring
+             rather than a rule of nine and so we can get it in the
+             next loop
+             
+             We also set up reverse tripwires on cells two and five
+             
+             Trying to attack if a tripwire is broken is mostly
+             pointless because we can't outrace an enemy who has
+             decoys; instead try to defend the flag
+             
+             We use the defend ten algorithm; waiting one hundred and
+             twenty eight cycles first as a reasonable guess as to
+             synchronization; those cycles are spent shuddering in
+             order to beat turtles
+             
+             (<)*6
+             <-[
+              (<)*1(-)*64(+)*64
+              ((+)*256(>)*9 (.+)*119(<)*9 )*3
+              ((+)*256(>)*10(.+)*118(<)*10)*3
+              ((+)*256(>)*11(.+)*117(<)*11)*3
+              ((+)*256(>)*12(.+)*116(<)*12)*3
+              ((+)*256(>)*13(.+)*115(<)*13)*3
+              ((+)*256(>)*14(.+)*114(<)*14)*3
+              ((+)*256(>)*15(.+)*113(<)*15)*3
+              ((+)*256(>)*16(.+)*112(<)*16)*3
+              ((+)*256(>)*17(.+)*111(<)*17)*3
+              ((+)*256(>)*18(.+)*110(<)*18)*3
+              ((+)*256(>)*19(.+)*109(<)*19)*3
+              ((+)*256(>)*20(.+)*108(<)*20)*3
+              ((+)*256(>)*21(.+)*107(<)*21)*3
+              ((+)*256(>)*22(.+)*106(<)*22)*3
+              ((+)*256(>)*23(.+)*105(<)*23)*3
+              ((+)*256(>)*24(.+)*104(<)*24)*3
+              ((+)*256(>)*25(.+)*103(<)*25)*3
+              ((+)*256(>)*26(.+)*102(<)*26)*3
+              ((+)*256(>)*27(.+)*101(<)*27)*3
+              ((+)*256(>)*28(.+)*100(<)*28)*3
+              ((+)*256(>)*29(.+)*99 (<)*29)*3
+             ]+
+             (>)*7
+             (-)*56(+)*56
+             (<)*4
+             <-[
+              (<)*3(-)*64(+)*64
+              ((+)*256(>)*9 (.+)*119(<)*9 )*3
+              ((+)*256(>)*10(.+)*118(<)*10)*3
+              ((+)*256(>)*11(.+)*117(<)*11)*3
+              ((+)*256(>)*12(.+)*116(<)*12)*3
+              ((+)*256(>)*13(.+)*115(<)*13)*3
+              ((+)*256(>)*14(.+)*114(<)*14)*3
+              ((+)*256(>)*15(.+)*113(<)*15)*3
+              ((+)*256(>)*16(.+)*112(<)*16)*3
+              ((+)*256(>)*17(.+)*111(<)*17)*3
+              ((+)*256(>)*18(.+)*110(<)*18)*3
+              ((+)*256(>)*19(.+)*109(<)*19)*3
+              ((+)*256(>)*20(.+)*108(<)*20)*3
+              ((+)*256(>)*21(.+)*107(<)*21)*3
+              ((+)*256(>)*22(.+)*106(<)*22)*3
+              ((+)*256(>)*23(.+)*105(<)*23)*3
+              ((+)*256(>)*24(.+)*104(<)*24)*3
+              ((+)*256(>)*25(.+)*103(<)*25)*3
+              ((+)*256(>)*26(.+)*102(<)*26)*3
+              ((+)*256(>)*27(.+)*101(<)*27)*3
+              ((+)*256(>)*28(.+)*100(<)*28)*3
+              ((+)*256(>)*29(.+)*99 (<)*29)*3
+             ]
+             <-[
+              (<)*2(-)*64(+)*64
+              ((+)*256(>)*9 (.+)*119(<)*9 )*3
+              ((+)*256(>)*10(.+)*118(<)*10)*3
+              ((+)*256(>)*11(.+)*117(<)*11)*3
+              ((+)*256(>)*12(.+)*116(<)*12)*3
+              ((+)*256(>)*13(.+)*115(<)*13)*3
+              ((+)*256(>)*14(.+)*114(<)*14)*3
+              ((+)*256(>)*15(.+)*113(<)*15)*3
+              ((+)*256(>)*16(.+)*112(<)*16)*3
+              ((+)*256(>)*17(.+)*111(<)*17)*3
+              ((+)*256(>)*18(.+)*110(<)*18)*3
+              ((+)*256(>)*19(.+)*109(<)*19)*3
+              ((+)*256(>)*20(.+)*108(<)*20)*3
+              ((+)*256(>)*21(.+)*107(<)*21)*3
+              ((+)*256(>)*22(.+)*106(<)*22)*3
+              ((+)*256(>)*23(.+)*105(<)*23)*3
+              ((+)*256(>)*24(.+)*104(<)*24)*3
+              ((+)*256(>)*25(.+)*103(<)*25)*3
+              ((+)*256(>)*26(.+)*102(<)*26)*3
+              ((+)*256(>)*27(.+)*101(<)*27)*3
+              ((+)*256(>)*28(.+)*100(<)*28)*3
+              ((+)*256(>)*29(.+)*99 (<)*29)*3
+             ]
+             (>)*6
+             (-)*56(+)*56
+             <
+             <-[
+              (<)*6(-)*64(+)*64
+              ((+)*256(>)*9 (.+)*119(<)*9 )*3
+              ((+)*256(>)*10(.+)*118(<)*10)*3
+              ((+)*256(>)*11(.+)*117(<)*11)*3
+              ((+)*256(>)*12(.+)*116(<)*12)*3
+              ((+)*256(>)*13(.+)*115(<)*13)*3
+              ((+)*256(>)*14(.+)*114(<)*14)*3
+              ((+)*256(>)*15(.+)*113(<)*15)*3
+              ((+)*256(>)*16(.+)*112(<)*16)*3
+              ((+)*256(>)*17(.+)*111(<)*17)*3
+              ((+)*256(>)*18(.+)*110(<)*18)*3
+              ((+)*256(>)*19(.+)*109(<)*19)*3
+              ((+)*256(>)*20(.+)*108(<)*20)*3
+              ((+)*256(>)*21(.+)*107(<)*21)*3
+              ((+)*256(>)*22(.+)*106(<)*22)*3
+              ((+)*256(>)*23(.+)*105(<)*23)*3
+              ((+)*256(>)*24(.+)*104(<)*24)*3
+              ((+)*256(>)*25(.+)*103(<)*25)*3
+              ((+)*256(>)*26(.+)*102(<)*26)*3
+              ((+)*256(>)*27(.+)*101(<)*27)*3
+              ((+)*256(>)*28(.+)*100(<)*28)*3
+              ((+)*256(>)*29(.+)*99 (<)*29)*3
+             ]
+             <-[
+              (<)*5(-)*64(+)*64
+              ((+)*256(>)*9 (.+)*119(<)*9 )*3
+              ((+)*256(>)*10(.+)*118(<)*10)*3
+              ((+)*256(>)*11(.+)*117(<)*11)*3
+              ((+)*256(>)*12(.+)*116(<)*12)*3
+              ((+)*256(>)*13(.+)*115(<)*13)*3
+              ((+)*256(>)*14(.+)*114(<)*14)*3
+              ((+)*256(>)*15(.+)*113(<)*15)*3
+              ((+)*256(>)*16(.+)*112(<)*16)*3
+              ((+)*256(>)*17(.+)*111(<)*17)*3
+              ((+)*256(>)*18(.+)*110(<)*18)*3
+              ((+)*256(>)*19(.+)*109(<)*19)*3
+              ((+)*256(>)*20(.+)*108(<)*20)*3
+              ((+)*256(>)*21(.+)*107(<)*21)*3
+              ((+)*256(>)*22(.+)*106(<)*22)*3
+              ((+)*256(>)*23(.+)*105(<)*23)*3
+              ((+)*256(>)*24(.+)*104(<)*24)*3
+              ((+)*256(>)*25(.+)*103(<)*25)*3
+              ((+)*256(>)*26(.+)*102(<)*26)*3
+              ((+)*256(>)*27(.+)*101(<)*27)*3
+              ((+)*256(>)*28(.+)*100(<)*28)*3
+              ((+)*256(>)*29(.+)*99 (<)*29)*3
+             ]
+             <-[
+              (<)*4(-)*64(+)*64
+              ((+)*256(>)*9 (.+)*119(<)*9 )*3
+              ((+)*256(>)*10(.+)*118(<)*10)*3
+              ((+)*256(>)*11(.+)*117(<)*11)*3
+              ((+)*256(>)*12(.+)*116(<)*12)*3
+              ((+)*256(>)*13(.+)*115(<)*13)*3
+              ((+)*256(>)*14(.+)*114(<)*14)*3
+              ((+)*256(>)*15(.+)*113(<)*15)*3
+              ((+)*256(>)*16(.+)*112(<)*16)*3
+              ((+)*256(>)*17(.+)*111(<)*17)*3
+              ((+)*256(>)*18(.+)*110(<)*18)*3
+              ((+)*256(>)*19(.+)*109(<)*19)*3
+              ((+)*256(>)*20(.+)*108(<)*20)*3
+              ((+)*256(>)*21(.+)*107(<)*21)*3
+              ((+)*256(>)*22(.+)*106(<)*22)*3
+              ((+)*256(>)*23(.+)*105(<)*23)*3
+              ((+)*256(>)*24(.+)*104(<)*24)*3
+              ((+)*256(>)*25(.+)*103(<)*25)*3
+              ((+)*256(>)*26(.+)*102(<)*26)*3
+              ((+)*256(>)*27(.+)*101(<)*27)*3
+              ((+)*256(>)*28(.+)*100(<)*28)*3
+              ((+)*256(>)*29(.+)*99 (<)*29)*3
+             ]
+             +>>>>
+             
+             We speed the lock up to fifteen cycles of waiting; this
+             makes it slightly harder to break
+             
+             We alternate between checking to see if it is broken;
+             and building max height decoys between here and the flag
+             
+             If the lock breaks then either it was broken while
+             changing the flag /in which case the opponent has a
+             broken antishudder/ or it was broken legitimately /in
+             which case either the opponent's using an insane clear
+             algorithm such as an inflexible timer clear or else we're
+             unlucky with the probabilistic lock/
+             
+             Try another probabilistic lock on one of the two
+             preceding cells if the tripwire on cell one hasn't broken
+             /which one depends on whether cell eight is near zero/
+             
+             If the tripwire on cell one breaks then the opponent may
+             already be on the flag; we try to lock on cell one or cell
+             zero depending on how close to zero cell one is
+             
+             If the second probabilistic lock breaks we instead
+             shudder because it's quite possible the opponent has a
+             broken antishudder
+             
+             (
+              (-)*56(+)*57(<{(+)*11}>)%2
+              (-)*57(+)*56<-[
+               <--([+{
+                 (<)*5-[
+
+                  How near zero is cell one?
+                  
+                  (+)*3([-{
+                    It's not near zero; lock on cell one
+                    The opponent is probably using some sort of anti lock
+                    clear loop /probably due to a timer clear expiring/;
+                    so we use the shudderlock algorithm to be able to
+                    handle clears with weird timings
+                    
+                    ((+)*64(-)*64(>)*15(.+)*49(<)*15)*6
+                    ((+)*64(-)*64(>)*16(.+)*48(<)*16)*6
+                    ((+)*64(-)*64(>)*17(.+)*47(<)*17)*6
+                    ((+)*64(-)*64(>)*18(.+)*46(<)*18)*6
+                    ((+)*64(-)*64(>)*19(.+)*45(<)*19)*6
+                    ((+)*64(-)*64(>)*20(.+)*44(<)*20)*6
+                    ((+)*64(-)*64(>)*21(.+)*43(<)*21)*7
+                    ((+)*64(-)*64(>)*22(.+)*42(<)*22)*7
+                    ((+)*64(-)*64(>)*23(.+)*41(<)*23)*7
+                    ((+)*64(-)*64(>)*24(.+)*40(<)*24)*7
+                    ((+)*64(-)*64(>)*25(.+)*39(<)*25)*7
+                    ((+)*64(-)*64(>)*26(.+)*38(<)*26)*7
+                    ((+)*64(-)*64(>)*27(.+)*37(<)*27)*7
+                    ((+)*64(-)*64(>)*28(.+)*36(<)*28)*8
+                    }]
+
+                   It's near zero; lock on the flag
+                   Many programs that reach this point are either turtles;
+                   or have broken antishudders
+                   Thus we use increase and hope they fall off the end
+                   Going up rather than down here is shameless constant tweaking
+                   <(+)*100000
+                  )%6
+                 ]+
+                 
+                 Assume the opponent's still clearing cell eight if
+                 it's not near zero; otherwise lock on cell seven
+                 (>)*6--([+{
+                   
+                   Cell eight lock
+                   (
+                    (+)*56(-)*57(<{-[<((+)*64(-)*64)*1000]+}>)%6
+                    (+)*57(-)*56(<{(+)*13}>)%1
+                   )*9
+                   (
+                    (+)*56(-)*57(<{-[<((+)*64(-)*64)*1000]+}>)%6
+                    (+)*57(-)*56(<{(+)*11}>)%2
+                   )*11
+                   (
+                    (+)*56(-)*57(<{-[<((+)*64(-)*64)*1000]+}>)%6
+                    (+)*57(-)*56(<{(+)*9}>)%3
+                   )*14
+                   (
+                    (+)*56(-)*57(<{-[<((+)*64(-)*64)*1000]+}>)%6
+                    (+)*57(-)*56(<{(+)*7}>)%4
+                   )*18
+                   (
+                    (+)*56(-)*57(<{-[<((+)*64(-)*64)*1000]+}>)%6
+                    (+)*57(-)*56(<{(+)*5}>)%5
+                   )*24
+                   (
+                    Just in case the opponent is on a very long timer;
+                    we have no better use for the cycles
+                    (+)*56(-)*57(<{-[<((+)*64(-)*64)*1000]+}>)%6
+                    (+)*57(-)*56(<{-[<((+)*64(-)*64)*1000]+}>)%6
+                   )*100                   
+                   (
+                    (+)*56(-)*57(<{(+)*3}>)%6
+                    (+)*57(-)*56(<{(+)*3}>)%6
+                   )*21
+                   Time to rush!
+                   >>(>[(+)*20[-]])*21
+                   }]<
+                  
+                  Cell seven lock
+                  (.)*8
+                  (
+                   (+)*56(-)*57(<{-[<((+)*64(-)*64)*1000]+}>)%5..
+                   (+)*57(-)*56(<{(+)*13}>)%1
+                  )*9
+                  (
+                   (+)*56(-)*57(<{-[<((+)*64(-)*64)*1000]+}>)%5..
+                   (+)*57(-)*56(<{(+)*11}>)%2
+                  )*11
+                  (
+                   (+)*56(-)*57(<{-[<((+)*64(-)*64)*1000]+}>)%5..
+                   (+)*57(-)*56(<{(+)*9}>)%3
+                  )*14
+                  (
+                   (+)*56(-)*57(<{-[<((+)*64(-)*64)*1000]+}>)%5..
+                   (+)*57(-)*56(<{(+)*7}>)%4
+                  )*18
+                  (
+                   If we're only on cell seven there's a good chance
+                   the opponent could outrun us; so we stall checking
+                   the tripwire until we're close to the cycle limit
+                   so that the opponent has no chance to win before
+                   time runs out but we have a good chance to catch
+                   them if they set few decoys
+                   (+)*56(-)*57(<{-[<((+)*64(-)*64)*1000]+}>)%5..
+                   (+)*57(-)*56(<{-[<((+)*64(-)*64)*1000]+}>)%5..
+                  )*316
+                  (
+                   (+)*56(-)*57(<{(+)*5}>)%5
+                   (+)*57(-)*56(<{(+)*5}>)%5
+                  )*12
+                  Time to rush! Start at cell sixteen; the opponent
+                  wouldn't have got locked here if the tape is shorter
+                  than that due to rule of nine
+                  (>)*9(>[(+)*20[-]])*14
+                 )%5
+                 }]
+                
+                Cell seven was cleared
+                
+                (<)*6
+                ((+)*256(>)*16(.+)*112(<)*16)*3
+                ((+)*256(>)*17(.+)*111(<)*17)*3
+                ((+)*256(>)*18(.+)*110(<)*18)*3
+                ((+)*256(>)*19(.+)*109(<)*19)*3
+                ((+)*256(>)*20(.+)*108(<)*20)*3
+                ((+)*256(>)*21(.+)*107(<)*21)*3
+                ((+)*256(>)*22(.+)*106(<)*22)*3
+                ((+)*256(>)*23(.+)*105(<)*23)*3
+                ((+)*256(>)*24(.+)*104(<)*24)*3
+                ((+)*256(>)*25(.+)*103(<)*25)*3
+                ((+)*256(>)*26(.+)*102(<)*26)*3
+                ((+)*256(>)*27(.+)*101(<)*27)*3
+                ((+)*256(>)*28(.+)*100(<)*28)*3
+                ((+)*256(>)*29(.+)*99 (<)*29)*3
+               )%5
+              ]
+              +<<<-[
+               The opponent broke our middle tripwire; perhaps they
+               are using some sort of tripwire avoidance scheme or an
+               undetected poke
+               
+               Try to trap them on the flag; this shudder algorithm works
+               on many three cycle clears and some two cycle clears too
+               
+               A draw is better than a loss!
+               
+               <<<<
+               (+...+.)*50000
+               
+               ]+>>>>.
+              )*11
+              
+              Set large decoys on cells six and five
+              If the tripwire on cell seven breaks, set large decoys between
+              here and the flag then rush; the opponent was probably using some
+              sort of timer clear
+              
+              We use a timer clear of our own in case the reason the tripwire
+              took so long to trip is that the opponent is using a full tape
+              clear /and thus likely trying to lock us/
+              
+              (
+               (-)*56(+)*57(<{(+)*9}>)%3
+               (-)*57(+)*56<-.[
+                
+                <<(+)*85
+                (<(+)*85)*4
+                (>)*13
+                (>[(+)*8(-[{-[.---[.---]][.---[.---]]>}][..+.+]>(+)*8)%2000])*15
+                
+                (<)*7
+                ((+)*256(>)*16(.+)*112(<)*16)*3
+                ((+)*256(>)*17(.+)*111(<)*17)*3
+                ((+)*256(>)*18(.+)*110(<)*18)*3
+                ((+)*256(>)*19(.+)*109(<)*19)*3
+                ((+)*256(>)*20(.+)*108(<)*20)*3
+                ((+)*256(>)*21(.+)*107(<)*21)*3
+                ((+)*256(>)*22(.+)*106(<)*22)*3
+                ((+)*256(>)*23(.+)*105(<)*23)*3
+                ((+)*256(>)*24(.+)*104(<)*24)*3
+                ((+)*256(>)*25(.+)*103(<)*25)*3
+                ((+)*256(>)*26(.+)*102(<)*26)*3
+                ((+)*256(>)*27(.+)*101(<)*27)*3
+                ((+)*256(>)*28(.+)*100(<)*28)*3
+                ((+)*256(>)*29(.+)*99 (<)*29)*3
+                
+                ]+.>(.)*8
+               )*14
+               (
+                (-)*56(+)*57(<{(+)*7}>)%4
+                (-)*57(+)*56<-.[
+                 
+                 <<<(+)*85
+                 (<(+)*85)*3
+                 (>)*13
+                 (>[(+)*8(-[{-[.---[.---]][.---[.---]]>}][..+.+]>(+)*8)%2000])*15
+                 
+                 (<)*7
+                 ((+)*256(>)*16(.+)*112(<)*16)*3
+                 ((+)*256(>)*17(.+)*111(<)*17)*3
+                 ((+)*256(>)*18(.+)*110(<)*18)*3
+                 ((+)*256(>)*19(.+)*109(<)*19)*3
+                 ((+)*256(>)*20(.+)*108(<)*20)*3
+                 ((+)*256(>)*21(.+)*107(<)*21)*3
+                 ((+)*256(>)*22(.+)*106(<)*22)*3
+                 ((+)*256(>)*23(.+)*105(<)*23)*3
+                 ((+)*256(>)*24(.+)*104(<)*24)*3
+                 ((+)*256(>)*25(.+)*103(<)*25)*3
+                 ((+)*256(>)*26(.+)*102(<)*26)*3
+                 ((+)*256(>)*27(.+)*101(<)*27)*3
+                 ((+)*256(>)*28(.+)*100(<)*28)*3
+                 ((+)*256(>)*29(.+)*99 (<)*29)*3
+                 
+                 ]+.>(.)*8
+                )*18
+                
+                From this point assume that the lock is perfect
+                (
+                 (-)*56(+)*57(<{(+)*5}>)%5
+                 (-)*57(+)*56(<{(+)*5}>)%5
+                )*12
+                (
+                 (-)*56(+)*57(<{(+)*3}>)%6
+                 (-)*57(+)*56(<{(+)*3}>)%6
+                )*21
+                (
+                 (-)*56(+)*57(<{(+)*1}>)%7
+                 (-)*57(+)*56(<{(+)*1}>)%7
+                )*63
+                This also means that we can make the near tripwire into
+                a decoy
+                (
+                 (-)*56(+)*57(<{(+)*13}>)%1
+                 (-)*57(+)*56(<{(+)*13}>)%1
+                )*4
+                
+                (-)*56(+)*57<+++++++++++++>
+                (-)*57(+)*56<++++++++++>>+<
+                (-)*56(+)*57<<++++++<++>+>>
+                (-)*57(+)*56<<<<+<++++>>>>>
+                (-)*56(+)*57<<<<<++<+>>>>>>
+                (-)*57(+)*56<<<<<++<+>>>>>>
+                (-)*56(+)*57<<<<<<<+>>>>>>>
+                                
+                We now have seven max height decoys between here and
+                our flag; additionally the tape length is almost
+                certainly at least eighteen if the opponent is a
+                /presumably slow/ rush program or else the opponent
+                would not have been locked due to rule of nine; and
+                the opponent probably isn't a turtle because they
+                would have broken the lock by now
+                
+                Time to rush!
+
+                Against active opponents: we know the tape is at least
+                eighteen cells long because otherwise we would have
+                observed their rule of nine clear earlier
+                
+                Against passive oponents: we have a lot of decoys but
+                don't know how long the tape is
+                
+                To determine whether the opponent is active or passive
+                we wait 1280 cycles for our lock cell to be zeroed; if
+                it is the opponent is active; if not the opponent is
+                passive /or slow enough that we can safely treat them
+                as passive/
+                
+                (
+                 [{
+                  The opponent failed to zero our lock cell
+                  They must be passive
+                  
+                  Start at cell eleven; we would have lost already if the tape
+                  length were ten
+                  
+                  (>)*2
+
+                  We use four different clear algorithms and change
+                  between them every 828 cycles until the tape is
+                  cleared; they're two cycle clears which differ on
+                  polarity and parity; 828 = golden ratio times two;
+                  this guarantees that we hit the timing and polarity
+                  that breaks any lock eventually
+                  
+                  Our countervibrate works by moving back one cell
+                  then rearriving on the current cell with the
+                  opposite parity
+
+                  (                  
+                   ([+{. ([+{. ([-{. ([-{.
+                   ([+{. ([+{. ([-{. ([-{.
+                   ([+{. ([+{. ([-{. ([-{.
+                   ([+{. ([+{. ([-{. ([-{.
+                   ([+{. ([+{. ([-{. ([-{.
+                   ([+{. ([+{. ([-{. ([-{.
+                   ([+{. ([+{. ([-{. ([-{.
+                   ([+{. ([+{. ([-{. ([-{.
+                   ([+{. ([+{. ([-{. ([-{.
+                   ([+{. ([+{. ([-{. ([-{.
+                   ([+{. ([+{. ([-{. ([-{.
+                   ([+{. ([+{. ([-{. ([-{.
+                   ([+{. ([+{. ([-{. ([-{.
+                   ([+{. ([+{. ([-{. ([-{.
+                   ([+{. ([+{. ([-{. ([-{.
+                   ([+{. ([+{. ([-{. ([-{.
+                   ([+{. ([+{. ([-{. ([-{.
+                   ([+{. ([+{. ([-{. ([-{.
+                   ([+{. ([+{. ([-{. ([-{.
+                   ([+{. ([+{. ([-{. ([-{.
+                   }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414
+                   }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414
+                   }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414
+                   }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414
+                   }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414
+                   }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414
+                   }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414
+                   }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414
+                   }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414
+                   }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414
+                   }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414
+                   }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414
+                   }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414
+                   }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414
+                   }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414
+                   }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414
+                   }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414
+                   }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414
+                   }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414
+                   }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414 }][<+[-]]>)%414
+                  )*10000                  
+                  }]
+                 
+                 The opponent zeroed our lock cell; they must be active
+                 So we can safely start at cell eighteen
+                 
+                 We know the opponent isn't defending; but we don't know anything
+                 about their decoy setup
+                 
+                 (>)*8(>[(+)*12[-]])*13
+                 
+                 )%1280
+               ]
+               
+               We get here if someone interfered with our decoy setup
+               
+               Either the opponent is a very fast rush program /no
+               decoys/ or they set a breadcrumb decoy with a value of
+               minus one
+               
+               In both cases there will be nothing but small decoys
+               between our large decoy and the flag
+               
+               We thus start clearing from cell eleven after first
+               removing the decoy we placed there ourself; we check for
+               values near zero to eliminate small decoys; then for
+               values near the starting flag height to clear the flag
+               
+               Just in case someone does try to lock us we clear in the
+               opposite direction with a three cycle clear if we reach
+               one hundred and thirty six without zeroing the cell; this
+               defeats the vast majority of lock algorithms
+               
+               If we detected the opponent four or more spaces from our
+               flag it's possible/probable it hasn't reached our flag
+               yet; and may be setting decoys of its own
+               
+               If that happens as we bump the decoys to two the opponent is
+               probably a very fast rush /possibly a turtle/ so we only
+               set one medium decoy on cell two
+               
+               If that happens as we bump the decoys to three the opponent is
+               still a fast rush but maybe a little slower; we use our
+               remaining tripwires to try to assess where the enemy is
+               and set a medium decoy on cell two and large decoys on
+               cells three and four if the opponent hasn't reached them yet
+               
+               (<)*6---[(>)*9-([(-)*8([+{(+)*116(.+)*12[-[.-]]}])%17]>)*20]
+               (+)*12>---[(>)*8-([(-)*8([+{(+)*116(.+)*12[-[.-]]}])%17]>)*20]
+               (+)*52>---[(>)*7-([(-)*8([+{(+)*116(.+)*12[-[.-]]}])%17]>)*20]
+               (+)*52(>)*7-([(-)*8([+{(+)*116(.+)*12[-[.-]]}])%17]>)*20
+              ]
+              (<)*5---[(>)*9-([(-)*8([+{(+)*116(.+)*12[-[.-]]}])%17]>)*20]
+              (+)*12>---[(>)*8-([(-)*8([+{(+)*116(.+)*12[-[.-]]}])%17]>)*20]
+              (+)*52>---[(>)*7-([(-)*8([+{(+)*116(.+)*12[-[.-]]}])%17]>)*20]
+              (+)*52(>)*7-([(-)*8([+{(+)*116(.+)*12[-[.-]]}])%17]>)*20
+             ]
+             (<)*4---[(>)*9-([(-)*8([+{(+)*116(.+)*12[-[.-]]}])%17]>)*20]
+             (+)*12>---[(>)*8-([(-)*8([+{(+)*116(.+)*12[-[.-]]}])%17]>)*20]
+             (+)*52>---[(>)*7-([(-)*8([+{(+)*116(.+)*12[-[.-]]}])%17]>)*20]
+             (+)*52(>)*7-([(-)*8([+{(+)*116(.+)*12[-[.-]]}])%17]>)*20
+            ]
+            (<)*3---[(>)*9-([(-)*8([+{(+)*116(.+)*12[-[.-]]}])%17]>)*20]
+            (+)*12>---[(>)*8-([(-)*8([+{(+)*116(.+)*12[-[.-]]}])%17]>)*20]
+            (+)*52(>)*8-([(-)*8([+{(+)*116(.+)*12[-[.-]]}])%17]>)*20
+           ]
+           (>)*7-([(-)*8([+{(+)*116(.+)*12[-[.-]]}])%17]>)*20
+          ]
+          (>)*8-([(-)*8([+{(+)*116(.+)*12[-[.-]]}])%17]>)*20
+         ]
+         (>)*9-([(-)*8([+{(+)*116(.+)*12[-[.-]]}])%17]>)*20
+        ]
+        (>)*8-([(-)*8([+{(+)*116(.+)*12[-[.-]]}])%17]>)*20
+       ]
+       (>)*7-([(-)*8([+{(+)*116(.+)*12[-[.-]]}])%17]>)*20
+      ]
+      (<)*3(+)*12(>)*9-([(-)*8([+{(+)*116(.+)*12[-[.-]]}])%17]>)*20
+     ]
+     (<)*4(+)*12(>)*9-([(-)*8([+{(+)*116(.+)*12[-[.-]]}])%17]>)*20
+    ]
+    (<)*5(+)*12(>)*9-([(-)*8([+{(+)*116(.+)*12[-[.-]]}])%17]>)*20
+   ]
+   (<)*6(+)*12(>)*9-([(-)*8([+{(+)*116(.+)*12[-[.-]]}])%17]>)*20
+   

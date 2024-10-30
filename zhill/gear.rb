@@ -1,6 +1,3 @@
-require 'protobuf/message/decoder'
-require 'protobuf/message/field'
-
 # Minimal Ruby wrapper class around the gearlanced tool.
 
 class Gear
@@ -33,7 +30,7 @@ class Gear
   # and the possibly empty list of Statistics messages (key :stats)
   # returned by cranklanced.
   def test(code)
-    @gear_in.write([0x01, code.length].pack('I<2'))
+    @gear_in.write([0x01, code.bytesize].pack('I<2'))
     @gear_in.write(code)
     @gear_in.flush
 
@@ -77,7 +74,7 @@ class Gear
   #
   # The indices run from 0 to #size-1.
   def set(i, code)
-    @gear_in.write([0x02 | (i << 8), code.length].pack('I<2'))
+    @gear_in.write([0x02 | (i << 8), code.bytesize].pack('I<2'))
     @gear_in.write(code)
     @gear_in.flush
 
@@ -103,7 +100,7 @@ class Gear
     header = @gear_out.read(4)
     raise GearException, 'short reply header' unless header.length == 4
     if (header[0].ord & 0x01) == 0
-      error = @gear_out.read(header.unpack('I<') >> 8)
+      error = @gear_out.read(header.unpack('I<')[0] >> 8)
       return false, error
     end
     return true, header

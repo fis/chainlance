@@ -11,7 +11,7 @@ def main():
     for left, right in source.pairs():
         result = subprocess.check_output(
             [runfiles.path('gearlance'), left.path, right.path])
-        if not reference.check(left.name, right.name, result):
+        if not reference.check(left.name, right.name, result.decode('utf-8')):
             failed += 1
 
     if failed:
